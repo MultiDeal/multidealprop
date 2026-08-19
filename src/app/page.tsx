@@ -275,9 +275,12 @@ export default function HomePage() {
                     ) : (
                       <span className="text-[11px] text-slate-500">Market Rate</span>
                     )}
-                    <button className="text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                      View Deal <ArrowUpRight className="w-3.5 h-3.5" />
-                    </button>
+                    <a 
+  href={`/deals/${deal.id}`}
+  className="text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+>
+  View Deal <ArrowUpRight className="w-3.5 h-3.5" />
+</a>
                   </div>
                 </div>
               );
