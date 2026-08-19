@@ -6,13 +6,15 @@ import { supabase } from '@/lib/supabase';
 import { 
   Building2, 
   MapPin, 
-  Lock, 
   ArrowLeft, 
   TrendingUp, 
   DollarSign, 
   ShieldCheck, 
   CheckCircle2,
-  Mail
+  Mail,
+  Calculator,
+  Percent,
+  Wallet
 } from 'lucide-react';
 
 interface Deal {
@@ -41,6 +43,11 @@ export default function DealDetailPage() {
   const [email, setEmail] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // Paramètres du simulateur de financement
+  const [downPaymentPercent, setDownPaymentPercent] = useState<number>(20);
+  const [interestRate, setInterestRate] = useState<number>(6.8);
+  const loanTermYears = 30;
 
   useEffect(() => {
     async function getDeal() {
@@ -79,7 +86,7 @@ export default function DealDetailPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center text-slate-400">
-        Chargement de l'opportunité...
+        Chargement des analyses financières...
       </div>
     );
   }
@@ -95,16 +102,38 @@ export default function DealDetailPage() {
     );
   }
 
-  const discount = deal.estimated_market_value && deal.price
-    ? Math.round(((deal.estimated_market_value - deal.price) / deal.estimated_market_value) * 100)
+  const price = Number(deal.price) || 0;
+  const marketVal = Number(deal.estimated_market_value) || price;
+  const discount = marketVal > price ? Math.round(((marketVal - price) / marketVal) * 100) : 0;
+  const monthlyRent = Number(deal.monthly_rent_estimate) || 0;
+
+  // Calculs Financiers Détaillés
+  const downPaymentAmount = (price * downPaymentPercent) / 100;
+  const loanAmount = price - downPaymentAmount;
+  const monthlyInterestRate = (interestRate / 100) / 12;
+  const totalMonths = loanTermYears * 12;
+
+  // Formule Mensualité Hypothèque (Principal + Intérêts)
+  const monthlyMortgage = loanAmount > 0 && monthlyInterestRate > 0
+    ? Math.round((loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, totalMonths))) / (Math.pow(1 + monthlyInterestRate, totalMonths) - 1))
     : 0;
 
-  const estimatedAnnualRent = (deal.monthly_rent_estimate || 0) * 12;
-  const estimatedNetIncome = Math.round(estimatedAnnualRent * 0.65); // Estimation charges ~35%
+  // Dépenses estimées selon les moyennes US
+  const monthlyTaxes = Math.round((price * 0.018) / 12); // ~1.8% annuel
+  const monthlyInsurance = Math.round(120 * (deal.units_count || 1)); // ~$120/mois par unité
+  const monthlyManagement = Math.round(monthlyRent * 0.08); // 8% frais de gestion
+  const monthlyMaintenance = Math.round(monthlyRent * 0.05); // 5% réserve travaux
+
+  const totalMonthlyExpenses = monthlyMortgage + monthlyTaxes + monthlyInsurance + monthlyManagement + monthlyMaintenance;
+  const netMonthlyCashFlow = monthlyRent - totalMonthlyExpenses;
+  const annualCashFlow = netMonthlyCashFlow * 12;
+  const cashOnCashReturn = downPaymentAmount > 0 
+    ? ((annualCashFlow / downPaymentAmount) * 100).toFixed(1) 
+    : '0';
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 selection:bg-emerald-500 selection:text-black">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-5xl mx-auto px-4 py-8">
         {/* Navigation retour */}
         <button 
           onClick={() => router.push('/')}
@@ -113,11 +142,11 @@ export default function DealDetailPage() {
           <ArrowLeft className="w-4 h-4" /> Retour aux opportunités
         </button>
 
-        {/* En-tête de l'opportunité */}
+        {/* Carte Titre Principale */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 mb-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <span className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-300 bg-slate-800 px-3 py-1 rounded-md uppercase tracking-wide">
-              <Building2 className="w-3.5 h-3.5" /> {deal.property_type}
+              <Building2 className="w-3.5 h-3.5" /> {deal.property_type} ({deal.units_count} Portes)
             </span>
             <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
               Deal Score : {deal.deal_score}/100
@@ -127,70 +156,136 @@ export default function DealDetailPage() {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-white">{deal.title}</h1>
           <p className="flex items-center gap-1 text-slate-400 text-sm mt-2">
             <MapPin className="w-4 h-4 text-slate-500" />
-            {unlocked ? deal.formatted_address : `${deal.city}, ${deal.state} ${deal.zip_code} (Adresse exacte masquée)`}
+            {unlocked ? deal.formatted_address : `${deal.city}, ${deal.state} ${deal.zip_code} (Adresse exacte réservée aux membres)`}
           </p>
 
-          {/* Grille financière */}
+          {/* Grille financière haut de page */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-800">
             <div>
               <div className="text-[11px] text-slate-400 uppercase font-medium">Prix Demandé</div>
-              <div className="text-xl font-bold text-white">${Number(deal.price).toLocaleString()}</div>
+              <div className="text-xl font-bold text-white">${price.toLocaleString()}</div>
             </div>
             <div>
               <div className="text-[11px] text-slate-400 uppercase font-medium">Valeur Estimée</div>
               <div className="text-xl font-bold text-emerald-400">
-                ${Number(deal.estimated_market_value).toLocaleString()}
+                ${marketVal.toLocaleString()}
                 {discount > 0 && <span className="text-xs ml-1 font-normal">(-{discount}%)</span>}
               </div>
             </div>
             <div>
-              <div className="text-[11px] text-slate-400 uppercase font-medium">Cap Rate</div>
+              <div className="text-[11px] text-slate-400 uppercase font-medium">Cap Rate Brut</div>
               <div className="text-xl font-bold text-emerald-400">{deal.cap_rate}%</div>
             </div>
             <div>
-              <div className="text-[11px] text-slate-400 uppercase font-medium">Loyers / Mois</div>
-              <div className="text-xl font-bold text-white">${Number(deal.monthly_rent_estimate).toLocaleString()}</div>
+              <div className="text-[11px] text-slate-400 uppercase font-medium">Loyers Totaux Estimés</div>
+              <div className="text-xl font-bold text-white">${monthlyRent.toLocaleString()} / mois</div>
             </div>
           </div>
         </div>
 
-        {/* Détails & Rentabilité */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
-            <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
-              <TrendingUp className="w-4 h-4 text-emerald-400" /> Projections Annuelles
-            </h2>
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between py-2 border-b border-slate-800/60">
-                <span className="text-slate-400">Revenus Bruts Estimés</span>
-                <span className="font-semibold text-white">${estimatedAnnualRent.toLocaleString()} / an</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-800/60">
-                <span className="text-slate-400">Estimation NOI (Net)</span>
-                <span className="font-semibold text-emerald-400">${estimatedNetIncome.toLocaleString()} / an</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-slate-800/60">
-                <span className="text-slate-400">Nombre de portes / unités</span>
-                <span className="font-semibold text-white">{deal.units_count} unité(s)</span>
-              </div>
-              <div className="flex justify-between py-2">
-                <span className="text-slate-400">Programme Section 8</span>
-                <span className="font-semibold text-emerald-400">
-                  {deal.section8_eligible ? 'Éligible (Paiement Garanti)' : 'Prix Marché'}
-                </span>
+        {/* Simulateur Hypothécaire & Décomposition du Cash-Flow */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          
+          {/* Colonne 1 & 2 : Analyse des Dépenses et Cash Flow */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Bloc Paramètres Hypothèque */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+              <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
+                <Calculator className="w-4 h-4 text-emerald-400" /> Simulateur de Financement & Hypothèque
+              </h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="block text-slate-400 mb-1">Mise de fonds (Down Payment) : <strong className="text-white">{downPaymentPercent}% (${downPaymentAmount.toLocaleString()})</strong></label>
+                  <input 
+                    type="range" 
+                    min="10" 
+                    max="50" 
+                    step="5"
+                    value={downPaymentPercent} 
+                    onChange={(e) => setDownPaymentPercent(Number(e.target.value))}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-400 mb-1">Taux d'intérêt estimé : <strong className="text-white">{interestRate}% (30 ans fixe)</strong></label>
+                  <input 
+                    type="range" 
+                    min="4.5" 
+                    max="10.0" 
+                    step="0.1"
+                    value={interestRate} 
+                    onChange={(e) => setInterestRate(Number(e.target.value))}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                </div>
               </div>
             </div>
+
+            {/* Décomposition mensuelle Recettes vs Dépenses */}
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
+              <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
+                <TrendingUp className="w-4 h-4 text-emerald-400" /> Bilan Mensuel Estimé (Cash Flow)
+              </h2>
+
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between py-2 border-b border-slate-800/80">
+                  <span className="text-slate-300 font-medium">(+) Loyers bruts mensuels</span>
+                  <span className="font-bold text-emerald-400">+${monthlyRent.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between py-1.5 text-xs text-slate-400">
+                  <span>(-) Hypothèque (P&I - 30 ans)</span>
+                  <span className="text-rose-400">-${monthlyMortgage.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between py-1.5 text-xs text-slate-400">
+                  <span>(-) Taxes foncières (Property Taxes ~1.8%/an)</span>
+                  <span className="text-rose-400">-${monthlyTaxes.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between py-1.5 text-xs text-slate-400">
+                  <span>(-) Assurances Propriétaire (Hazard & Fire Insurance)</span>
+                  <span className="text-rose-400">-${monthlyInsurance.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between py-1.5 text-xs text-slate-400">
+                  <span>(-) Gestion locative (Property Management 8%)</span>
+                  <span className="text-rose-400">-${monthlyManagement.toLocaleString()}</span>
+                </div>
+
+                <div className="flex justify-between py-1.5 text-xs text-slate-400 border-b border-slate-800/80 pb-3">
+                  <span>(-) Réserve réparations / Vacance (5%)</span>
+                  <span className="text-rose-400">-${monthlyMaintenance.toLocaleString()}</span>
+                </div>
+
+                {/* Résultat Cashflow Net */}
+                <div className="flex justify-between items-center pt-2">
+                  <div>
+                    <div className="font-bold text-white text-base flex items-center gap-1.5">
+                      <Wallet className="w-4 h-4 text-emerald-400" /> Cash Flow Net Mensuel
+                    </div>
+                    <div className="text-[11px] text-slate-400">Rendement Cash-on-Cash estimé : <span className="text-emerald-400 font-semibold">{cashOnCashReturn}%</span></div>
+                  </div>
+                  <div className={`text-xl font-extrabold ${netMonthlyCashFlow >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                    {netMonthlyCashFlow >= 0 ? `+$${netMonthlyCashFlow.toLocaleString()}` : `-$${Math.abs(netMonthlyCashFlow).toLocaleString()}`} / mois
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
-          {/* Déblocage Contacts & Adresse (Lead Magnet) */}
-          <div className="bg-slate-900/60 border border-emerald-500/30 rounded-2xl p-6 relative overflow-hidden flex flex-col justify-between">
+          {/* Colonne 3 : Déblocage Dossier & Leads */}
+          <div className="bg-slate-900/60 border border-emerald-500/30 rounded-2xl p-6 flex flex-col justify-between h-fit">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md mb-3">
-                <ShieldCheck className="w-3.5 h-3.5" /> Dossier Off-Market
+                <ShieldCheck className="w-3.5 h-3.5" /> Dossier d'Acquisition
               </div>
-              <h2 className="text-base font-bold text-white mb-2">Débloquer le dossier complet</h2>
-              <p className="text-xs text-slate-400 mb-4">
-                Accédez à l'adresse exacte, à la fiche du vendeur/courtier et aux comparables de quartier.
+              <h2 className="text-lg font-bold text-white mb-2">Débloquer le dossier complet</h2>
+              <p className="text-xs text-slate-400 leading-relaxed mb-6">
+                Recevez la fiche détaillée du bien avec l'adresse exacte, les baux en cours (Section 8), et le contact direct du vendeur ou gestionnaire.
               </p>
             </div>
 
@@ -199,7 +294,7 @@ export default function DealDetailPage() {
                 <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2" />
                 <p className="text-xs font-bold text-white">Dossier Débloqué !</p>
                 <p className="text-[11px] text-slate-300 mt-1">Adresse : {deal.formatted_address}</p>
-                <p className="text-[11px] text-slate-400 mt-0.5">Contact assigné : agent-support@multidealprop.com</p>
+                <p className="text-[11px] text-slate-400 mt-1">Équipe support : deals@multidealprop.com</p>
               </div>
             ) : (
               <form onSubmit={handleUnlock} className="space-y-3">
@@ -208,7 +303,7 @@ export default function DealDetailPage() {
                   <input
                     type="email"
                     required
-                    placeholder="Votre adresse email pro..."
+                    placeholder="Votre email d'investisseur..."
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
@@ -219,11 +314,12 @@ export default function DealDetailPage() {
                   disabled={submitting}
                   className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
                 >
-                  {submitting ? 'Déblocage...' : 'Recevoir le dossier & Adresse'}
+                  {submitting ? 'Envoi...' : 'Recevoir le dossier & Contact'}
                 </button>
               </form>
             )}
           </div>
+
         </div>
       </div>
     </div>
