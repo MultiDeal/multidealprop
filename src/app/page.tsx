@@ -266,19 +266,22 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Card Footer */}
-                  <div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                    {deal.section8_eligible ? (
-                      <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5" /> Section 8
-                      </span>
-                    ) : (
-                      <span className="text-[11px] text-slate-500">Market Rate</span>
-                    )}
-                    <button className="text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors">
-                      View Deal <ArrowUpRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
+                 {/* Card Footer */}
+<div className="mt-5 pt-3 border-t border-slate-800/80 flex items-center justify-between">
+  {deal.section8_eligible ? (
+    <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+      <ShieldCheck className="w-3.5 h-3.5" /> Section 8
+    </span>
+  ) : (
+    <span className="text-[11px] text-slate-500">Market Rate</span>
+  )}
+  <a 
+    href={`/deals/${deal.id}`}
+    className="text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+  >
+    View Deal <ArrowUpRight className="w-3.5 h-3.5" />
+  </a>
+</div>
                 </div>
               );
             })}
