@@ -13,6 +13,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <Footer/>
       <body>{children}</body>
     </html>
   );
