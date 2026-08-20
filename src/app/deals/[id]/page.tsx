@@ -13,8 +13,9 @@ import {
   CheckCircle2,
   Mail,
   Calculator,
-  Percent,
-  Wallet
+  Wallet,
+  Share2,
+  Check
 } from 'lucide-react';
 
 interface Deal {
@@ -33,6 +34,7 @@ interface Deal {
   deal_score: number;
   section8_eligible: boolean;
   is_vip_only: boolean;
+  image_url?: string;
 }
 
 export default function DealDetailPage() {
@@ -43,6 +45,7 @@ export default function DealDetailPage() {
   const [email, setEmail] = useState('');
   const [unlocked, setUnlocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Paramètres du simulateur de financement
   const [downPaymentPercent, setDownPaymentPercent] = useState<number>(20);
@@ -65,6 +68,27 @@ export default function DealDetailPage() {
     }
     getDeal();
   }, [params?.id]);
+
+  const handleShare = async () => {
+    const shareUrl = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: deal?.title || 'MultiDealProp Opportunity',
+          text: `Découvrez cette opportunité d'investissement : ${deal?.title}`,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        // Fallback vers la copie dans le presse-papier si annulation
+      }
+    }
+
+    // Copie standard dans le presse-papier
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2500);
+  };
 
   const handleUnlock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,7 +119,7 @@ export default function DealDetailPage() {
     return (
       <div className="min-h-screen bg-[#0B0F19] flex flex-col items-center justify-center text-slate-400 gap-4">
         <p>Opportunité introuvable.</p>
-        <button onClick={() => router.push('/')} className="text-emerald-400 underline text-sm">
+        <button onClick={() => router.push('/')} className="text-emerald-400 underline text-sm cursor-pointer">
           Retour à la liste
         </button>
       </div>
@@ -113,16 +137,14 @@ export default function DealDetailPage() {
   const monthlyInterestRate = (interestRate / 100) / 12;
   const totalMonths = loanTermYears * 12;
 
-  // Formule Mensualité Hypothèque (Principal + Intérêts)
   const monthlyMortgage = loanAmount > 0 && monthlyInterestRate > 0
     ? Math.round((loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, totalMonths))) / (Math.pow(1 + monthlyInterestRate, totalMonths) - 1))
     : 0;
 
-  // Dépenses estimées selon les moyennes US
-  const monthlyTaxes = Math.round((price * 0.018) / 12); // ~1.8% annuel
-  const monthlyInsurance = Math.round(120 * (deal.units_count || 1)); // ~$120/mois par unité
-  const monthlyManagement = Math.round(monthlyRent * 0.08); // 8% frais de gestion
-  const monthlyMaintenance = Math.round(monthlyRent * 0.05); // 5% réserve travaux
+  const monthlyTaxes = Math.round((price * 0.018) / 12);
+  const monthlyInsurance = Math.round(120 * (deal.units_count || 1));
+  const monthlyManagement = Math.round(monthlyRent * 0.08);
+  const monthlyMaintenance = Math.round(monthlyRent * 0.05);
 
   const totalMonthlyExpenses = monthlyMortgage + monthlyTaxes + monthlyInsurance + monthlyManagement + monthlyMaintenance;
   const netMonthlyCashFlow = monthlyRent - totalMonthlyExpenses;
@@ -134,13 +156,45 @@ export default function DealDetailPage() {
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 selection:bg-emerald-500 selection:text-black">
       <div className="max-w-5xl mx-auto px-4 py-8">
-        {/* Navigation retour */}
-        <button 
-          onClick={() => router.push('/')}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white mb-6 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" /> Retour aux opportunités
-        </button>
+        
+        {/* Barre de navigation & Partage */}
+        <div className="flex items-center justify-between mb-6">
+          <button 
+            onClick={() => router.push('/')}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" /> Retour aux opportunités
+          </button>
+
+          <button
+            onClick={handleShare}
+            className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+              copied 
+                ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400' 
+                : 'bg-slate-850 border-slate-700 text-slate-300 hover:text-white hover:border-slate-600'
+            }`}
+          >
+            {copied ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-400" /> Lien copié !
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5" /> Partager ce deal
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Bannière Photo HD */}
+        <div className="h-64 sm:h-80 w-full rounded-2xl overflow-hidden mb-6 border border-slate-800 relative">
+          <img 
+            src={deal.image_url || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80'} 
+            alt={deal.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-transparent"></div>
+        </div>
 
         {/* Carte Titre Principale */}
         <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 mb-6">
@@ -183,13 +237,11 @@ export default function DealDetailPage() {
           </div>
         </div>
 
-        {/* Simulateur Hypothécaire & Décomposition du Cash-Flow */}
+        {/* Simulateur & Décomposition Financière */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          
-          {/* Colonne 1 & 2 : Analyse des Dépenses et Cash Flow */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Bloc Paramètres Hypothèque */}
+            {/* Simulateur */}
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
               <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
                 <Calculator className="w-4 h-4 text-emerald-400" /> Simulateur de Financement & Hypothèque
@@ -209,7 +261,7 @@ export default function DealDetailPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-slate-400 mb-1">Taux d'intérêt estimé : <strong className="text-white">{interestRate}% (30 ans fixe)</strong></label>
+                  <label className="block text-slate-400 mb-1">Taux d'intérêt estimé : <strong className="text-white">{interestRate}% (30 ans)</strong></label>
                   <input 
                     type="range" 
                     min="4.5" 
@@ -223,7 +275,7 @@ export default function DealDetailPage() {
               </div>
             </div>
 
-            {/* Décomposition mensuelle Recettes vs Dépenses */}
+            {/* Bilan des Dépenses */}
             <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-6">
               <h2 className="text-base font-bold text-white flex items-center gap-2 mb-4">
                 <TrendingUp className="w-4 h-4 text-emerald-400" /> Bilan Mensuel Estimé (Cash Flow)
@@ -246,27 +298,26 @@ export default function DealDetailPage() {
                 </div>
 
                 <div className="flex justify-between py-1.5 text-xs text-slate-400">
-                  <span>(-) Assurances Propriétaire (Hazard & Fire Insurance)</span>
+                  <span>(-) Assurances Propriétaire</span>
                   <span className="text-rose-400">-${monthlyInsurance.toLocaleString()}</span>
                 </div>
 
                 <div className="flex justify-between py-1.5 text-xs text-slate-400">
-                  <span>(-) Gestion locative (Property Management 8%)</span>
+                  <span>(-) Gestion locative (8%)</span>
                   <span className="text-rose-400">-${monthlyManagement.toLocaleString()}</span>
                 </div>
 
                 <div className="flex justify-between py-1.5 text-xs text-slate-400 border-b border-slate-800/80 pb-3">
-                  <span>(-) Réserve réparations / Vacance (5%)</span>
+                  <span>(-) Réserve travaux & vacance (5%)</span>
                   <span className="text-rose-400">-${monthlyMaintenance.toLocaleString()}</span>
                 </div>
 
-                {/* Résultat Cashflow Net */}
                 <div className="flex justify-between items-center pt-2">
                   <div>
                     <div className="font-bold text-white text-base flex items-center gap-1.5">
                       <Wallet className="w-4 h-4 text-emerald-400" /> Cash Flow Net Mensuel
                     </div>
-                    <div className="text-[11px] text-slate-400">Rendement Cash-on-Cash estimé : <span className="text-emerald-400 font-semibold">{cashOnCashReturn}%</span></div>
+                    <div className="text-[11px] text-slate-400">Rendement Cash-on-Cash : <span className="text-emerald-400 font-semibold">{cashOnCashReturn}%</span></div>
                   </div>
                   <div className={`text-xl font-extrabold ${netMonthlyCashFlow >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {netMonthlyCashFlow >= 0 ? `+$${netMonthlyCashFlow.toLocaleString()}` : `-$${Math.abs(netMonthlyCashFlow).toLocaleString()}`} / mois
@@ -277,7 +328,7 @@ export default function DealDetailPage() {
 
           </div>
 
-          {/* Colonne 3 : Déblocage Dossier & Leads */}
+          {/* Déblocage Dossier & Leads */}
           <div className="bg-slate-900/60 border border-emerald-500/30 rounded-2xl p-6 flex flex-col justify-between h-fit">
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md mb-3">
@@ -312,7 +363,7 @@ export default function DealDetailPage() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+                  className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
                 >
                   {submitting ? 'Envoi...' : 'Recevoir le dossier & Contact'}
                 </button>
