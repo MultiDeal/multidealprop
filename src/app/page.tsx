@@ -71,9 +71,14 @@ export default function HomePage() {
     setVipSubmitting(true);
 
     try {
-      await supabase.from('leads').insert([
-        { email: vipEmail, interested_in: 'VIP Deals Club' }
-      ]);
+      await fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          email: vipEmail, 
+          interested_in: 'VIP Deals Club' 
+        })
+      });
       setVipSuccess(true);
     } catch (err) {
       console.error('Error submitting VIP lead:', err);
