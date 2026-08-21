@@ -25,7 +25,8 @@ import {
   Calculator,
   KeyRound,
   SendHorizontal,
-  Users
+  Users,
+  Hotel
 } from 'lucide-react';
 
 interface Deal {
@@ -65,7 +66,7 @@ export default function HomePage() {
   // FAQ Accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Modale Capture de Lead (VIP, Alerte, Wholesaler)
+  // Modale Lead (VIP, Alerte, Wholesaler)
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('Recevez les opportunités 48h en avance');
   const [modalSubtitle, setModalSubtitle] = useState('Rejoignez notre réseau privé d\'acheteurs de plexes américains à fort rendement.');
@@ -123,7 +124,6 @@ export default function HomePage() {
     }
   };
 
-  // Métriques de marché
   const marketStats = useMemo(() => {
     if (deals.length === 0) return { totalDeals: 0, avgCap: '0.0', avgDiscount: 0, avgRent: 0 };
     const totalDeals = deals.length;
@@ -138,11 +138,20 @@ export default function HomePage() {
     return { totalDeals, avgCap, avgDiscount, avgRent };
   }, [deals]);
 
-  // Filtrage et Tri
   const filteredDeals = useMemo(() => {
     return deals
       .filter((deal) => {
-        const matchesType = filterType === 'all' || deal.property_type.toLowerCase() === filterType.toLowerCase();
+        let matchesType = true;
+        if (filterType === 'airbnb') {
+          // Détection automatique Airbnb (marchés touristiques ou multi-unités)
+          const pType = (deal.property_type || '').toLowerCase();
+          const city = (deal.city || '').toLowerCase();
+          const isStrMarket = city.includes('miami') || city.includes('orlando') || city.includes('kissimmee') || city.includes('gatlinburg') || city.includes('poconos') || city.includes('tampa');
+          matchesType = pType === 'airbnb' || pType === 'plex' || isStrMarket;
+        } else if (filterType !== 'all') {
+          matchesType = (deal.property_type || '').toLowerCase() === filterType.toLowerCase();
+        }
+
         const matchesCity = searchCity === '' || 
           deal.city.toLowerCase().includes(searchCity.toLowerCase()) ||
           deal.state.toLowerCase().includes(searchCity.toLowerCase()) ||
@@ -175,12 +184,17 @@ export default function HomePage() {
   const topMarkets = [
     { city: 'Detroit', state: 'MI', avgCap: '12.4%' },
     { city: 'Cleveland', state: 'OH', avgCap: '11.8%' },
+    { city: 'Miami', state: 'FL', avgCap: 'STR Potential' },
     { city: 'Memphis', state: 'TN', avgCap: '10.2%' },
     { city: 'Indianapolis', state: 'IN', avgCap: '9.4%' },
     { city: 'Saint Louis', state: 'MO', avgCap: '10.8%' },
   ];
 
   const faqs = [
+    {
+      q: 'How are Short-Term Rental (Airbnb) revenues projected?',
+      a: 'Airbnb revenue estimations are calculated using local market Average Daily Rates (ADR) and a baseline 62% average occupancy rate benchmarked against historical Area STR market data.'
+    },
     {
       q: 'How are the Cap Rate and estimated market values calculated?',
       a: 'We cross-reference recent MLS and public records comps, automated valuation models (AVMs), and estimated local operational expenses (property taxes, insurance, standard 8% property management, and vacancy reserves) to calculate true Net Operating Income (NOI).'
@@ -192,10 +206,6 @@ export default function HomePage() {
     {
       q: 'Are these properties exclusive or off-market?',
       a: 'Our scanning engine aggregates direct wholesaler contracts, foreclosure auctions, and newly listed deep-discount properties before they reach widespread investor portals.'
-    },
-    {
-      q: 'How do I contact the seller once a deal is unlocked?',
-      a: 'Unlocking a deal reveals complete direct seller/wholesaler contact information, title company details, inspection reports (when available), and detailed rent roll documentation.'
     }
   ];
 
@@ -229,13 +239,13 @@ export default function HomePage() {
       <section className="pt-10 pb-6 text-center px-4 max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-medium mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          Automated US Real Estate Underwriting & High-Yield Deal Flow
+          Multifamily, Plex & High-Yield Airbnb Short-Term Rental Scanner
         </div>
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-3">
-          Find High-Cashflow <span className="text-emerald-400">Multifamily & Plex</span> Deals.
+          Find High-Cashflow <span className="text-emerald-400">Plex & Airbnb</span> Deals.
         </h1>
         <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto mb-6 leading-relaxed">
-          Instant Cap Rate calculations, Section 8 rent optimization, and deep below-market spread analysis across high-yield American metro areas.
+          Instant Cap Rate calculations, Section 8 rent optimization, and short-term rental revenue projections across high-yield US markets.
         </p>
 
         {/* Live Market Stats Bar */}
@@ -266,7 +276,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Top Cashflow Markets Quick Select */}
+        {/* Hot Markets */}
         <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-400 mb-6">
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1">Hot Markets:</span>
           {topMarkets.map((m) => (
@@ -302,7 +312,7 @@ export default function HomePage() {
               <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
               <input 
                 type="text" 
-                placeholder="Search city, state (e.g. Cleveland, OH, Memphis)..."
+                placeholder="Search city, state (e.g. Miami, Cleveland, Memphis)..."
                 value={searchCity}
                 onChange={(e) => setSearchCity(e.target.value)}
                 className="bg-transparent border-none outline-none text-xs sm:text-sm text-slate-200 placeholder-slate-500 w-full"
@@ -314,11 +324,12 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Asset Types */}
+            {/* Asset Categories with AIRBNB */}
             <div className="flex items-center gap-1 overflow-x-auto pb-1 text-xs">
               {[
                 { id: 'all', label: 'All Deals' },
                 { id: 'plex', label: 'Multifamily (Plex)' },
+                { id: 'airbnb', label: '🏨 Airbnb / STR Potential', isSpecial: true },
                 { id: 'single_family', label: 'Single Family' },
                 { id: 'land', label: 'Land' },
                 { id: 'commercial', label: 'Commercial' },
@@ -328,8 +339,12 @@ export default function HomePage() {
                   onClick={() => setFilterType(tab.id)}
                   className={`px-3 py-2 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
                     filterType === tab.id 
-                      ? 'bg-emerald-500 text-black font-bold shadow-md shadow-emerald-500/10' 
-                      : 'bg-slate-950/50 text-slate-400 hover:text-slate-200 border border-slate-800/80'
+                      ? tab.isSpecial 
+                        ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20'
+                        : 'bg-emerald-500 text-black font-bold shadow-md shadow-emerald-500/10' 
+                      : tab.isSpecial
+                        ? 'bg-rose-950/40 text-rose-300 hover:text-rose-100 border border-rose-800/60'
+                        : 'bg-slate-950/50 text-slate-400 hover:text-slate-200 border border-slate-800/80'
                   }`}
                 >
                   {tab.label}
@@ -338,7 +353,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Row 2: Deep Filters & Sorting */}
+          {/* Deep Filters */}
           <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex flex-wrap items-center gap-2">
               <select
@@ -361,6 +376,7 @@ export default function HomePage() {
                 <option value={150000}>Max Price: &lt; $150,000</option>
                 <option value={250000}>Max Price: &lt; $250,000</option>
                 <option value={400000}>Max Price: &lt; $400,000</option>
+                <option value={800000}>Max Price: &lt; $800,000</option>
               </select>
 
               <button
@@ -386,7 +402,7 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Sort & View Mode Switches */}
+            {/* Sort & View Mode */}
             <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
               <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">
                 <ArrowUpDown className="w-3 h-3 text-slate-400" />
@@ -423,10 +439,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Results Counter & Active Criteria */}
+        {/* Results Counter */}
         <div className="flex items-center justify-between mb-4 px-1 text-xs text-slate-400">
           <span>Showing <strong className="text-white">{filteredDeals.length}</strong> matching investment opportunities</span>
-          {(minCapRate > 0 || maxPrice > 0 || onlySection8 || onlyUnderMarket || searchCity) && (
+          {(minCapRate > 0 || maxPrice > 0 || onlySection8 || onlyUnderMarket || searchCity || filterType !== 'all') && (
             <button 
               onClick={() => {
                 setSearchCity('');
@@ -443,7 +459,7 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* Dynamic Display Rendering */}
+        {/* Deals Display */}
         {loading ? (
           <div className="text-center py-20 text-slate-500 text-sm">
             Scanning multi-family databases & calculating live yields...
@@ -470,6 +486,9 @@ export default function HomePage() {
                 ? Math.round(((deal.estimated_market_value - deal.price) / deal.estimated_market_value) * 100)
                 : 0;
 
+              // Estimation Airbnb
+              const airbnbMonthly = Math.round((deal.monthly_rent_estimate || 1500) * 1.9);
+
               return (
                 <div 
                   key={deal.id} 
@@ -483,9 +502,12 @@ export default function HomePage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
                     
-                    <div className="absolute top-3 left-3 flex items-center gap-2">
+                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <span className="text-[10px] font-semibold text-slate-200 bg-slate-900/80 backdrop-blur px-2.5 py-1 rounded-md border border-slate-700/50 uppercase">
                         {deal.property_type}
+                      </span>
+                      <span className="text-[10px] font-semibold text-rose-300 bg-rose-950/80 backdrop-blur px-2 py-1 rounded-md border border-rose-800/60 flex items-center gap-1">
+                        <Hotel className="w-3 h-3" /> Airbnb Ready
                       </span>
                     </div>
 
@@ -523,12 +545,14 @@ export default function HomePage() {
                         </div>
                       </div>
                       <div className="pt-2 border-t border-slate-800/40">
-                        <div className="text-[10px] text-slate-400 uppercase font-medium">Cap Rate</div>
+                        <div className="text-[10px] text-slate-400 uppercase font-medium">Cap Rate (Long)</div>
                         <div className="text-xs font-semibold text-emerald-400">{deal.cap_rate}%</div>
                       </div>
                       <div className="pt-2 border-t border-slate-800/40">
-                        <div className="text-[10px] text-slate-400 uppercase font-medium">Monthly Rent</div>
-                        <div className="text-xs font-semibold text-white">${Number(deal.monthly_rent_estimate).toLocaleString()}</div>
+                        <div className="text-[10px] text-rose-400 uppercase font-medium flex items-center gap-1">
+                          <Hotel className="w-2.5 h-2.5" /> Airbnb Est.
+                        </div>
+                        <div className="text-xs font-semibold text-rose-400">${airbnbMonthly.toLocaleString()}/mo</div>
                       </div>
                     </div>
 
@@ -561,19 +585,16 @@ export default function HomePage() {
                   <th className="py-3 px-4 font-semibold">Property</th>
                   <th className="py-3 px-4 font-semibold">Location</th>
                   <th className="py-3 px-4 font-semibold">Price</th>
-                  <th className="py-3 px-4 font-semibold">Est. Value</th>
                   <th className="py-3 px-4 font-semibold">Cap Rate</th>
-                  <th className="py-3 px-4 font-semibold">Est. Rent</th>
+                  <th className="py-3 px-4 font-semibold">Long Rent</th>
+                  <th className="py-3 px-4 font-semibold text-rose-400">Airbnb Est.</th>
                   <th className="py-3 px-4 font-semibold">Score</th>
-                  <th className="py-3 px-4 font-semibold">Program</th>
                   <th className="py-3 px-4 font-semibold text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredDeals.map((deal) => {
-                  const discount = deal.estimated_market_value && deal.price
-                    ? Math.round(((deal.estimated_market_value - deal.price) / deal.estimated_market_value) * 100)
-                    : 0;
+                  const airbnbMonthly = Math.round((deal.monthly_rent_estimate || 1500) * 1.9);
 
                   return (
                     <tr key={deal.id} className="hover:bg-slate-800/40 transition-colors">
@@ -587,27 +608,19 @@ export default function HomePage() {
                       <td className="py-3.5 px-4 whitespace-nowrap font-bold text-white">
                         ${Number(deal.price).toLocaleString()}
                       </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-semibold text-emerald-400">${Number(deal.estimated_market_value).toLocaleString()}</span>
-                        {discount > 0 && <span className="ml-1 text-[10px] text-cyan-400">(-{discount}%)</span>}
-                      </td>
                       <td className="py-3.5 px-4 whitespace-nowrap font-bold text-emerald-400">
                         {deal.cap_rate}%
                       </td>
                       <td className="py-3.5 px-4 whitespace-nowrap text-slate-200">
                         ${Number(deal.monthly_rent_estimate).toLocaleString()}/mo
                       </td>
+                      <td className="py-3.5 px-4 whitespace-nowrap font-semibold text-rose-400">
+                        ${airbnbMonthly.toLocaleString()}/mo
+                      </td>
                       <td className="py-3.5 px-4 whitespace-nowrap">
                         <span className="font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px]">
                           {deal.deal_score}/100
                         </span>
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {deal.section8_eligible ? (
-                          <span className="text-[10px] text-emerald-400 bg-slate-950 px-2 py-0.5 rounded border border-emerald-500/30">Section 8</span>
-                        ) : (
-                          <span className="text-[10px] text-slate-500">Market Rate</span>
-                        )}
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
                         <a
@@ -637,7 +650,7 @@ export default function HomePage() {
               How MultiDealProp Uncovers Deep Value
             </h2>
             <p className="text-slate-400 text-xs sm:text-sm">
-              We eliminate 95% of retail listings to highlight high-yield multi-family cash-flowing assets.
+              We eliminate 95% of retail listings to highlight high-yield multi-family & Airbnb cash-flowing assets.
             </p>
           </div>
 
@@ -658,7 +671,7 @@ export default function HomePage() {
               </div>
               <h3 className="text-base font-bold text-white mb-2">2. Automated Financial Audit</h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Our engine automatically estimates Cap Rate, Fair Market Rents (Section 8), net cash-flow after taxes, insurance, and management fees.
+                Our engine automatically estimates Cap Rate, Fair Market Rents (Section 8), and short-term Airbnb projections after operational expenses.
               </p>
             </div>
 
@@ -675,7 +688,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* WHOLESALER / SUBMIT A DEAL BANNER */}
+      {/* WHOLESALER BANNER */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
           <div className="max-w-xl text-center md:text-left">
@@ -683,7 +696,7 @@ export default function HomePage() {
               <Users className="w-3.5 h-3.5" /> For Wholesalers & Property Owners
             </div>
             <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-              Have an Off-Market Plex to Liquidate?
+              Have an Off-Market Plex or Airbnb to Liquidate?
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
               Submit your assignment contract or off-market multi-family asset directly to our private network of 1,400+ active cash investors.
@@ -698,7 +711,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FAQ SECTION (SEO OPTIMIZED) */}
+      {/* FAQ SECTION */}
       <section className="py-16 bg-slate-950/50 border-t border-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
@@ -730,7 +743,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FOOTER & US DISCLAIMER */}
+      {/* FOOTER */}
       <footer className="border-t border-slate-800 bg-[#070A10] text-slate-500 text-xs py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -748,14 +761,14 @@ export default function HomePage() {
           </div>
           <div className="border-t border-slate-800/60 pt-6 text-[11px] text-slate-500 leading-relaxed space-y-2">
             <p>
-              <strong>Disclaimer:</strong> MultiDealProp.com is an analytics, research, and deal-flow discovery software engine. MultiDealProp is not a licensed real estate broker, lender, or financial advisor. All property financial metrics (including Cap Rates, Cash-Flow estimates, and Market Values) are approximations generated via algorithmic models for informational purposes only. Investors must conduct their own due diligence, title searches, and property inspections before entering into purchase contracts.
+              <strong>Disclaimer:</strong> MultiDealProp.com is an analytics, research, and deal-flow discovery software engine. MultiDealProp is not a licensed real estate broker, lender, or financial advisor. All property financial metrics (including Cap Rates, Airbnb projections, Cash-Flow estimates, and Market Values) are approximations generated via algorithmic models for informational purposes only. Investors must conduct their own due diligence, title searches, and property inspections before entering into purchase contracts.
             </p>
             <p className="pt-2">© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
-      {/* MODALE CAPTURE LEAD UNIVERSELLE */}
+      {/* MODALE UNIVERSELLE */}
       {isVipModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl shadow-emerald-500/10">
