@@ -7,19 +7,25 @@ import {
   MapPin, 
   ArrowUpRight, 
   ShieldCheck, 
-  Search,
-  CheckCircle2,
-  Mail,
-  X,
-  Sparkles,
-  BellRing,
-  LayoutGrid,
-  ListFilter,
-  ArrowUpDown,
-  TrendingUp,
-  Percent,
-  DollarSign,
-  Flame
+  Search, 
+  CheckCircle2, 
+  Mail, 
+  X, 
+  Sparkles, 
+  BellRing, 
+  LayoutGrid, 
+  ListFilter, 
+  ArrowUpDown, 
+  TrendingUp, 
+  Percent, 
+  DollarSign, 
+  Flame,
+  ChevronDown,
+  Layers,
+  Calculator,
+  KeyRound,
+  SendHorizontal,
+  Users
 } from 'lucide-react';
 
 interface Deal {
@@ -56,8 +62,13 @@ export default function HomePage() {
   const [sortBy, setSortBy] = useState<string>('score_desc');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
-  // Modale VIP & Alerte
+  // FAQ Accordion
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
+  // Modale Capture de Lead (VIP, Alerte, Wholesaler)
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
+  const [modalTitle, setModalTitle] = useState('Recevez les opportunités 48h en avance');
+  const [modalSubtitle, setModalSubtitle] = useState('Rejoignez notre réseau privé d\'acheteurs de plexes américains à fort rendement.');
   const [vipEmail, setVipEmail] = useState('');
   const [vipInterest, setVipInterest] = useState('VIP Deals Club');
   const [vipSubmitting, setVipSubmitting] = useState(false);
@@ -82,7 +93,15 @@ export default function HomePage() {
     fetchDeals();
   }, []);
 
-  const handleVipSubmit = async (e: React.FormEvent) => {
+  const openLeadModal = (interest: string, title?: string, subtitle?: string) => {
+    setVipInterest(interest);
+    if (title) setModalTitle(title);
+    if (subtitle) setModalSubtitle(subtitle);
+    setVipSuccess(false);
+    setIsVipModalOpen(true);
+  };
+
+  const handleLeadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!vipEmail) return;
     setVipSubmitting(true);
@@ -106,7 +125,7 @@ export default function HomePage() {
 
   // Métriques de marché
   const marketStats = useMemo(() => {
-    if (deals.length === 0) return { totalDeals: 0, avgCap: 0, avgDiscount: 0, avgRent: 0 };
+    if (deals.length === 0) return { totalDeals: 0, avgCap: '0.0', avgDiscount: 0, avgRent: 0 };
     const totalDeals = deals.length;
     const avgCap = (deals.reduce((acc, d) => acc + (Number(d.cap_rate) || 0), 0) / totalDeals).toFixed(1);
     const avgRent = Math.round(deals.reduce((acc, d) => acc + (Number(d.monthly_rent_estimate) || 0), 0) / totalDeals);
@@ -153,6 +172,33 @@ export default function HomePage() {
       });
   }, [deals, searchCity, filterType, minCapRate, maxPrice, onlySection8, onlyUnderMarket, sortBy]);
 
+  const topMarkets = [
+    { city: 'Detroit', state: 'MI', avgCap: '12.4%' },
+    { city: 'Cleveland', state: 'OH', avgCap: '11.8%' },
+    { city: 'Memphis', state: 'TN', avgCap: '10.2%' },
+    { city: 'Indianapolis', state: 'IN', avgCap: '9.4%' },
+    { city: 'Saint Louis', state: 'MO', avgCap: '10.8%' },
+  ];
+
+  const faqs = [
+    {
+      q: 'How are the Cap Rate and estimated market values calculated?',
+      a: 'We cross-reference recent MLS and public records comps, automated valuation models (AVMs), and estimated local operational expenses (property taxes, insurance, standard 8% property management, and vacancy reserves) to calculate true Net Operating Income (NOI).'
+    },
+    {
+      q: 'What qualifies a property for Section 8 status?',
+      a: 'A property is marked Section 8 eligible when its local ZIP code HUD Fair Market Rent (FMR) exceeds standard local market rent rates, ensuring guaranteed monthly direct-deposit rental income backed by local housing authorities.'
+    },
+    {
+      q: 'Are these properties exclusive or off-market?',
+      a: 'Our scanning engine aggregates direct wholesaler contracts, foreclosure auctions, and newly listed deep-discount properties before they reach widespread investor portals.'
+    },
+    {
+      q: 'How do I contact the seller once a deal is unlocked?',
+      a: 'Unlocking a deal reveals complete direct seller/wholesaler contact information, title company details, inspection reports (when available), and detailed rent roll documentation.'
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-[#0B0F19] text-slate-100 selection:bg-emerald-500 selection:text-black relative">
       {/* Header */}
@@ -170,11 +216,7 @@ export default function HomePage() {
               Live US Deal Scanner
             </span>
             <button 
-              onClick={() => {
-                setVipInterest('VIP Deals Club');
-                setVipSuccess(false);
-                setIsVipModalOpen(true);
-              }}
+              onClick={() => openLeadModal('VIP Deals Club', 'Get VIP Deals 48h in Advance', 'Get exclusive access to off-market duplexes and multi-family cashflow assets before public release.')}
               className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5 cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" /> Get VIP Deals
@@ -184,20 +226,20 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-10 pb-8 text-center px-4 max-w-4xl mx-auto">
+      <section className="pt-10 pb-6 text-center px-4 max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-medium mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          Off-Market & High-Yield US Real Estate Scanner
+          Automated US Real Estate Underwriting & High-Yield Deal Flow
         </div>
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-3">
           Find High-Cashflow <span className="text-emerald-400">Multifamily & Plex</span> Deals.
         </h1>
         <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto mb-6 leading-relaxed">
-          Instant Cap Rate calculations, Section 8 rent optimization, and deep below-market spread analysis.
+          Instant Cap Rate calculations, Section 8 rent optimization, and deep below-market spread analysis across high-yield American metro areas.
         </p>
 
         {/* Live Market Stats Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-8 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-6 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
           <div className="p-2 text-center border-r border-slate-800/80">
             <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-center gap-1">
               <Flame className="w-3 h-3 text-amber-400" /> Active Deals
@@ -223,13 +265,38 @@ export default function HomePage() {
             <div className="text-lg font-black text-white mt-0.5">${marketStats.avgRent.toLocaleString()}</div>
           </div>
         </div>
+
+        {/* Top Cashflow Markets Quick Select */}
+        <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-400 mb-6">
+          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1">Hot Markets:</span>
+          {topMarkets.map((m) => (
+            <button
+              key={m.city}
+              onClick={() => setSearchCity(m.city)}
+              className={`px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
+                searchCity.toLowerCase() === m.city.toLowerCase()
+                  ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 font-semibold'
+                  : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
+              }`}
+            >
+              {m.city}, {m.state} <span className="text-[10px] text-emerald-400 ml-1">({m.avgCap})</span>
+            </button>
+          ))}
+          {searchCity && (
+            <button 
+              onClick={() => setSearchCity('')}
+              className="text-xs text-slate-500 hover:text-slate-300 underline cursor-pointer ml-1"
+            >
+              Clear
+            </button>
+          )}
+        </div>
       </section>
 
       {/* Main Terminal Controls & Deals */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         {/* Filter Control Center */}
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl mb-8 shadow-xl backdrop-blur space-y-4">
-          {/* Row 1: Search & Asset Categories */}
           <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
             <div className="flex items-center px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl flex-1">
               <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
@@ -274,7 +341,6 @@ export default function HomePage() {
           {/* Row 2: Deep Filters & Sorting */}
           <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex flex-wrap items-center gap-2">
-              {/* Cap Rate Selector */}
               <select
                 value={minCapRate}
                 onChange={(e) => setMinCapRate(Number(e.target.value))}
@@ -286,7 +352,6 @@ export default function HomePage() {
                 <option value={12}>Min Cap Rate: 12%+</option>
               </select>
 
-              {/* Price Ceiling Selector */}
               <select
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(Number(e.target.value))}
@@ -298,7 +363,6 @@ export default function HomePage() {
                 <option value={400000}>Max Price: &lt; $400,000</option>
               </select>
 
-              {/* Toggles */}
               <button
                 onClick={() => setOnlySection8(!onlySection8)}
                 className={`px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -331,7 +395,7 @@ export default function HomePage() {
                   onChange={(e) => setSortBy(e.target.value)}
                   className="bg-transparent text-slate-300 outline-none text-xs cursor-pointer"
                 >
-                  <option value="score_desc">Sort: Highest Deal Score</option>
+                  <option value="score_desc">Sort: Highest Score</option>
                   <option value="cap_desc">Sort: Highest Cap Rate</option>
                   <option value="discount_desc">Sort: Deepest Discount</option>
                   <option value="price_asc">Sort: Price (Low to High)</option>
@@ -339,7 +403,6 @@ export default function HomePage() {
                 </select>
               </div>
 
-              {/* View Toggle Button */}
               <div className="flex items-center bg-slate-950 border border-slate-800 p-0.5 rounded-lg">
                 <button
                   onClick={() => setViewMode('grid')}
@@ -393,11 +456,7 @@ export default function HomePage() {
               Create an instant alert. Our engine will notify you as soon as a property matching these criteria enters the pipeline.
             </p>
             <button
-              onClick={() => {
-                setVipInterest(`Alert: ${searchCity || 'Custom Search'} (Min Cap: ${minCapRate}%)`);
-                setVipSuccess(false);
-                setIsVipModalOpen(true);
-              }}
+              onClick={() => openLeadModal(`Alert: ${searchCity || 'Custom Search'} (Min Cap: ${minCapRate}%)`, 'Create Search Alert', 'Be notified the exact minute a property matching your filters is discovered.')}
               className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/10 cursor-pointer"
             >
               Set Instant Alert for this Search
@@ -494,7 +553,7 @@ export default function HomePage() {
             })}
           </div>
         ) : (
-          /* TABLE FINANCIAL COMPARISON VIEW */
+          /* TABLE COMPARISON VIEW */
           <div className="overflow-x-auto bg-slate-900/60 border border-slate-800 rounded-2xl shadow-xl">
             <table className="w-full text-left text-xs text-slate-300">
               <thead className="bg-slate-950/80 text-[10px] text-slate-400 uppercase border-b border-slate-800">
@@ -565,34 +624,138 @@ export default function HomePage() {
             </table>
           </div>
         )}
+      </main>
 
-        {/* Custom Deal Alert Banner */}
-        <div className="mt-16 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
+      {/* HOW IT WORKS SECTION */}
+      <section className="py-16 bg-slate-950/70 border-t border-slate-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-12">
+            <span className="text-xs font-semibold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+              Underwriting Process
+            </span>
+            <h2 className="text-2xl sm:text-4xl font-black text-white mt-3 mb-2">
+              How MultiDealProp Uncovers Deep Value
+            </h2>
+            <p className="text-slate-400 text-xs sm:text-sm">
+              We eliminate 95% of retail listings to highlight high-yield multi-family cash-flowing assets.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl relative">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-black mb-4">
+                <Layers className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">1. Algorithmic Data Scraping</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                We monitor county auction rolls, probate records, direct wholesaler networks, and MLS feeds in real time across the United States.
+              </p>
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl relative">
+              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center font-black mb-4">
+                <Calculator className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">2. Automated Financial Audit</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Our engine automatically estimates Cap Rate, Fair Market Rents (Section 8), net cash-flow after taxes, insurance, and management fees.
+              </p>
+            </div>
+
+            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl relative">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center font-black mb-4">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-2">3. Direct Deal Execution</h3>
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Unlock direct seller/wholesaler phone numbers, inspection documents, and complete rent rolls without middlemen markups.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* WHOLESALER / SUBMIT A DEAL BANNER */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
           <div className="max-w-xl text-center md:text-left">
             <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full mb-3">
-              <BellRing className="w-3.5 h-3.5" /> Deal Flow Direct Engine
+              <Users className="w-3.5 h-3.5" /> For Wholesalers & Property Owners
             </div>
             <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-              Looking for a specific market or off-market multi-family?
+              Have an Off-Market Plex to Liquidate?
             </h3>
             <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              We scrape auction platforms, county foreclosure lists, and private wholesalers daily. Set your target criteria and get notified first.
+              Submit your assignment contract or off-market multi-family asset directly to our private network of 1,400+ active cash investors.
             </p>
           </div>
           <button
-            onClick={() => {
-              setVipInterest('Custom Acquisition Request');
-              setVipSuccess(false);
-              setIsVipModalOpen(true);
-            }}
-            className="whitespace-nowrap bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 cursor-pointer"
+            onClick={() => openLeadModal('Wholesaler Deal Submission', 'Submit Your Off-Market Deal', 'Send us the property address, asking price and photos. We will match it with our private cash buyers.')}
+            className="whitespace-nowrap bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer"
           >
-            Create Custom Buy Alert
+            <SendHorizontal className="w-4 h-4" /> Submit a Deal Free
           </button>
         </div>
-      </main>
+      </section>
 
-      {/* POPUP / MODALE VIP & ALERTS */}
+      {/* FAQ SECTION (SEO OPTIMIZED) */}
+      <section className="py-16 bg-slate-950/50 border-t border-slate-800">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <div className="text-center mb-10">
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Frequently Asked Questions</span>
+            <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">MultiDealProp Investor FAQ</h2>
+          </div>
+
+          <div className="space-y-3">
+            {faqs.map((faq, idx) => (
+              <div 
+                key={idx} 
+                className="bg-slate-900/60 border border-slate-800/90 rounded-xl overflow-hidden transition-colors"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                  className="w-full p-4 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-white hover:text-emerald-400 transition-colors cursor-pointer"
+                >
+                  <span>{faq.q}</span>
+                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openFaq === idx ? 'rotate-180 text-emerald-400' : ''}`} />
+                </button>
+                {openFaq === idx && (
+                  <div className="p-4 pt-0 text-xs text-slate-400 leading-relaxed border-t border-slate-800/40">
+                    {faq.a}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER & US DISCLAIMER */}
+      <footer className="border-t border-slate-800 bg-[#070A10] text-slate-500 text-xs py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+              <div className="bg-emerald-500 text-black font-black text-xs w-6 h-6 rounded flex items-center justify-center">
+                M
+              </div>
+              <span className="font-bold text-white tracking-tight">MultiDealProp.com</span>
+            </div>
+            <div className="flex items-center gap-6 text-slate-400">
+              <button onClick={() => openLeadModal('Footer Contact Request', 'Contact Support', 'Questions regarding deal underwriting or API access? Leave your email.')} className="hover:text-white cursor-pointer">Support</button>
+              <a href="#terms" className="hover:text-white">Terms of Service</a>
+              <a href="#privacy" className="hover:text-white">Privacy Policy</a>
+            </div>
+          </div>
+          <div className="border-t border-slate-800/60 pt-6 text-[11px] text-slate-500 leading-relaxed space-y-2">
+            <p>
+              <strong>Disclaimer:</strong> MultiDealProp.com is an analytics, research, and deal-flow discovery software engine. MultiDealProp is not a licensed real estate broker, lender, or financial advisor. All property financial metrics (including Cap Rates, Cash-Flow estimates, and Market Values) are approximations generated via algorithmic models for informational purposes only. Investors must conduct their own due diligence, title searches, and property inspections before entering into purchase contracts.
+            </p>
+            <p className="pt-2">© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* MODALE CAPTURE LEAD UNIVERSELLE */}
       {isVipModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl shadow-emerald-500/10">
@@ -608,9 +771,9 @@ export default function HomePage() {
                 <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Alerte Confirmée !</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Demande Validée !</h3>
                 <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                  Votre demande a bien été enregistrée. Vous recevrez nos meilleures opportunités off-market directement par email.
+                  Votre demande a bien été enregistrée dans notre système. Vous recevrez une notification par email.
                 </p>
                 <button
                   onClick={() => setIsVipModalOpen(false)}
@@ -622,24 +785,24 @@ export default function HomePage() {
             ) : (
               <div>
                 <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full mb-4">
-                  <BellRing className="w-3.5 h-3.5" /> Accès Investisseur Prioritaire
+                  <BellRing className="w-3.5 h-3.5" /> {vipInterest}
                 </div>
                 
                 <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
-                  Recevez les opportunités <span className="text-emerald-400">48h en avance</span>
+                  {modalTitle}
                 </h2>
                 
                 <p className="text-xs text-slate-400 leading-relaxed mb-6">
-                  Rejoignez notre réseau privé d'acheteurs d'immeubles de rapport et plexes américains à fort rendement.
+                  {modalSubtitle}
                 </p>
 
-                <form onSubmit={handleVipSubmit} className="space-y-4">
+                <form onSubmit={handleLeadSubmit} className="space-y-4">
                   <div className="relative">
                     <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       type="email"
                       required
-                      placeholder="Votre adresse email professionnelle..."
+                      placeholder="Votre email professionnel..."
                       value={vipEmail}
                       onChange={(e) => setVipEmail(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-colors"
@@ -651,16 +814,16 @@ export default function HomePage() {
                     disabled={vipSubmitting}
                     className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs sm:text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
                   >
-                    {vipSubmitting ? 'Activation en cours...' : 'Activer mon Accès VIP Gratuit'}
+                    {vipSubmitting ? 'Validation en cours...' : 'Confirmer ma Demande'}
                   </button>
                 </form>
 
                 <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-slate-500">
-                  <span>✓ 100% Gratuit</span>
+                  <span>✓ 100% Sécurisé</span>
                   <span>•</span>
                   <span>✓ Zéro Spam</span>
                   <span>•</span>
-                  <span>✓ Désinscription en 1 clic</span>
+                  <span>✓ Contact direct</span>
                 </div>
               </div>
             )}
