@@ -26,7 +26,10 @@ import {
   KeyRound,
   SendHorizontal,
   Users,
-  Hotel
+  Hotel,
+  PlusCircle,
+  CreditCard,
+  Zap
 } from 'lucide-react';
 
 interface Deal {
@@ -66,14 +69,22 @@ export default function HomePage() {
   // FAQ Accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Modale Lead (VIP, Alerte, Wholesaler)
+  // Modale Standard
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState('Recevez les opportunités 48h en avance');
-  const [modalSubtitle, setModalSubtitle] = useState('Rejoignez notre réseau privé d\'acheteurs de plexes américains à fort rendement.');
+  const [modalSubtitle, setModalSubtitle] = useState('Rejoignez notre réseau privé d\'acheteurs.');
   const [vipEmail, setVipEmail] = useState('');
   const [vipInterest, setVipInterest] = useState('VIP Deals Club');
   const [vipSubmitting, setVipSubmitting] = useState(false);
   const [vipSuccess, setVipSuccess] = useState(false);
+
+  // Modale ON-DEMAND SCAN ($4.99)
+  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
+  const [scanCity, setScanCity] = useState('');
+  const [scanState, setScanState] = useState('');
+  const [scanEmail, setScanEmail] = useState('');
+  const [scanSubmitting, setScanSubmitting] = useState(false);
+  const [scanSuccess, setScanSuccess] = useState(false);
 
   useEffect(() => {
     async function fetchDeals() {
@@ -124,6 +135,35 @@ export default function HomePage() {
     }
   };
 
+  const handleScanSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!scanEmail || !scanCity) return;
+    setScanSubmitting(true);
+
+    try {
+      const res = await fetch('/api/checkout/scan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: scanEmail,
+          target_location: scanCity,
+          state: scanState
+        })
+      });
+
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setScanSuccess(true);
+      }
+    } catch (err) {
+      console.error('Error submitting scan request:', err);
+    } finally {
+      setScanSubmitting(false);
+    }
+  };
+
   const marketStats = useMemo(() => {
     if (deals.length === 0) return { totalDeals: 0, avgCap: '0.0', avgDiscount: 0, avgRent: 0 };
     const totalDeals = deals.length;
@@ -143,7 +183,6 @@ export default function HomePage() {
       .filter((deal) => {
         let matchesType = true;
         if (filterType === 'airbnb') {
-          // Détection automatique Airbnb (marchés touristiques ou multi-unités)
           const pType = (deal.property_type || '').toLowerCase();
           const city = (deal.city || '').toLowerCase();
           const isStrMarket = city.includes('miami') || city.includes('orlando') || city.includes('kissimmee') || city.includes('gatlinburg') || city.includes('poconos') || city.includes('tampa');
@@ -184,13 +223,17 @@ export default function HomePage() {
   const topMarkets = [
     { city: 'Detroit', state: 'MI', avgCap: '12.4%' },
     { city: 'Cleveland', state: 'OH', avgCap: '11.8%' },
-    { city: 'Miami', state: 'FL', avgCap: 'STR Potential' },
+    { city: 'Miami', state: 'FL', avgCap: 'STR' },
     { city: 'Memphis', state: 'TN', avgCap: '10.2%' },
     { city: 'Indianapolis', state: 'IN', avgCap: '9.4%' },
     { city: 'Saint Louis', state: 'MO', avgCap: '10.8%' },
   ];
 
   const faqs = [
+    {
+      q: 'How does the On-Demand County/City Scan ($4.99) work?',
+      a: 'When requested, our algorithmic engine immediately initiates deep-tier API scraping across active MLS listings, foreclosure databases, and tax-lien registries for your specified location. Results and calculated rent rolls are delivered to your dashboard and inbox within minutes.'
+    },
     {
       q: 'How are Short-Term Rental (Airbnb) revenues projected?',
       a: 'Airbnb revenue estimations are calculated using local market Average Daily Rates (ADR) and a baseline 62% average occupancy rate benchmarked against historical Area STR market data.'
@@ -201,11 +244,7 @@ export default function HomePage() {
     },
     {
       q: 'What qualifies a property for Section 8 status?',
-      a: 'A property is marked Section 8 eligible when its local ZIP code HUD Fair Market Rent (FMR) exceeds standard local market rent rates, ensuring guaranteed monthly direct-deposit rental income backed by local housing authorities.'
-    },
-    {
-      q: 'Are these properties exclusive or off-market?',
-      a: 'Our scanning engine aggregates direct wholesaler contracts, foreclosure auctions, and newly listed deep-discount properties before they reach widespread investor portals.'
+      a: 'A property is marked Section 8 eligible when its local ZIP code HUD Fair Market Rent (FMR) exceeds standard local market rent rates, ensuring guaranteed monthly direct-deposit rental income.'
     }
   ];
 
@@ -220,16 +259,21 @@ export default function HomePage() {
             </div>
             <span className="font-extrabold text-lg tracking-tight text-white">MultiDeal<span className="text-emerald-400">Prop</span></span>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs text-slate-400 hidden sm:inline-flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              Live US Deal Scanner
-            </span>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              onClick={() => {
+                setScanSuccess(false);
+                setIsScanModalOpen(true);
+              }}
+              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Zap className="w-3.5 h-3.5 text-amber-400" /> Order Market Scan ($4.99)
+            </button>
             <button 
               onClick={() => openLeadModal('VIP Deals Club', 'Get VIP Deals 48h in Advance', 'Get exclusive access to off-market duplexes and multi-family cashflow assets before public release.')}
-              className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-4 py-2 rounded-lg transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5 cursor-pointer"
+              className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-3 sm:px-4 py-2 rounded-lg transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5 cursor-pointer"
             >
-              <Sparkles className="w-3.5 h-3.5" /> Get VIP Deals
+              <Sparkles className="w-3.5 h-3.5" /> VIP Club
             </button>
           </div>
         </div>
@@ -276,7 +320,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Hot Markets */}
+        {/* Hot Markets + BOUTON SCAN ($4.99) */}
         <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-400 mb-6">
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1">Hot Markets:</span>
           {topMarkets.map((m) => (
@@ -292,20 +336,20 @@ export default function HomePage() {
               {m.city}, {m.state} <span className="text-[10px] text-emerald-400 ml-1">({m.avgCap})</span>
             </button>
           ))}
-          {searchCity && (
-            <button 
-              onClick={() => setSearchCity('')}
-              className="text-xs text-slate-500 hover:text-slate-300 underline cursor-pointer ml-1"
-            >
-              Clear
-            </button>
-          )}
+          <button
+            onClick={() => {
+              setScanSuccess(false);
+              setIsScanModalOpen(true);
+            }}
+            className="px-3 py-1 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-300 font-bold hover:bg-amber-500/20 transition-all flex items-center gap-1 cursor-pointer"
+          >
+            <PlusCircle className="w-3.5 h-3.5 text-amber-400" /> Add Any City/County ($4.99)
+          </button>
         </div>
       </section>
 
       {/* Main Terminal Controls & Deals */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        {/* Filter Control Center */}
         <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl mb-8 shadow-xl backdrop-blur space-y-4">
           <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
             <div className="flex items-center px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl flex-1">
@@ -324,7 +368,7 @@ export default function HomePage() {
               )}
             </div>
 
-            {/* Asset Categories with AIRBNB */}
+            {/* Asset Categories */}
             <div className="flex items-center gap-1 overflow-x-auto pb-1 text-xs">
               {[
                 { id: 'all', label: 'All Deals' },
@@ -467,15 +511,19 @@ export default function HomePage() {
         ) : filteredDeals.length === 0 ? (
           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center max-w-lg mx-auto">
             <Search className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-white mb-1">No deals match these exact filters</h3>
+            <h3 className="text-lg font-bold text-white mb-1">No deals match this exact filter</h3>
             <p className="text-xs text-slate-400 mb-6">
-              Create an instant alert. Our engine will notify you as soon as a property matching these criteria enters the pipeline.
+              Need immediate deal-flow in this county? Order a dedicated on-demand deep scan for only $4.99.
             </p>
             <button
-              onClick={() => openLeadModal(`Alert: ${searchCity || 'Custom Search'} (Min Cap: ${minCapRate}%)`, 'Create Search Alert', 'Be notified the exact minute a property matching your filters is discovered.')}
-              className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-emerald-500/10 cursor-pointer"
+              onClick={() => {
+                setScanCity(searchCity);
+                setScanSuccess(false);
+                setIsScanModalOpen(true);
+              }}
+              className="bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer flex items-center gap-1.5 mx-auto"
             >
-              Set Instant Alert for this Search
+              <Zap className="w-3.5 h-3.5" /> Order Deep Scan for "{searchCity || 'Target Area'}" ($4.99)
             </button>
           </div>
         ) : viewMode === 'grid' ? (
@@ -486,7 +534,6 @@ export default function HomePage() {
                 ? Math.round(((deal.estimated_market_value - deal.price) / deal.estimated_market_value) * 100)
                 : 0;
 
-              // Estimation Airbnb
               const airbnbMonthly = Math.round((deal.monthly_rent_estimate || 1500) * 1.9);
 
               return (
@@ -639,78 +686,6 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* HOW IT WORKS SECTION */}
-      <section className="py-16 bg-slate-950/70 border-t border-slate-800/80">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-12">
-            <span className="text-xs font-semibold text-emerald-400 uppercase tracking-widest bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-              Underwriting Process
-            </span>
-            <h2 className="text-2xl sm:text-4xl font-black text-white mt-3 mb-2">
-              How MultiDealProp Uncovers Deep Value
-            </h2>
-            <p className="text-slate-400 text-xs sm:text-sm">
-              We eliminate 95% of retail listings to highlight high-yield multi-family & Airbnb cash-flowing assets.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl relative">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center font-black mb-4">
-                <Layers className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">1. Algorithmic Data Scraping</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                We monitor county auction rolls, probate records, direct wholesaler networks, and MLS feeds in real time across the United States.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl relative">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center font-black mb-4">
-                <Calculator className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">2. Automated Financial Audit</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Our engine automatically estimates Cap Rate, Fair Market Rents (Section 8), and short-term Airbnb projections after operational expenses.
-              </p>
-            </div>
-
-            <div className="bg-slate-900/50 border border-slate-800 p-6 rounded-2xl relative">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center font-black mb-4">
-                <KeyRound className="w-5 h-5" />
-              </div>
-              <h3 className="text-base font-bold text-white mb-2">3. Direct Deal Execution</h3>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Unlock direct seller/wholesaler phone numbers, inspection documents, and complete rent rolls without middlemen markups.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* WHOLESALER BANNER */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/30 rounded-3xl p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl">
-          <div className="max-w-xl text-center md:text-left">
-            <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full mb-3">
-              <Users className="w-3.5 h-3.5" /> For Wholesalers & Property Owners
-            </div>
-            <h3 className="text-xl sm:text-2xl font-black text-white mb-2">
-              Have an Off-Market Plex or Airbnb to Liquidate?
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
-              Submit your assignment contract or off-market multi-family asset directly to our private network of 1,400+ active cash investors.
-            </p>
-          </div>
-          <button
-            onClick={() => openLeadModal('Wholesaler Deal Submission', 'Submit Your Off-Market Deal', 'Send us the property address, asking price and photos. We will match it with our private cash buyers.')}
-            className="whitespace-nowrap bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs sm:text-sm px-6 py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center gap-2 cursor-pointer"
-          >
-            <SendHorizontal className="w-4 h-4" /> Submit a Deal Free
-          </button>
-        </div>
-      </section>
-
       {/* FAQ SECTION */}
       <section className="py-16 bg-slate-950/50 border-t border-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
@@ -761,14 +736,114 @@ export default function HomePage() {
           </div>
           <div className="border-t border-slate-800/60 pt-6 text-[11px] text-slate-500 leading-relaxed space-y-2">
             <p>
-              <strong>Disclaimer:</strong> MultiDealProp.com is an analytics, research, and deal-flow discovery software engine. MultiDealProp is not a licensed real estate broker, lender, or financial advisor. All property financial metrics (including Cap Rates, Airbnb projections, Cash-Flow estimates, and Market Values) are approximations generated via algorithmic models for informational purposes only. Investors must conduct their own due diligence, title searches, and property inspections before entering into purchase contracts.
+              <strong>Disclaimer:</strong> MultiDealProp.com is an analytics, research, and deal-flow discovery software engine. MultiDealProp is not a licensed real estate broker, lender, or financial advisor. All property financial metrics are approximations generated via algorithmic models for informational purposes only.
             </p>
             <p className="pt-2">© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
-      {/* MODALE UNIVERSELLE */}
+      {/* MODALE ON-DEMAND SCAN ($4.99) */}
+      {isScanModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl shadow-amber-500/10">
+            <button 
+              onClick={() => setIsScanModalOpen(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {scanSuccess ? (
+              <div className="text-center py-4">
+                <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle2 className="w-8 h-8 text-amber-400" />
+                </div>
+                <h3 className="text-xl font-bold text-white mb-2">Scan Order Initiated!</h3>
+                <p className="text-xs text-slate-300 leading-relaxed mb-6">
+                  Our pipeline is now pulling MLS comps, tax liens, and Airbnb revenue data for <strong>{scanCity} {scanState}</strong>. The audit report will arrive in your inbox.
+                </p>
+                <button
+                  onClick={() => setIsScanModalOpen(false)}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs py-3 rounded-xl transition-all cursor-pointer"
+                >
+                  Close Window
+                </button>
+              </div>
+            ) : (
+              <div>
+                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full mb-4">
+                  <Zap className="w-3.5 h-3.5 text-amber-400" /> On-Demand Deal Scanner
+                </div>
+                
+                <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
+                  Order a Custom County / City Scan
+                </h2>
+                
+                <p className="text-xs text-slate-400 leading-relaxed mb-6">
+                  Targeting a specific market? For <strong>$4.99</strong>, we launch an immediate deep API query across active MLS, foreclosures, and STR comps.
+                </p>
+
+                <form onSubmit={handleScanSubmit} className="space-y-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-2">
+                      <input
+                        type="text"
+                        required
+                        placeholder="City or County (e.g. Dallas)"
+                        value={scanCity}
+                        onChange={(e) => setScanCity(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <input
+                        type="text"
+                        placeholder="State (TX)"
+                        maxLength={2}
+                        value={scanState}
+                        onChange={(e) => setScanState(e.target.value.toUpperCase())}
+                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none uppercase text-center"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="relative">
+                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="Your delivery email..."
+                      value={scanEmail}
+                      onChange={(e) => setScanEmail(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={scanSubmitting}
+                    className="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs sm:text-sm py-3 rounded-xl transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    {scanSubmitting ? 'Connecting...' : 'Launch Deep Scan ($4.99 USD)'}
+                  </button>
+                </form>
+
+                <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-slate-500">
+                  <span>✓ 500+ Comps Scanned</span>
+                  <span>•</span>
+                  <span>✓ Instant Delivery</span>
+                  <span>•</span>
+                  <span>✓ 100% Guaranteed</span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* MODALE STANDARD */}
       {isVipModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl shadow-emerald-500/10">
@@ -786,7 +861,7 @@ export default function HomePage() {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">Demande Validée !</h3>
                 <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                  Votre demande a bien été enregistrée dans notre système. Vous recevrez une notification par email.
+                  Votre demande a bien été enregistrée dans notre système.
                 </p>
                 <button
                   onClick={() => setIsVipModalOpen(false)}
@@ -827,17 +902,9 @@ export default function HomePage() {
                     disabled={vipSubmitting}
                     className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs sm:text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
                   >
-                    {vipSubmitting ? 'Validation en cours...' : 'Confirmer ma Demande'}
+                    {vipSubmitting ? 'Validation...' : 'Confirmer ma Demande'}
                   </button>
                 </form>
-
-                <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-slate-500">
-                  <span>✓ 100% Sécurisé</span>
-                  <span>•</span>
-                  <span>✓ Zéro Spam</span>
-                  <span>•</span>
-                  <span>✓ Contact direct</span>
-                </div>
               </div>
             )}
           </div>
