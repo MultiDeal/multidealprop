@@ -3,20 +3,32 @@ import { supabase } from '@/lib/supabase';
 
 export async function POST(request: Request) {
   try {
-    const { email, plan } = await request.json();
+    const body = await request.json();
+    const email = body?.email;
+    const plan = body?.plan || 'starter'; // 'starter', 'vip_monthly', 'vip_annual'
 
     if (!email) {
       return NextResponse.json({ error: 'Email required' }, { status: 400 });
     }
 
-    const isAnnual = plan === 'annual';
-    const amount = isAnnual ? 49900 : 4900; // $499.00 or $49.00 USD
-    const planName = isAnnual ? 'MultiDealProp VIP Pro (Annual)' : 'MultiDealProp VIP Pro (Monthly)';
+    let amount = 2900; // $29.00 USD
+    let planName = 'MultiDealProp Starter ($29/mo)';
+    let planDesc = '0-Day real-time deal access, unlocked seller phone numbers, and 10 PDF due diligence packs/month.';
 
-    // 1. Enregistrer dans Supabase
+    if (plan === 'vip_annual') {
+      amount = 49900; // $499.00 USD
+      planName = 'MultiDealProp VIP Pro (Annual $499/yr)';
+      planDesc = 'Unlimited PDF audits, instant SMS/WhatsApp alerts for Cap Rates > 12%, and 3 free county scans included.';
+    } else if (plan === 'vip_monthly' || plan === 'vip') {
+      amount = 4900; // $49.00 USD
+      planName = 'MultiDealProp VIP Pro ($49/mo)';
+      planDesc = 'Unlimited PDF audits, instant SMS/WhatsApp alerts for Cap Rates > 12%, and 3 free county scans included.';
+    }
+
+    // 1. Enregistrement du lead dans Supabase
     await supabase.from('leads').insert([{
       email,
-      interested_in: `VIP Pro Checkout: ${planName}`
+      interested_in: `Subscription Checkout: ${planName}`
     }]);
 
     // 2. Notification Admin par Email (Resend)
@@ -33,16 +45,17 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           from: 'MultiDealProp <support@multidealprop.com>',
           to: adminEmail,
-          subject: `👑 NOUVEL ABONNÉ VIP PRO (${isAnnual ? '$499/an' : '$49/mois'}) : ${email}`,
+          subject: `👑 NOUVEL ABONNEMENT EN COURS (${planName}) : ${email}`,
           html: `
             <div style="font-family: Arial, sans-serif; background-color: #070A10; color: #ffffff; padding: 24px; border-radius: 12px;">
-              <h2 style="color: #10B981;">🚀 Nouvel Abonnement VIP Pro !</h2>
-              <p>Un investisseur vient de souscrire à la formule VIP Pro :</p>
-              <ul>
-                <li><strong>Email :</strong> ${email}</li>
-                <li><strong>Formule :</strong> ${planName}</li>
-                <li><strong>Montant :</strong> $${isAnnual ? '499.00' : '49.00'} USD</li>
-              </ul>
+              <h2 style="color: #10B981;">🚀 Nouvelle Commande d'Abonnement SaaS !</h2>
+              <p>Un investisseur a validé le paiement pour :</p>
+              <div style="background-color: #1E293B; padding: 16px; border-radius: 8px; margin: 16px 0;">
+                <p><strong>Email :</strong> <span style="color: #38BDF8;">${email}</span></p>
+                <p><strong>Forfait :</strong> <span style="color: #FBBF24;">${planName}</span></p>
+                <p><strong>Montant :</strong> $${(amount / 100).toFixed(2)} USD</p>
+                <p><strong>Date :</strong> ${new Date().toLocaleString('fr-FR')}</p>
+              </div>
             </div>
           `
         })
@@ -63,7 +76,7 @@ export async function POST(request: Request) {
           'line_items[0][price_data][currency]': 'usd',
           'line_items[0][price_data][unit_amount]': String(amount),
           'line_items[0][price_data][product_data][name]': planName,
-          'line_items[0][price_data][product_data][description]': '0-day early access to 12%+ Cap Rate duplexes, rent rolls & direct seller contacts.',
+          'line_items[0][price_data][product_data][description]': planDesc,
           'line_items[0][quantity]': '1',
           'mode': 'payment',
           'customer_email': email,
@@ -73,14 +86,15 @@ export async function POST(request: Request) {
       });
 
       const session = await stripeRes.json();
-      if (session.url) {
+      if (session && session.url) {
         return NextResponse.json({ url: session.url });
       }
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('VIP Checkout Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('VIP Checkout Error:', message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
