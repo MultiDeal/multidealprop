@@ -2,26 +2,24 @@
 
 import { useState } from 'react';
 import { 
-  Sparkles, 
   Check, 
   Zap, 
-  ShieldCheck, 
-  TrendingUp, 
-  FileText, 
-  MessageSquare, 
   Lock, 
-  Unlock, 
   ArrowRight, 
-  Star,
-  Flame,
-  CheckCircle2,
-  Building2,
-  BellRing
+  Flame, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Sparkles,
+  Layers,
+  FileCheck2,
+  BellRing,
+  CreditCard
 } from 'lucide-react';
 import Link from 'next/link';
 
 export default function VipPage() {
-  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'vip_monthly' | 'vip_annual'>('starter');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [selectedPlan, setSelectedPlan] = useState<'starter' | 'vip'>('vip');
   const [email, setEmail] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
@@ -31,22 +29,24 @@ export default function VipPage() {
     if (!email) return;
     setSubmitting(true);
 
+    const planCode = selectedPlan === 'starter' 
+      ? 'starter' 
+      : (billingCycle === 'annual' ? 'vip_annual' : 'vip_monthly');
+
     try {
-      // 1. Enregistrement du lead
       await fetch('/api/leads', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
-          interested_in: `Tier Selection: ${selectedPlan}`
+          interested_in: `Tier Selection: ${planCode}`
         })
       });
 
-      // 2. Appel Checkout
       const res = await fetch('/api/checkout/vip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, plan: selectedPlan })
+        body: JSON.stringify({ email, plan: planCode })
       });
 
       const data = await res.json();
@@ -62,270 +62,301 @@ export default function VipPage() {
     }
   };
 
-  const planTitles = {
-    starter: 'Starter ($29/month)',
-    vip_monthly: 'VIP Pro ($49/month)',
-    vip_annual: 'VIP Pro Annual ($499/year)'
-  };
-
   return (
-    <div className="min-h-screen bg-[#070A10] text-slate-100 selection:bg-emerald-500 selection:text-black relative overflow-hidden">
+    <div className="min-h-screen bg-[#06080F] text-slate-100 selection:bg-emerald-500 selection:text-black antialiased relative">
       
-      {/* Background Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] h-[550px] bg-gradient-to-b from-emerald-500/15 via-teal-500/10 to-transparent blur-3xl pointer-events-none -z-10" />
+      {/* Ambient background lighting */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[500px] bg-gradient-to-b from-emerald-500/10 via-teal-500/5 to-transparent blur-[120px] pointer-events-none -z-10" />
 
-      {/* Navigation */}
-      <header className="border-b border-slate-800/80 bg-[#0B0F19]/80 backdrop-blur sticky top-0 z-40">
+      {/* Top Bar */}
+      <header className="border-b border-slate-800/60 bg-[#06080F]/80 backdrop-blur-xl sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="bg-emerald-500 text-black font-black text-xl w-9 h-9 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="bg-emerald-500 text-black font-black text-lg w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform">
               M
             </div>
-            <span className="font-extrabold text-lg tracking-tight text-white">MultiDeal<span className="text-emerald-400">Prop</span></span>
+            <span className="font-bold text-base tracking-tight text-white">MultiDeal<span className="text-emerald-400">Prop</span></span>
           </Link>
 
-          <Link href="/" className="text-xs text-slate-400 hover:text-white transition-colors">
-            &larr; Back to Deal Scanner
+          <Link href="/" className="text-xs font-semibold text-slate-400 hover:text-white transition-colors flex items-center gap-1">
+            ← Live Scanner
           </Link>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-14 pb-10 text-center px-4 max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-xs font-bold mb-5 backdrop-blur shadow-inner">
-          <Sparkles className="w-4 h-4 text-emerald-400 animate-pulse" />
-          Choose Your Real Estate Cash-Flow Advantage
+      {/* Hero */}
+      <section className="pt-16 pb-12 text-center px-4 max-w-4xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-semibold mb-6">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          Institutional Deal-Flow Access
         </div>
 
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-4 leading-tight">
-          Institutional Multi-Family <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">Deal Flow</span> Plans.
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-5 leading-[1.1]">
+          Acquire High-Yield Duplexes <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+            Before Retail Buyers.
+          </span>
         </h1>
 
-        <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto leading-relaxed">
-          From casual market tracking to high-speed 0-day early acquisitions. Lock in off-market duplexes and verified high-yield deals before retail buyers.
+        <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          Zero-day early deal access, direct unredacted wholesaler contacts, and complete audited due diligence packets.
         </p>
+
+        {/* Global Cycle Toggle */}
+        <div className="mt-8 inline-flex items-center bg-slate-900/80 border border-slate-800 p-1 rounded-2xl backdrop-blur">
+          <button
+            type="button"
+            onClick={() => setBillingCycle('monthly')}
+            className={`px-5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              billingCycle === 'monthly'
+                ? 'bg-slate-800 text-white shadow-sm'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Monthly
+          </button>
+          <button
+            type="button"
+            onClick={() => setBillingCycle('annual')}
+            className={`px-5 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center gap-1.5 ${
+              billingCycle === 'annual'
+                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20 font-extrabold'
+                : 'text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            Annual <span className="text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-400/40 px-1.5 py-0.5 rounded-full font-bold">Save 15%</span>
+          </button>
+        </div>
       </section>
 
-      {/* 3-Tier Pricing Grid */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+      {/* Large 3-Column Plan Grid */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
           
-          {/* TIER 1: FREE EXPLORER */}
-          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 flex flex-col justify-between backdrop-blur">
+          {/* TIER 1: FREE */}
+          <div className="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-8 flex flex-col justify-between backdrop-blur-sm">
             <div>
-              <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Explorer</div>
-              <h3 className="text-xl font-black text-white mb-1">Free Tier</h3>
-              <p className="text-xs text-slate-400 mb-5">For casual research &amp; public comps.</p>
+              <div className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mb-2">Explorer</div>
+              <h3 className="text-2xl font-black text-white mb-2">Free</h3>
+              <p className="text-xs text-slate-400 leading-relaxed mb-8">For casual market browsing and basic research.</p>
 
-              <div className="text-3xl font-black text-white mb-5">
-                $0 <span className="text-xs text-slate-500 font-normal">/ forever</span>
+              <div className="mb-8">
+                <div className="text-5xl font-black text-white tracking-tight">$0</div>
+                <div className="text-xs text-slate-500 mt-1 font-medium">Free forever</div>
               </div>
 
-              <div className="space-y-3 pt-5 border-t border-slate-800 text-xs text-slate-300">
-                <div className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                  <span>Public feed with <strong>48-hour delay</strong></span>
+              <div className="space-y-4 pt-6 border-t border-slate-800/80 text-xs text-slate-300">
+                <div className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                  <span>Public deal feed (<strong>48h delay</strong>)</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                  <span>Basic Cap Rate &amp; Price estimates</span>
+                <div className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                  <span>Standard Cap Rate & Rent estimates</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <Check className="w-4 h-4 text-slate-500 flex-shrink-0" />
-                  <span>Standard 5 default market filters</span>
+                <div className="flex items-start gap-3">
+                  <Check className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
+                  <span>5 default market searches</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-slate-500">
-                  <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>Seller contact desk locked</span>
+                <div className="flex items-start gap-3 text-slate-500">
+                  <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>Seller phone & desk locked</span>
                 </div>
-                <div className="flex items-center gap-2.5 text-slate-500">
-                  <Lock className="w-3.5 h-3.5 flex-shrink-0" />
-                  <span>No PDF due diligence exports</span>
+                <div className="flex items-start gap-3 text-slate-500">
+                  <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <span>No PDF audit packs</span>
                 </div>
               </div>
             </div>
 
             <Link
               href="/"
-              className="mt-8 w-full bg-slate-800 hover:bg-slate-700 text-white text-center font-bold text-xs py-3 rounded-xl transition-all block"
+              className="mt-10 w-full bg-slate-800/80 hover:bg-slate-800 text-slate-300 text-center font-bold text-xs py-3.5 rounded-xl border border-slate-700/50 transition-all block"
             >
               Continue Free
             </Link>
           </div>
 
           {/* TIER 2: STARTER ($29/mo) */}
-          <div className={`bg-slate-900/90 border-2 ${selectedPlan === 'starter' ? 'border-cyan-500 shadow-xl shadow-cyan-500/10' : 'border-slate-800'} rounded-3xl p-6 flex flex-col justify-between relative transition-all`}>
-            
-            <div className="absolute -top-3 right-6 bg-cyan-500 text-black text-[9px] uppercase tracking-widest font-black px-2.5 py-0.5 rounded-full shadow-md">
-              Fast ROI
+          <div 
+            onClick={() => setSelectedPlan('starter')}
+            className={`bg-slate-900/70 border-2 ${selectedPlan === 'starter' ? 'border-cyan-400 shadow-2xl shadow-cyan-500/10' : 'border-slate-800 hover:border-slate-700'} rounded-3xl p-8 flex flex-col justify-between backdrop-blur-sm relative cursor-pointer transition-all`}
+          >
+            <div className="absolute -top-3 right-8 bg-cyan-400 text-black text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full shadow-md">
+              Starter Choice
             </div>
 
             <div>
-              <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                <Zap className="w-3 h-3" /> Individual Investor
+              <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <Zap className="w-3.5 h-3.5" /> Individual Investor
               </div>
-              <h3 className="text-xl font-black text-white mb-1">Starter Pro</h3>
-              <p className="text-xs text-slate-400 mb-5">Direct speed &amp; unlocked seller contacts.</p>
+              <h3 className="text-2xl font-black text-white mb-2">Starter Pro</h3>
+              <p className="text-xs text-slate-400 leading-relaxed mb-8">Speed advantage with unlocked seller numbers.</p>
 
-              <div className="text-3xl font-black text-white mb-5">
-                $29 <span className="text-xs text-slate-400 font-normal">/ month</span>
+              <div className="mb-8">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-5xl font-black text-white tracking-tight">$29</span>
+                  <span className="text-xs font-semibold text-slate-400">/ month</span>
+                </div>
+                <div className="text-xs text-cyan-400/90 mt-1 font-medium">Billed monthly • Cancel anytime</div>
               </div>
 
-              <div className="space-y-3 pt-5 border-t border-slate-800 text-xs text-slate-200">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
+              <div className="space-y-4 pt-6 border-t border-slate-800/80 text-xs text-slate-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Zero-Day Speed :</strong> See deals 48h before public</span>
+                  <span><strong>Zero-Day Priority :</strong> See deals 48h before the public</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Direct Wholesaler Phone :</strong> Unlocked contacts</span>
+                  <span><strong>Direct Seller Desk :</strong> Phone numbers & assignment contacts</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>10 PDF Due Diligence Packs :</strong> Audit exports/mo</span>
+                  <span><strong>10 PDF Due Diligence Packs :</strong> Instant exports/mo</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Full Airbnb Yield Matrix :</strong> Nightly STR comps</span>
+                  <span><strong>Full Airbnb Yield Matrix :</strong> Nightly STR revenue comps</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Email Deal Alerts :</strong> Instant custom criteria drops</span>
+                  <span><strong>Custom Email Deal Drops :</strong> High-yield criteria</span>
                 </div>
               </div>
             </div>
 
             <button
-              onClick={() => setSelectedPlan('starter')}
-              className={`mt-8 w-full font-bold text-xs py-3 rounded-xl transition-all cursor-pointer ${
+              type="button"
+              className={`mt-10 w-full font-bold text-xs py-3.5 rounded-xl transition-all ${
                 selectedPlan === 'starter'
-                  ? 'bg-cyan-500 text-black shadow-lg shadow-cyan-500/20'
-                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+                  ? 'bg-cyan-400 hover:bg-cyan-300 text-black shadow-lg shadow-cyan-400/20'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              {selectedPlan === 'starter' ? 'Selected: Starter ($29/mo)' : 'Select Starter Plan'}
+              {selectedPlan === 'starter' ? 'Selected: Starter ($29/mo)' : 'Select Starter'}
             </button>
           </div>
 
-          {/* TIER 3: VIP PRO ($49/mo or $499/yr) */}
-          <div className={`bg-gradient-to-b from-slate-900 via-slate-900 to-[#0F172A] border-2 ${selectedPlan.startsWith('vip') ? 'border-emerald-500 shadow-2xl shadow-emerald-500/20' : 'border-emerald-500/60'} rounded-3xl p-6 flex flex-col justify-between relative`}>
-            
-            <div className="absolute -top-3 right-6 bg-gradient-to-r from-emerald-400 to-teal-400 text-black text-[9px] uppercase tracking-widest font-black px-3 py-0.5 rounded-full shadow-md">
-              Most Popular • Max Power
+          {/* TIER 3: VIP PRO ($49/mo OR $499/yr) - BIG NUMBERS */}
+          <div 
+            onClick={() => setSelectedPlan('vip')}
+            className={`bg-gradient-to-b from-slate-900 via-slate-900 to-[#0A121E] border-2 ${selectedPlan === 'vip' ? 'border-emerald-400 shadow-2xl shadow-emerald-500/20' : 'border-emerald-500/40 hover:border-emerald-400/80'} rounded-3xl p-8 flex flex-col justify-between relative cursor-pointer transition-all scale-[1.02]`}
+          >
+            <div className="absolute -top-3.5 right-8 bg-gradient-to-r from-emerald-400 to-teal-300 text-black text-[10px] font-black uppercase tracking-wider px-3.5 py-1 rounded-full shadow-lg">
+              Most Popular • VIP Club
             </div>
 
             <div>
-              <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider mb-1 flex items-center gap-1">
-                <Flame className="w-3.5 h-3.5 text-amber-400" /> VIP Network Tier
+              <div className="text-[11px] font-bold text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                <Flame className="w-3.5 h-3.5 text-amber-400" /> Complete Power Tier
               </div>
-              <h3 className="text-xl font-black text-white mb-1">VIP Pro Elite</h3>
-              <p className="text-xs text-slate-300 mb-4">Unlimited deal drops &amp; high-volume pipeline.</p>
+              <h3 className="text-2xl font-black text-white mb-2">VIP Pro Elite</h3>
+              <p className="text-xs text-slate-300 leading-relaxed mb-8">Unlimited deal flow and real-time SMS drop notifications.</p>
 
-              {/* Toggle Monthly / Annual */}
-              <div className="bg-slate-950 p-1 rounded-xl border border-slate-800 flex items-center mb-4 text-[11px]">
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan('vip_monthly')}
-                  className={`flex-1 py-1 font-bold rounded-lg transition-all cursor-pointer ${
-                    selectedPlan === 'vip_monthly' ? 'bg-emerald-500 text-black shadow' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  $49 / mo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSelectedPlan('vip_annual')}
-                  className={`flex-1 py-1 font-bold rounded-lg transition-all cursor-pointer ${
-                    selectedPlan === 'vip_annual' ? 'bg-gradient-to-r from-emerald-400 to-teal-400 text-black shadow' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  $499 / yr <span className="text-[9px] ml-0.5 uppercase text-purple-900 font-extrabold">-15%</span>
-                </button>
+              {/* HUGE NUMBERS DISPLAY */}
+              <div className="mb-8 bg-slate-950/80 border border-slate-800/80 p-4 rounded-2xl">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-6xl font-black text-white tracking-tight font-mono">
+                    {billingCycle === 'annual' ? '$499' : '$49'}
+                  </span>
+                  <span className="text-sm font-bold text-slate-400">
+                    {billingCycle === 'annual' ? '/ year' : '/ month'}
+                  </span>
+                </div>
+                <div className="text-xs text-emerald-400 font-semibold mt-1">
+                  {billingCycle === 'annual' ? '⚡ Billed annually (Save $89/year)' : '⚡ Instant access • Cancel anytime'}
+                </div>
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-slate-800 text-xs text-slate-200">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+              <div className="space-y-4 pt-6 border-t border-slate-800/80 text-xs text-slate-200">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Everything in Starter Plan</strong></span>
+                  <span><strong>Everything in Starter Plan</strong> included</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Unlimited PDF Due Diligence Packs</strong></span>
+                  <span><strong>Unlimited Due Diligence PDF Packs :</strong> Full inspection & rent rolls</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Instant SMS &amp; WhatsApp Alerts :</strong> Cap Rate &gt; 12%</span>
+                  <span><strong>Instant SMS & WhatsApp Alerts :</strong> Triggered when Cap Rate &gt; 12%</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>3 Free County Scans Included :</strong> ($15 value/mo)</span>
+                  <span><strong>3 Free County Scans / Month :</strong> ($15 monthly value)</span>
                 </div>
-                <div className="flex items-center gap-2.5">
-                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0">
+                <div className="flex items-start gap-3">
+                  <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Verified Rent Rolls &amp; Leases</strong></span>
+                  <span><strong>Verified Rent Rolls & Lease Audits :</strong> Full tenant schedules</span>
                 </div>
               </div>
             </div>
 
             <button
-              onClick={() => {
-                if (!selectedPlan.startsWith('vip')) setSelectedPlan('vip_monthly');
-              }}
-              className={`mt-8 w-full font-bold text-xs py-3 rounded-xl transition-all cursor-pointer ${
-                selectedPlan.startsWith('vip')
-                  ? 'bg-gradient-to-r from-emerald-400 to-teal-400 text-black shadow-lg shadow-emerald-500/20'
-                  : 'bg-slate-800 text-slate-200 hover:bg-slate-700'
+              type="button"
+              className={`mt-10 w-full font-extrabold text-xs py-3.5 rounded-xl transition-all ${
+                selectedPlan === 'vip'
+                  ? 'bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 hover:opacity-95 text-black shadow-xl shadow-emerald-500/20'
+                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
               }`}
             >
-              {selectedPlan.startsWith('vip') ? `Selected: ${selectedPlan === 'vip_annual' ? 'VIP Annual ($499/yr)' : 'VIP Monthly ($49/mo)'}` : 'Select VIP Pro Plan'}
+              {selectedPlan === 'vip' 
+                ? `Selected: VIP Pro (${billingCycle === 'annual' ? '$499/yr' : '$49/mo'})` 
+                : 'Select VIP Pro'}
             </button>
           </div>
 
         </div>
       </section>
 
-      {/* CHECKOUT ACTION BOX */}
-      <section className="max-w-xl mx-auto px-4 pb-20">
-        <div className="bg-slate-900 border border-slate-800 p-6 sm:p-8 rounded-3xl shadow-2xl">
+      {/* Direct Checkout Terminal Box */}
+      <section className="max-w-xl mx-auto px-4 pb-24">
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-8 shadow-2xl backdrop-blur">
           {subscribed ? (
             <div className="text-center py-4">
               <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-3">
                 <CheckCircle2 className="w-8 h-8 text-emerald-400" />
               </div>
-              <h3 className="text-xl font-bold text-white mb-1">Subscription Order Initiated!</h3>
-              <p className="text-xs text-slate-300 mb-4">
-                You will receive confirmation and instant access setup in your inbox.
+              <h3 className="text-xl font-bold text-white mb-1">Access Initialized</h3>
+              <p className="text-xs text-slate-300 mb-6 leading-relaxed">
+                Check your inbox to finalize your feed preferences.
               </p>
-              <Link href="/" className="inline-block bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-6 py-2.5 rounded-xl">
-                Return to Live Deals
+              <Link href="/" className="inline-block bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-6 py-3 rounded-xl transition-all">
+                Return to Live Feed
               </Link>
             </div>
           ) : (
             <div>
               <div className="text-center mb-6">
-                <div className="text-xs font-semibold text-emerald-400 uppercase tracking-wider mb-1">Selected Plan</div>
-                <h3 className="text-2xl font-black text-white">{planTitles[selectedPlan]}</h3>
-                <p className="text-xs text-slate-400 mt-1">Enter your email to activate instant deal-flow access.</p>
+                <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">
+                  Ready to Activate
+                </div>
+                <h3 className="text-2xl font-black text-white">
+                  {selectedPlan === 'starter' 
+                    ? 'Starter Plan ($29/mo)' 
+                    : (billingCycle === 'annual' ? 'VIP Pro Annual ($499/year)' : 'VIP Pro Monthly ($49/month)')}
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Enter your email to connect with Stripe.</p>
               </div>
 
               <form onSubmit={handleCheckout} className="space-y-3">
@@ -335,25 +366,25 @@ export default function VipPage() {
                   placeholder="Enter your investor email..."
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none"
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl px-4 py-3.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-colors"
                 />
 
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 hover:opacity-95 text-black font-black text-xs sm:text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 hover:opacity-95 text-black font-black text-xs sm:text-sm py-4 rounded-xl transition-all shadow-xl shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
                 >
-                  <Zap className="w-4 h-4 fill-black" />
-                  {submitting ? 'Connecting to Stripe...' : `Proceed to Secure Checkout (${planTitles[selectedPlan]})`}
+                  <CreditCard className="w-4 h-4" />
+                  {submitting ? 'Connecting to Stripe...' : 'Proceed to Checkout →'}
                 </button>
               </form>
 
-              <div className="mt-4 flex items-center justify-center gap-4 text-[10px] text-slate-500">
-                <span>&check; 30-Day Money-Back</span>
-                <span>&bull;</span>
-                <span>&check; Cancel in 1-Click</span>
-                <span>&bull;</span>
-                <span>&check; Instant Activation</span>
+              <div className="mt-5 flex items-center justify-center gap-4 text-[11px] text-slate-500 font-medium">
+                <span>✓ 30-Day Guarantee</span>
+                <span>•</span>
+                <span>✓ 1-Click Cancel</span>
+                <span>•</span>
+                <span>✓ Instant Delivery</span>
               </div>
             </div>
           )}
@@ -361,11 +392,11 @@ export default function VipPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 bg-[#070A10] text-slate-500 text-xs py-10">
-        <div className="max-w-7xl mx-auto px-4 text-center space-y-3">
-          <p>&copy; {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
-          <p className="text-[10px] text-slate-600 max-w-xl mx-auto">
-            MultiDealProp is an analytics engine. All financial computations are algorithmic projections for informational purposes.
+      <footer className="border-t border-slate-800/80 bg-[#04060A] text-slate-500 text-xs py-10">
+        <div className="max-w-7xl mx-auto px-4 text-center space-y-2">
+          <p>© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
+          <p className="text-[10px] text-slate-600 max-w-lg mx-auto">
+            MultiDealProp is an underwriting & discovery software engine. Real estate investments involve risk.
           </p>
         </div>
       </footer>
