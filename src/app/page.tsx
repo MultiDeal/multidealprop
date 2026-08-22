@@ -5,18 +5,13 @@ import Link from 'next/link';
 import { 
   Building2, 
   MapPin, 
-  TrendingUp, 
   Search, 
   SlidersHorizontal, 
   Flame, 
-  Sparkles, 
   ArrowUpRight, 
-  DollarSign, 
-  CheckCircle2, 
   ShieldCheck, 
-  Zap, 
-  Lock,
-  Download
+  Download,
+  Filter
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -24,6 +19,7 @@ export default function HomePage() {
   const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCity, setSelectedCity] = useState('ALL');
   const [minCapRate, setMinCapRate] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(1000000);
 
@@ -38,11 +34,11 @@ export default function HomePage() {
         if (data && data.length > 0) {
           setDeals(data);
         } else {
-          // Exemples par défaut
+          // Default underwritten sample duplex inventory
           setDeals([
             {
               id: '1',
-              title: 'Turnkey Duplex - 2 Units Fully Rented',
+              title: 'Turnkey Multi-Family Duplex - 2 Units Leased',
               city: 'Cleveland',
               state: 'OH',
               zip_code: '44105',
@@ -51,12 +47,12 @@ export default function HomePage() {
               monthly_rent_estimate: 1950,
               gross_yield: 23.8,
               image_url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
-              seller_name: 'Apex Capital',
+              seller_name: 'Apex Wholesale Capital LLC',
               seller_phone: '+1 (216) 884-2190'
             },
             {
               id: '2',
-              title: 'Brick Multi-Family Value Add Duplex',
+              title: 'Brick Multi-Family Value-Add Duplex',
               city: 'Detroit',
               state: 'MI',
               zip_code: '48227',
@@ -65,12 +61,12 @@ export default function HomePage() {
               monthly_rent_estimate: 1800,
               gross_yield: 27.3,
               image_url: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
-              seller_name: 'Motor City Deals',
+              seller_name: 'Motor City Wholesale Desk',
               seller_phone: '+1 (313) 490-1120'
             },
             {
               id: '3',
-              title: 'Cash-Flowing Side-by-Side Duplex',
+              title: 'Cash-Flowing Side-by-Side 2-Unit Duplex',
               city: 'Memphis',
               state: 'TN',
               zip_code: '38109',
@@ -79,8 +75,36 @@ export default function HomePage() {
               monthly_rent_estimate: 2100,
               gross_yield: 21.9,
               image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-              seller_name: 'Bluff City RE',
+              seller_name: 'Bluff City Direct Acquisitions',
               seller_phone: '+1 (901) 329-8740'
+            },
+            {
+              id: '4',
+              title: 'High Cashflow Duplex Near Medical Center',
+              city: 'Indianapolis',
+              state: 'IN',
+              zip_code: '46201',
+              price: 128000,
+              cap_rate: 12.8,
+              monthly_rent_estimate: 2200,
+              gross_yield: 20.6,
+              image_url: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
+              seller_name: 'Circle City Deal Desk',
+              seller_phone: '+1 (317) 550-9812'
+            },
+            {
+              id: '5',
+              title: 'Fully Occupied Turnkey Duplex Portfolio Add',
+              city: 'Kansas City',
+              state: 'MO',
+              zip_code: '64130',
+              price: 109000,
+              cap_rate: 13.1,
+              monthly_rent_estimate: 1980,
+              gross_yield: 21.8,
+              image_url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+              seller_name: 'Midwest Capital Flow',
+              seller_phone: '+1 (816) 430-6721'
             }
           ]);
         }
@@ -94,23 +118,29 @@ export default function HomePage() {
   }, []);
 
   const filteredDeals = deals.filter((deal) => {
+    const query = searchQuery.toLowerCase();
     const matchesSearch = 
-      deal.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deal.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deal.state?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      deal.zip_code?.includes(searchQuery);
-    
+      !query ||
+      deal.title?.toLowerCase().includes(query) ||
+      deal.city?.toLowerCase().includes(query) ||
+      deal.state?.toLowerCase().includes(query) ||
+      deal.zip_code?.includes(query);
+
+    const matchesCity = 
+      selectedCity === 'ALL' || 
+      deal.city?.toLowerCase() === selectedCity.toLowerCase();
+
     const matchesCap = (deal.cap_rate || 0) >= minCapRate;
     const matchesPrice = (deal.price || 0) <= maxPrice;
 
-    return matchesSearch && matchesCap && matchesPrice;
+    return matchesSearch && matchesCity && matchesCap && matchesPrice;
   });
 
   return (
     <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
       
       {/* Top Navbar */}
-      <header className="border-b border-slate-800 bg-[#06080F]/80 backdrop-blur sticky top-0 z-40">
+      <header className="border-b border-slate-800/80 bg-[#06080F]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="bg-emerald-500 text-black font-black text-lg w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -119,8 +149,8 @@ export default function HomePage() {
             <span className="font-bold text-base tracking-tight text-white">MultiDeal<span className="text-emerald-400">Prop</span></span>
           </Link>
 
-          <div className="flex items-center gap-4">
-            <Link href="/vip" className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-extrabold text-xs px-4 py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all">
+          <div className="flex items-center gap-3">
+            <Link href="/vip" className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-black text-xs px-4 py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all">
               ⚡ VIP Pro Access
             </Link>
           </div>
@@ -128,72 +158,168 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-16 pb-12 text-center px-4 max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-semibold mb-6">
+      <section className="pt-14 pb-8 text-center px-4 max-w-4xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-semibold mb-5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
-          Live Real Estate Yield Scanner
+          Live US Multi-Family Yield Scanner
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-4 leading-tight">
-          Find High-Yield Duplexes <br />
+          Discover High-Yield Duplexes <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
             With 12%+ Cap Rates
           </span>
         </h1>
 
         <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto mb-8">
-          Underwritten off-market multi-family deals, verified rent estimates, and direct wholesaler assignment contacts.
+          Pre-underwritten off-market multi-family deals, audited rent estimates, and direct wholesaler assignment contacts.
         </p>
 
-        {/* Filter Bar */}
-        <div className="bg-slate-900/80 border border-slate-800 p-2.5 sm:p-3 rounded-2xl max-w-2xl mx-auto flex flex-col sm:flex-row gap-2 shadow-2xl backdrop-blur">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input 
-              type="text" 
-              placeholder="Search by City, State, or Zip..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500"
-            />
+        {/* FULL FILTER CONTROL BAR */}
+        <div className="bg-slate-900/90 border border-slate-800 p-3 sm:p-4 rounded-3xl max-w-4xl mx-auto shadow-2xl backdrop-blur">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input 
+                type="text" 
+                placeholder="Search Keyword, Zip..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-3 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500 transition-colors"
+              />
+            </div>
+
+            {/* City Filter */}
+            <div className="relative">
+              <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 outline-none focus:border-emerald-500 transition-colors cursor-pointer appearance-none"
+              >
+                <option value="ALL">All Target Markets</option>
+                <option value="Cleveland">Cleveland, OH</option>
+                <option value="Detroit">Detroit, MI</option>
+                <option value="Memphis">Memphis, TN</option>
+                <option value="Indianapolis">Indianapolis, IN</option>
+                <option value="Kansas City">Kansas City, MO</option>
+              </select>
+            </div>
+
+            {/* Cap Rate Filter */}
+            <div className="relative">
+              <SlidersHorizontal className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <select
+                value={minCapRate}
+                onChange={(e) => setMinCapRate(Number(e.target.value))}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-slate-200 outline-none focus:border-emerald-500 transition-colors cursor-pointer appearance-none"
+              >
+                <option value="0">All Cap Rates</option>
+                <option value="10">Min 10%+ Cap Rate</option>
+                <option value="12">Min 12%+ Cap Rate</option>
+                <option value="14">Min 14%+ Cap Rate</option>
+              </select>
+            </div>
+
+            {/* Max Price Filter */}
+            <div className="relative">
+              <select
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(Number(e.target.value))}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-200 outline-none focus:border-emerald-500 transition-colors cursor-pointer appearance-none"
+              >
+                <option value="1000000">Any Max Price</option>
+                <option value="80000">Under $80,000</option>
+                <option value="100000">Under $100,000</option>
+                <option value="150000">Under $150,000</option>
+                <option value="200000">Under $200,000</option>
+              </select>
+            </div>
+
           </div>
 
-          <div className="flex gap-2">
-            <select
-              value={minCapRate}
-              onChange={(e) => setMinCapRate(Number(e.target.value))}
-              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 outline-none cursor-pointer"
-            >
-              <option value="0">All Cap Rates</option>
-              <option value="10">10%+ Cap Rate</option>
-              <option value="12">12%+ Cap Rate</option>
-              <option value="14">14%+ Cap Rate</option>
-            </select>
+          {/* Active Filter Chips */}
+          <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 px-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Filter status:</span>
+              {selectedCity !== 'ALL' && (
+                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md">
+                  📍 {selectedCity}
+                </span>
+              )}
+              {minCapRate > 0 && (
+                <span className="bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 px-2 py-0.5 rounded-md">
+                  ⚡ {minCapRate}%+ Cap Rate
+                </span>
+              )}
+              {maxPrice < 1000000 && (
+                <span className="bg-slate-800 text-slate-200 px-2 py-0.5 rounded-md">
+                  💰 Under ${maxPrice.toLocaleString()}
+                </span>
+              )}
+              {selectedCity === 'ALL' && minCapRate === 0 && maxPrice === 1000000 && !searchQuery && (
+                <span className="text-slate-500">Showing all available inventory</span>
+              )}
+            </div>
+
+            {(selectedCity !== 'ALL' || minCapRate > 0 || maxPrice < 1000000 || searchQuery) && (
+              <button
+                onClick={() => {
+                  setSelectedCity('ALL');
+                  setMinCapRate(0);
+                  setMaxPrice(1000000);
+                  setSearchQuery('');
+                }}
+                className="text-slate-400 hover:text-white underline cursor-pointer text-[11px]"
+              >
+                Reset filters
+              </button>
+            )}
           </div>
+
         </div>
       </section>
 
-      {/* Deals Grid */}
+      {/* Deals Inventory Grid */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
-            Available Duplex Inventory ({filteredDeals.length})
+          <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            Active Properties Available ({filteredDeals.length})
           </h2>
         </div>
 
         {loading ? (
-          <div className="text-center py-20 text-slate-500 text-xs">
-            Scanning multi-family databases...
+          <div className="text-center py-20 text-slate-500 text-xs animate-pulse">
+            Scanning multi-family databases &amp; underwriting cash-flows...
+          </div>
+        ) : filteredDeals.length === 0 ? (
+          <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-3xl p-8">
+            <p className="text-sm font-bold text-white mb-1">No properties matching your criteria</p>
+            <p className="text-xs text-slate-400 mb-4">Try broadening your search or resetting the filters.</p>
+            <button
+              onClick={() => {
+                setSelectedCity('ALL');
+                setMinCapRate(0);
+                setMaxPrice(1000000);
+                setSearchQuery('');
+              }}
+              className="bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs px-4 py-2 rounded-xl transition-all"
+            >
+              Reset Filters
+            </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredDeals.map((deal) => (
               <div 
                 key={deal.id} 
-                className="bg-slate-900/50 border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden transition-all flex flex-col justify-between group"
+                className="bg-slate-900/50 border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden transition-all flex flex-col justify-between group shadow-xl hover:shadow-2xl"
               >
                 <div>
-                  {/* Image */}
+                  {/* Image Header */}
                   <div className="h-48 bg-slate-950 relative overflow-hidden">
                     <img 
                       src={deal.image_url || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'} 
@@ -205,13 +331,15 @@ export default function HomePage() {
                     </div>
                   </div>
 
-                  {/* Body */}
+                  {/* Body Content */}
                   <div className="p-6">
-                    <div className="text-xs text-slate-400 flex items-center gap-1 mb-1">
-                      <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                    <div className="text-xs text-slate-400 flex items-center gap-1 mb-1 font-medium">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
                       {deal.city || 'Market'}, {deal.state || ''} {deal.zip_code || ''}
                     </div>
-                    <h3 className="text-base font-bold text-white mb-4 line-clamp-1">{deal.title}</h3>
+                    <h3 className="text-base font-bold text-white mb-4 line-clamp-1 group-hover:text-emerald-400 transition-colors">
+                      {deal.title}
+                    </h3>
 
                     <div className="grid grid-cols-2 gap-3 bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/80 text-xs">
                       <div>
@@ -219,7 +347,7 @@ export default function HomePage() {
                         <div className="text-base font-black text-white font-mono">${Number(deal.price || 0).toLocaleString()}</div>
                       </div>
                       <div>
-                        <div className="text-[10px] text-slate-500 uppercase font-bold">Est. Rent / Mo</div>
+                        <div className="text-[10px] text-slate-500 uppercase font-bold">Gross Rent / Mo</div>
                         <div className="text-base font-black text-emerald-400 font-mono">${Number(deal.monthly_rent_estimate || 1800).toLocaleString()}</div>
                       </div>
                     </div>
@@ -240,7 +368,7 @@ export default function HomePage() {
                     target="_blank"
                     className="w-full bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-[11px] py-2 rounded-xl flex items-center justify-center gap-1.5 transition-colors border border-slate-700/50 block text-center"
                   >
-                    <Download className="w-3 h-3 text-emerald-400" /> Due Diligence PDF Audit
+                    <Download className="w-3 h-3 text-emerald-400" /> Due Diligence PDF Pack
                   </Link>
                 </div>
 
@@ -253,6 +381,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t border-slate-800/80 bg-[#04060A] text-slate-500 text-xs py-8 text-center">
         <p>© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
+        <p className="text-[10px] text-slate-600 mt-1">Real estate investment discovery &amp; algorithmic due diligence engine.</p>
       </footer>
 
     </div>
