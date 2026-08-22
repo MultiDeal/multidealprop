@@ -1,200 +1,260 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Building2, 
-  Phone, 
-  Mail, 
-  ShieldCheck, 
-  FileText
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { 
+  Building2, 
+  MapPin, 
+  TrendingUp, 
+  Search, 
+  SlidersHorizontal, 
+  Flame, 
+  Sparkles, 
+  ArrowUpRight, 
+  DollarSign, 
+  CheckCircle2, 
+  ShieldCheck, 
+  Zap, 
+  Lock,
+  Download
+} from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
-export default function DealDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const id = params?.id as string;
-  const [deal, setDeal] = useState<any>(null);
+export default function HomePage() {
+  const [deals, setDeals] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [minCapRate, setMinCapRate] = useState<number>(0);
+  const [maxPrice, setMaxPrice] = useState<number>(1000000);
 
   useEffect(() => {
-    async function loadDeal() {
-      if (!id) return;
-      
-      const { data } = await supabase
-        .from('deals')
-        .select('*')
-        .eq('id', id)
-        .single();
+    async function fetchDeals() {
+      try {
+        const { data, error } = await supabase
+          .from('deals')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (data) {
-        setDeal(data);
-      } else {
-        setDeal({
-          id,
-          title: 'Turnkey Multi-Family Duplex - Value Add Opportunity',
-          city: 'Cleveland',
-          state: 'OH',
-          zip_code: '44105',
-          price: 98000,
-          cap_rate: 13.4,
-          monthly_rent_estimate: 1950,
-          gross_yield: 23.8,
-          seller_name: 'Apex Wholesale Capital LLC',
-          seller_phone: '+1 (216) 884-2190',
-          seller_email: 'acquisitions@apexreicapital.com',
-          image_url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
-          description: 'Fully tenanted turnkey 2-unit multi-family property generating consistent cash-flow. Recent roof and mechanical updates. Long-term tenants in place with immediate rent growth potential.'
-        });
+        if (data && data.length > 0) {
+          setDeals(data);
+        } else {
+          // Exemples par défaut
+          setDeals([
+            {
+              id: '1',
+              title: 'Turnkey Duplex - 2 Units Fully Rented',
+              city: 'Cleveland',
+              state: 'OH',
+              zip_code: '44105',
+              price: 98000,
+              cap_rate: 13.4,
+              monthly_rent_estimate: 1950,
+              gross_yield: 23.8,
+              image_url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
+              seller_name: 'Apex Capital',
+              seller_phone: '+1 (216) 884-2190'
+            },
+            {
+              id: '2',
+              title: 'Brick Multi-Family Value Add Duplex',
+              city: 'Detroit',
+              state: 'MI',
+              zip_code: '48227',
+              price: 79000,
+              cap_rate: 14.2,
+              monthly_rent_estimate: 1800,
+              gross_yield: 27.3,
+              image_url: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
+              seller_name: 'Motor City Deals',
+              seller_phone: '+1 (313) 490-1120'
+            },
+            {
+              id: '3',
+              title: 'Cash-Flowing Side-by-Side Duplex',
+              city: 'Memphis',
+              state: 'TN',
+              zip_code: '38109',
+              price: 115000,
+              cap_rate: 12.1,
+              monthly_rent_estimate: 2100,
+              gross_yield: 21.9,
+              image_url: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+              seller_name: 'Bluff City RE',
+              seller_phone: '+1 (901) 329-8740'
+            }
+          ]);
+        }
+      } catch (err) {
+        console.error('Error fetching deals:', err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
-    loadDeal();
-  }, [id]);
+    fetchDeals();
+  }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#06080F] flex items-center justify-center text-white font-sans">
-        <p className="text-sm font-bold animate-pulse text-emerald-400">Loading Deal & Financial Matrix...</p>
-      </div>
-    );
-  }
+  const filteredDeals = deals.filter((deal) => {
+    const matchesSearch = 
+      deal.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      deal.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      deal.state?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      deal.zip_code?.includes(searchQuery);
+    
+    const matchesCap = (deal.cap_rate || 0) >= minCapRate;
+    const matchesPrice = (deal.price || 0) <= maxPrice;
 
-  const priceFormatted = Number(deal.price || 0).toLocaleString();
-  const rentFormatted = Number(deal.monthly_rent_estimate || 1800).toLocaleString();
+    return matchesSearch && matchesCap && matchesPrice;
+  });
 
   return (
-    <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased pb-20">
+    <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
       
-      {/* Header */}
+      {/* Top Navbar */}
       <header className="border-b border-slate-800 bg-[#06080F]/80 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button 
-            onClick={() => router.back()}
-            className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1.5 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Scanner
-          </button>
-
-          <Link href="/vip" className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-bold px-3.5 py-1.5 rounded-full transition-all">
-            ⚡ Upgrade VIP Pro
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2.5">
+            <div className="bg-emerald-500 text-black font-black text-lg w-8 h-8 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              M
+            </div>
+            <span className="font-bold text-base tracking-tight text-white">MultiDeal<span className="text-emerald-400">Prop</span></span>
           </Link>
+
+          <div className="flex items-center gap-4">
+            <Link href="/vip" className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-extrabold text-xs px-4 py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all">
+              ⚡ VIP Pro Access
+            </Link>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        
-        {/* Deal Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold mb-2">
-              <ShieldCheck className="w-3.5 h-3.5" /> High-Cap Underwritten Asset
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black text-white">{deal.title}</h1>
-            <p className="text-xs sm:text-sm text-slate-400 flex items-center gap-1.5 mt-1">
-              <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              {deal.city || 'Market'}, {deal.state || ''} {deal.zip_code || ''} • USA Multi-Family
-            </p>
-          </div>
-
-          <div className="text-left md:text-right bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Off-Market Asking Price</div>
-            <div className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono">${priceFormatted}</div>
-          </div>
+      {/* Hero Section */}
+      <section className="pt-16 pb-12 text-center px-4 max-w-4xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-semibold mb-6">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+          Live Real Estate Yield Scanner
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Main Column */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            {/* Image */}
-            {deal.image_url && (
-              <div className="rounded-3xl overflow-hidden border border-slate-800 bg-slate-900 h-72 sm:h-96 relative">
-                <img 
-                  src={deal.image_url} 
-                  alt={deal.title} 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-4 leading-tight">
+          Find High-Yield Duplexes <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
+            With 12%+ Cap Rates
+          </span>
+        </h1>
 
-            {/* Core Specs */}
-            <div className="grid grid-cols-3 gap-4 bg-slate-900/40 border border-slate-800 p-5 rounded-2xl">
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Cap Rate</div>
-                <div className="text-xl font-black text-emerald-400 mt-0.5">{deal.cap_rate || 13.4}%</div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Gross Monthly Rent</div>
-                <div className="text-xl font-black text-cyan-300 mt-0.5">${rentFormatted}</div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Gross Yield</div>
-                <div className="text-xl font-black text-white mt-0.5">{deal.gross_yield || 23.8}%</div>
-              </div>
-            </div>
+        <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto mb-8">
+          Underwritten off-market multi-family deals, verified rent estimates, and direct wholesaler assignment contacts.
+        </p>
 
-            {/* Description */}
-            <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Investment Synopsis</h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{deal.description}</p>
-            </div>
-
+        {/* Filter Bar */}
+        <div className="bg-slate-900/80 border border-slate-800 p-2.5 sm:p-3 rounded-2xl max-w-2xl mx-auto flex flex-col sm:flex-row gap-2 shadow-2xl backdrop-blur">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input 
+              type="text" 
+              placeholder="Search by City, State, or Zip..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 outline-none focus:border-emerald-500"
+            />
           </div>
 
-          {/* Action Sidebar */}
-          <div className="space-y-6">
-            
-            {/* PDF DOWNLOAD BOX */}
-            <div className="bg-gradient-to-b from-slate-900 to-[#0A121E] border-2 border-emerald-500/40 rounded-3xl p-6 shadow-2xl">
-              <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                <FileText className="w-4 h-4" /> Due Diligence Vault
-              </div>
-              <h3 className="text-lg font-black text-white mb-2">Audit Report &amp; Rent Roll</h3>
-              <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-                Complete financial underwriting, lease schedules, expense audit, and seller assignment details.
-              </p>
+          <div className="flex gap-2">
+            <select
+              value={minCapRate}
+              onChange={(e) => setMinCapRate(Number(e.target.value))}
+              className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-slate-300 outline-none cursor-pointer"
+            >
+              <option value="0">All Cap Rates</option>
+              <option value="10">10%+ Cap Rate</option>
+              <option value="12">12%+ Cap Rate</option>
+              <option value="14">14%+ Cap Rate</option>
+            </select>
+          </div>
+        </div>
+      </section>
 
-              <Link
-                href={`/deals/${id}/print`}
-                target="_blank"
-                className="w-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 hover:opacity-95 text-black font-black text-xs sm:text-sm py-4 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-all cursor-pointer"
+      {/* Deals Grid */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest">
+            Available Duplex Inventory ({filteredDeals.length})
+          </h2>
+        </div>
+
+        {loading ? (
+          <div className="text-center py-20 text-slate-500 text-xs">
+            Scanning multi-family databases...
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredDeals.map((deal) => (
+              <div 
+                key={deal.id} 
+                className="bg-slate-900/50 border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden transition-all flex flex-col justify-between group"
               >
-                <FileText className="w-4 h-4" />
-                📄 Download PDF Audit Pack
-              </Link>
-            </div>
+                <div>
+                  {/* Image */}
+                  <div className="h-48 bg-slate-950 relative overflow-hidden">
+                    <img 
+                      src={deal.image_url || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'} 
+                      alt={deal.title} 
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute top-3 left-3 bg-emerald-500 text-black text-[10px] font-black uppercase px-2.5 py-1 rounded-full shadow">
+                      {deal.cap_rate || 13.0}% Cap Rate
+                    </div>
+                  </div>
 
-            {/* Seller Contact Desk */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Direct Wholesaler Desk</div>
-              <div className="space-y-3 pt-2 text-xs">
-                <div className="flex items-center gap-2.5 text-slate-200">
-                  <Building2 className="w-4 h-4 text-emerald-400" />
-                  <span>{deal.seller_name || 'Apex Wholesale Capital LLC'}</span>
+                  {/* Body */}
+                  <div className="p-6">
+                    <div className="text-xs text-slate-400 flex items-center gap-1 mb-1">
+                      <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                      {deal.city || 'Market'}, {deal.state || ''} {deal.zip_code || ''}
+                    </div>
+                    <h3 className="text-base font-bold text-white mb-4 line-clamp-1">{deal.title}</h3>
+
+                    <div className="grid grid-cols-2 gap-3 bg-slate-950/80 p-3.5 rounded-xl border border-slate-800/80 text-xs">
+                      <div>
+                        <div className="text-[10px] text-slate-500 uppercase font-bold">List Price</div>
+                        <div className="text-base font-black text-white font-mono">${Number(deal.price || 0).toLocaleString()}</div>
+                      </div>
+                      <div>
+                        <div className="text-[10px] text-slate-500 uppercase font-bold">Est. Rent / Mo</div>
+                        <div className="text-base font-black text-emerald-400 font-mono">${Number(deal.monthly_rent_estimate || 1800).toLocaleString()}</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2.5 text-slate-200">
-                  <Phone className="w-4 h-4 text-emerald-400" />
-                  <span className="font-mono">{deal.seller_phone || '+1 (216) 884-2190'}</span>
+
+                {/* Card Action Buttons */}
+                <div className="p-6 pt-0 space-y-2">
+                  <Link
+                    href={`/deals/${deal.id}`}
+                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs py-3 rounded-xl flex items-center justify-center gap-1.5 transition-colors block text-center"
+                  >
+                    View Deal Details <ArrowUpRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  <Link
+                    href={`/deals/${deal.id}/print`}
+                    target="_blank"
+                    className="w-full bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white font-semibold text-[11px] py-2 rounded-xl flex items-center justify-center gap-1.5 transition-colors border border-slate-700/50 block text-center"
+                  >
+                    <Download className="w-3 h-3 text-emerald-400" /> Due Diligence PDF Audit
+                  </Link>
                 </div>
-                <div className="flex items-center gap-2.5 text-slate-200">
-                  <Mail className="w-4 h-4 text-emerald-400" />
-                  <span className="font-mono">{deal.seller_email || 'acquisitions@apexreicapital.com'}</span>
-                </div>
+
               </div>
-            </div>
-
+            ))}
           </div>
+        )}
+      </section>
 
-        </div>
+      {/* Footer */}
+      <footer className="border-t border-slate-800/80 bg-[#04060A] text-slate-500 text-xs py-8 text-center">
+        <p>© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
+      </footer>
 
-      </main>
     </div>
   );
 }
