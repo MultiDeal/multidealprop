@@ -29,7 +29,8 @@ import {
   Hotel,
   PlusCircle,
   CreditCard,
-  Zap
+  Zap,
+  CheckCircle
 } from 'lucide-react';
 
 interface Deal {
@@ -49,6 +50,7 @@ interface Deal {
   section8_eligible: boolean;
   is_vip_only: boolean;
   image_url?: string;
+  status?: string; // 'active', 'sold', 'under_contract'
   created_at?: string;
 }
 
@@ -63,6 +65,7 @@ export default function HomePage() {
   const [maxPrice, setMaxPrice] = useState<number>(0);
   const [onlySection8, setOnlySection8] = useState<boolean>(false);
   const [onlyUnderMarket, setOnlyUnderMarket] = useState<boolean>(false);
+  const [showSold, setShowSold] = useState<boolean>(true);
   const [sortBy, setSortBy] = useState<string>('score_desc');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
@@ -199,12 +202,15 @@ export default function HomePage() {
         const matchesPrice = maxPrice === 0 || (deal.price || 0) <= maxPrice;
         const matchesSection8 = !onlySection8 || deal.section8_eligible;
         
+        const isSold = deal.status === 'sold' || deal.status === 'under_contract';
+        const matchesSold = showSold ? true : !isSold;
+
         const discount = deal.estimated_market_value && deal.price
           ? ((deal.estimated_market_value - deal.price) / deal.estimated_market_value) * 100
           : 0;
         const matchesUnderMarket = !onlyUnderMarket || discount >= 10;
 
-        return matchesType && matchesCity && matchesCap && matchesPrice && matchesSection8 && matchesUnderMarket;
+        return matchesType && matchesCity && matchesCap && matchesPrice && matchesSection8 && matchesUnderMarket && matchesSold;
       })
       .sort((a, b) => {
         if (sortBy === 'score_desc') return (b.deal_score || 0) - (a.deal_score || 0);
@@ -218,7 +224,7 @@ export default function HomePage() {
         }
         return 0;
       });
-  }, [deals, searchCity, filterType, minCapRate, maxPrice, onlySection8, onlyUnderMarket, sortBy]);
+  }, [deals, searchCity, filterType, minCapRate, maxPrice, onlySection8, onlyUnderMarket, showSold, sortBy]);
 
   const topMarkets = [
     { city: 'Detroit', state: 'MI', avgCap: '12.4%' },
@@ -235,12 +241,12 @@ export default function HomePage() {
       a: 'When requested, our algorithmic engine immediately initiates deep-tier API scraping across active MLS listings, foreclosure databases, and tax-lien registries for your specified location. Results and calculated rent rolls are delivered to your dashboard and inbox within minutes.'
     },
     {
-      q: 'How are Short-Term Rental (Airbnb) revenues projected?',
-      a: 'Airbnb revenue estimations are calculated using local market Average Daily Rates (ADR) and a baseline 62% average occupancy rate benchmarked against historical Area STR market data.'
+      q: 'Why are some deals marked as SOLD or UNDER CONTRACT?',
+      a: 'Top-tier cashflow deals often go under contract within 7 to 14 days. We keep recently acquired properties visible as comp references for valuation and proof of active deal-flow volume in that sub-market.'
     },
     {
-      q: 'How are the Cap Rate and estimated market values calculated?',
-      a: 'We cross-reference recent MLS and public records comps, automated valuation models (AVMs), and estimated local operational expenses (property taxes, insurance, standard 8% property management, and vacancy reserves) to calculate true Net Operating Income (NOI).'
+      q: 'How are Short-Term Rental (Airbnb) revenues projected?',
+      a: 'Airbnb revenue estimations are calculated using local market Average Daily Rates (ADR) and a baseline 62% average occupancy rate benchmarked against historical Area STR market data.'
     },
     {
       q: 'What qualifies a property for Section 8 status?',
@@ -292,11 +298,11 @@ export default function HomePage() {
           Instant Cap Rate calculations, Section 8 rent optimization, and short-term rental revenue projections across high-yield US markets.
         </p>
 
-        {/* Live Market Stats */}
+        {/* Live Market Stats Bar */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-6 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
           <div className="p-2 text-center border-r border-slate-800/80">
             <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-center gap-1">
-              <Flame className="w-3 h-3 text-amber-400" /> Active Deals
+              <Flame className="w-3 h-3 text-amber-400" /> Tracked Deals
             </div>
             <div className="text-lg font-black text-white mt-0.5">{marketStats.totalDeals}</div>
           </div>
@@ -535,27 +541,43 @@ export default function HomePage() {
                 : 0;
 
               const airbnbMonthly = Math.round((deal.monthly_rent_estimate || 1500) * 1.9);
+              const isSold = deal.status === 'sold';
+              const isPending = deal.status === 'under_contract';
 
               return (
                 <div 
                   key={deal.id} 
-                  className="bg-slate-900/60 border border-slate-800/80 hover:border-slate-700 transition-all rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-emerald-950/20 flex flex-col justify-between"
+                  className={`bg-slate-900/60 border ${isSold ? 'border-red-900/40 opacity-75' : 'border-slate-800/80 hover:border-slate-700'} transition-all rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-emerald-950/20 flex flex-col justify-between relative`}
                 >
                   <div className="relative h-48 w-full bg-slate-800 overflow-hidden">
                     <img 
                       src={deal.image_url || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'} 
                       alt={deal.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isSold ? 'grayscale-[40%]' : ''}`}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
                     
+                    {/* STATUS BADGES (SOLD / UNDER CONTRACT / ACTIVE) */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                      <span className="text-[10px] font-semibold text-slate-200 bg-slate-900/80 backdrop-blur px-2.5 py-1 rounded-md border border-slate-700/50 uppercase">
-                        {deal.property_type}
-                      </span>
-                      <span className="text-[10px] font-semibold text-rose-300 bg-rose-950/80 backdrop-blur px-2 py-1 rounded-md border border-rose-800/60 flex items-center gap-1">
-                        <Hotel className="w-3 h-3" /> Airbnb Ready
-                      </span>
+                      {isSold ? (
+                        <span className="text-[10px] font-black text-white bg-red-600/90 backdrop-blur px-2.5 py-1 rounded-md border border-red-400 shadow-md uppercase tracking-wider flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3" /> SOLD
+                        </span>
+                      ) : isPending ? (
+                        <span className="text-[10px] font-black text-amber-950 bg-amber-400/90 backdrop-blur px-2.5 py-1 rounded-md border border-amber-300 shadow-md uppercase tracking-wider">
+                          UNDER CONTRACT
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-slate-200 bg-slate-900/80 backdrop-blur px-2.5 py-1 rounded-md border border-slate-700/50 uppercase">
+                          {deal.property_type}
+                        </span>
+                      )}
+                      
+                      {!isSold && (
+                        <span className="text-[10px] font-semibold text-rose-300 bg-rose-950/80 backdrop-blur px-2 py-1 rounded-md border border-rose-800/60 flex items-center gap-1">
+                          <Hotel className="w-3 h-3" /> Airbnb Ready
+                        </span>
+                      )}
                     </div>
 
                     <div className="absolute top-3 right-3">
@@ -581,7 +603,7 @@ export default function HomePage() {
 
                     <div className="mt-4 grid grid-cols-2 gap-2 bg-slate-950/50 p-3 rounded-xl border border-slate-800/50">
                       <div>
-                        <div className="text-[10px] text-slate-400 uppercase font-medium">List Price</div>
+                        <div className="text-[10px] text-slate-400 uppercase font-medium">{isSold ? 'Closed Price' : 'List Price'}</div>
                         <div className="text-base font-bold text-white">${Number(deal.price).toLocaleString()}</div>
                       </div>
                       <div>
@@ -604,18 +626,27 @@ export default function HomePage() {
                     </div>
 
                     <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      {deal.section8_eligible ? (
+                      {isSold ? (
+                        <span className="text-[11px] font-semibold text-red-400 flex items-center gap-1">
+                          Acquired by VIP Investor
+                        </span>
+                      ) : deal.section8_eligible ? (
                         <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
                           <ShieldCheck className="w-3.5 h-3.5" /> Section 8
                         </span>
                       ) : (
                         <span className="text-[11px] text-slate-500">Market Rate</span>
                       )}
+                      
                       <a 
                         href={`/deals/${deal.id}`}
-                        className="text-xs font-medium text-slate-200 bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors"
+                        className={`text-xs font-medium px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
+                          isSold 
+                            ? 'text-slate-400 bg-slate-800/60 hover:bg-slate-800 hover:text-white' 
+                            : 'text-slate-200 bg-slate-800 hover:bg-slate-700 hover:text-white'
+                        }`}
                       >
-                        View Deal <ArrowUpRight className="w-3.5 h-3.5" />
+                        {isSold ? 'View Sold Comp' : 'View Deal'} <ArrowUpRight className="w-3.5 h-3.5" />
                       </a>
                     </div>
                   </div>
@@ -629,6 +660,7 @@ export default function HomePage() {
             <table className="w-full text-left text-xs text-slate-300">
               <thead className="bg-slate-950/80 text-[10px] text-slate-400 uppercase border-b border-slate-800">
                 <tr>
+                  <th className="py-3 px-4 font-semibold">Status</th>
                   <th className="py-3 px-4 font-semibold">Property</th>
                   <th className="py-3 px-4 font-semibold">Location</th>
                   <th className="py-3 px-4 font-semibold">Price</th>
@@ -642,10 +674,21 @@ export default function HomePage() {
               <tbody className="divide-y divide-slate-800/60">
                 {filteredDeals.map((deal) => {
                   const airbnbMonthly = Math.round((deal.monthly_rent_estimate || 1500) * 1.9);
+                  const isSold = deal.status === 'sold';
+                  const isPending = deal.status === 'under_contract';
 
                   return (
-                    <tr key={deal.id} className="hover:bg-slate-800/40 transition-colors">
-                      <td className="py-3.5 px-4 font-medium text-white max-w-[200px] truncate">
+                    <tr key={deal.id} className={`hover:bg-slate-800/40 transition-colors ${isSold ? 'opacity-60 bg-red-950/10' : ''}`}>
+                      <td className="py-3.5 px-4 whitespace-nowrap">
+                        {isSold ? (
+                          <span className="text-[10px] font-bold text-white bg-red-600 px-2 py-0.5 rounded">SOLD</span>
+                        ) : isPending ? (
+                          <span className="text-[10px] font-bold text-amber-950 bg-amber-400 px-2 py-0.5 rounded">PENDING</span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/30">ACTIVE</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 font-medium text-white max-w-[180px] truncate">
                         {deal.title}
                         <div className="text-[10px] text-slate-500 uppercase">{deal.property_type}</div>
                       </td>
@@ -674,7 +717,7 @@ export default function HomePage() {
                           href={`/deals/${deal.id}`}
                           className="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors"
                         >
-                          View <ArrowUpRight className="w-3.5 h-3.5" />
+                          {isSold ? 'Comp' : 'View'} <ArrowUpRight className="w-3 h-3" />
                         </a>
                       </td>
                     </tr>
