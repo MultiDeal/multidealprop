@@ -13,7 +13,8 @@ import {
   Layers,
   FileCheck2,
   BellRing,
-  CreditCard
+  CreditCard,
+  Mail
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -152,7 +153,7 @@ export default function VipPage() {
                 </div>
                 <div className="flex items-start gap-3">
                   <Check className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
-                  <span>Standard Cap Rate & Rent estimates</span>
+                  <span>Standard Cap Rate &amp; Rent estimates</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <Check className="w-4 h-4 text-slate-500 mt-0.5 flex-shrink-0" />
@@ -160,7 +161,7 @@ export default function VipPage() {
                 </div>
                 <div className="flex items-start gap-3 text-slate-500">
                   <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                  <span>Seller phone & desk locked</span>
+                  <span>Seller phone &amp; desk locked</span>
                 </div>
                 <div className="flex items-start gap-3 text-slate-500">
                   <Lock className="w-4 h-4 mt-0.5 flex-shrink-0" />
@@ -212,7 +213,7 @@ export default function VipPage() {
                   <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Direct Seller Desk :</strong> Phone numbers & assignment contacts</span>
+                  <span><strong>Direct Seller Desk :</strong> Phone numbers &amp; assignment contacts</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -230,7 +231,7 @@ export default function VipPage() {
                   <div className="w-4 h-4 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Custom Email Deal Drops :</strong> High-yield criteria</span>
+                  <span><strong>Email Deal Alerts :</strong> Instant custom criteria drops</span>
                 </div>
               </div>
             </div>
@@ -261,7 +262,7 @@ export default function VipPage() {
                 <Flame className="w-3.5 h-3.5 text-amber-400" /> Complete Power Tier
               </div>
               <h3 className="text-2xl font-black text-white mb-2">VIP Pro Elite</h3>
-              <p className="text-xs text-slate-300 leading-relaxed mb-8">Unlimited deal flow and real-time SMS drop notifications.</p>
+              <p className="text-xs text-slate-300 leading-relaxed mb-8">Unlimited deal flow &amp; priority instant email drop alerts.</p>
 
               {/* HUGE NUMBERS DISPLAY */}
               <div className="mb-8 bg-slate-950/80 border border-slate-800/80 p-4 rounded-2xl">
@@ -289,13 +290,13 @@ export default function VipPage() {
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Unlimited Due Diligence PDF Packs :</strong> Full inspection & rent rolls</span>
+                  <span><strong>Unlimited Due Diligence PDF Packs :</strong> Full inspection &amp; rent rolls</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Instant SMS & WhatsApp Alerts :</strong> Triggered when Cap Rate &gt; 12%</span>
+                  <span><strong>Priority VIP Deal Drops :</strong> Instant alert for Cap Rate &gt; 12%</span>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -307,7 +308,7 @@ export default function VipPage() {
                   <div className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Check className="w-3 h-3" />
                   </div>
-                  <span><strong>Verified Rent Rolls & Lease Audits :</strong> Full tenant schedules</span>
+                  <span><strong>Verified Rent Rolls &amp; Lease Audits :</strong> Full tenant schedules</span>
                 </div>
               </div>
             </div>
@@ -396,7 +397,7 @@ export default function VipPage() {
         <div className="max-w-7xl mx-auto px-4 text-center space-y-2">
           <p>© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
           <p className="text-[10px] text-slate-600 max-w-lg mx-auto">
-            MultiDealProp is an underwriting & discovery software engine. Real estate investments involve risk.
+            MultiDealProp is an underwriting &amp; discovery software engine. Real estate investments involve risk.
           </p>
         </div>
       </footer>
