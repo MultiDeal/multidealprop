@@ -56,7 +56,7 @@ export default function HomePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filtres
+  // Filters
   const [searchCity, setSearchCity] = useState<string>('');
   const [filterType, setFilterType] = useState<string>('all');
   const [minCapRate, setMinCapRate] = useState<number>(0);
@@ -69,16 +69,16 @@ export default function HomePage() {
   // FAQ Accordion
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  // Modale Standard
+  // VIP Modal
   const [isVipModalOpen, setIsVipModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('Recevez les opportunités 48h en avance');
-  const [modalSubtitle, setModalSubtitle] = useState('Rejoignez notre réseau privé d\'acheteurs.');
+  const [modalTitle, setModalTitle] = useState('Get VIP Deals 48h in Advance');
+  const [modalSubtitle, setModalSubtitle] = useState('Join our private network of active multi-family investors.');
   const [vipEmail, setVipEmail] = useState('');
   const [vipInterest, setVipInterest] = useState('VIP Deals Club');
   const [vipSubmitting, setVipSubmitting] = useState(false);
   const [vipSuccess, setVipSuccess] = useState(false);
 
-  // Modale ON-DEMAND SCAN ($4.99)
+  // On-Demand Scan Modal ($4.99)
   const [isScanModalOpen, setIsScanModalOpen] = useState(false);
   const [scanCity, setScanCity] = useState('');
   const [scanState, setScanState] = useState('');
@@ -152,7 +152,7 @@ export default function HomePage() {
       });
 
       const data = await res.json();
-      if (data.url) {
+      if (data && data.url) {
         window.location.href = data.url;
       } else {
         setScanSuccess(true);
@@ -283,16 +283,16 @@ export default function HomePage() {
       <section className="pt-10 pb-6 text-center px-4 max-w-4xl mx-auto">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-medium mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          Multifamily, Plex & High-Yield Airbnb Short-Term Rental Scanner
+          Multifamily, Plex &amp; High-Yield Airbnb Short-Term Rental Scanner
         </div>
         <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-3">
-          Find High-Cashflow <span className="text-emerald-400">Plex & Airbnb</span> Deals.
+          Find High-Cashflow <span className="text-emerald-400">Plex &amp; Airbnb</span> Deals.
         </h1>
         <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto mb-6 leading-relaxed">
           Instant Cap Rate calculations, Section 8 rent optimization, and short-term rental revenue projections across high-yield US markets.
         </p>
 
-        {/* Live Market Stats Bar */}
+        {/* Live Market Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-6 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
           <div className="p-2 text-center border-r border-slate-800/80">
             <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-center gap-1">
@@ -320,7 +320,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Hot Markets + BOUTON SCAN ($4.99) */}
+        {/* Hot Markets */}
         <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-400 mb-6">
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1">Hot Markets:</span>
           {topMarkets.map((m) => (
@@ -506,7 +506,7 @@ export default function HomePage() {
         {/* Deals Display */}
         {loading ? (
           <div className="text-center py-20 text-slate-500 text-sm">
-            Scanning multi-family databases & calculating live yields...
+            Scanning multi-family databases &amp; calculating live yields...
           </div>
         ) : filteredDeals.length === 0 ? (
           <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center max-w-lg mx-auto">
@@ -523,7 +523,7 @@ export default function HomePage() {
               }}
               className="bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer flex items-center gap-1.5 mx-auto"
             >
-              <Zap className="w-3.5 h-3.5" /> Order Deep Scan for "{searchCity || 'Target Area'}" ($4.99)
+              <Zap className="w-3.5 h-3.5" /> Order Deep Scan for &quot;{searchCity || 'Target Area'}&quot; ($4.99)
             </button>
           </div>
         ) : viewMode === 'grid' ? (
@@ -624,7 +624,7 @@ export default function HomePage() {
             })}
           </div>
         ) : (
-          /* TABLE COMPARISON VIEW */
+          /* TABLE VIEW */
           <div className="overflow-x-auto bg-slate-900/60 border border-slate-800 rounded-2xl shadow-xl">
             <table className="w-full text-left text-xs text-slate-300">
               <thead className="bg-slate-950/80 text-[10px] text-slate-400 uppercase border-b border-slate-800">
@@ -674,7 +674,7 @@ export default function HomePage() {
                           href={`/deals/${deal.id}`}
                           className="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors"
                         >
-                          View <ArrowUpRight className="w-3 h-3" />
+                          View <ArrowUpRight className="w-3.5 h-3.5" />
                         </a>
                       </td>
                     </tr>
@@ -738,12 +738,12 @@ export default function HomePage() {
             <p>
               <strong>Disclaimer:</strong> MultiDealProp.com is an analytics, research, and deal-flow discovery software engine. MultiDealProp is not a licensed real estate broker, lender, or financial advisor. All property financial metrics are approximations generated via algorithmic models for informational purposes only.
             </p>
-            <p className="pt-2">© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
+            <p className="pt-2">&copy; {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
           </div>
         </div>
       </footer>
 
-      {/* MODALE ON-DEMAND SCAN ($4.99) */}
+      {/* ON-DEMAND SCAN MODAL ($4.99) */}
       {isScanModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl shadow-amber-500/10">
@@ -843,7 +843,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* MODALE STANDARD */}
+      {/* STANDARD VIP MODAL */}
       {isVipModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
           <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl shadow-emerald-500/10">
@@ -859,15 +859,15 @@ export default function HomePage() {
                 <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
                   <CheckCircle2 className="w-8 h-8 text-emerald-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2">Demande Validée !</h3>
+                <h3 className="text-xl font-bold text-white mb-2">Request Confirmed!</h3>
                 <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                  Votre demande a bien été enregistrée dans notre système.
+                  Your details have been registered. You will receive deal drops directly in your inbox.
                 </p>
                 <button
                   onClick={() => setIsVipModalOpen(false)}
                   className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs py-3 rounded-xl transition-all cursor-pointer"
                 >
-                  Fermer
+                  Close
                 </button>
               </div>
             ) : (
@@ -890,7 +890,7 @@ export default function HomePage() {
                     <input
                       type="email"
                       required
-                      placeholder="Votre email professionnel..."
+                      placeholder="Your professional email..."
                       value={vipEmail}
                       onChange={(e) => setVipEmail(e.target.value)}
                       className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-colors"
@@ -902,7 +902,7 @@ export default function HomePage() {
                     disabled={vipSubmitting}
                     className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs sm:text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
                   >
-                    {vipSubmitting ? 'Validation...' : 'Confirmer ma Demande'}
+                    {vipSubmitting ? 'Validating...' : 'Join VIP Network'}
                   </button>
                 </form>
               </div>
