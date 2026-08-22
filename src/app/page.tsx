@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Building2, 
@@ -11,12 +11,41 @@ import {
   ArrowUpRight, 
   ShieldCheck, 
   Download,
-  Filter
+  BarChart3,
+  TrendingUp,
+  Percent,
+  DollarSign,
+  Activity,
+  Layers
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
+interface PropertyDeal {
+  id: string;
+  title: string;
+  city: string;
+  state: string;
+  zip_code: string;
+  price: number;
+  cap_rate: number;
+  monthly_rent_estimate: number;
+  gross_yield?: number;
+  image_url?: string;
+  seller_name?: string;
+  seller_phone?: string;
+}
+
+const FEATURED_CITIES = [
+  { name: 'ALL', label: 'All Markets', state: 'USA', img: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=400&q=80' },
+  { name: 'Cleveland', label: 'Cleveland', state: 'OH', img: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=400&q=80' },
+  { name: 'Detroit', label: 'Detroit', state: 'MI', img: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=400&q=80' },
+  { name: 'Memphis', label: 'Memphis', state: 'TN', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=400&q=80' },
+  { name: 'Indianapolis', label: 'Indianapolis', state: 'IN', img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=400&q=80' },
+  { name: 'Kansas City', label: 'Kansas City', state: 'MO', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=400&q=80' },
+];
+
 export default function HomePage() {
-  const [deals, setDeals] = useState<any[]>([]);
+  const [deals, setDeals] = useState<PropertyDeal[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCity, setSelectedCity] = useState('ALL');
@@ -26,13 +55,13 @@ export default function HomePage() {
   useEffect(() => {
     async function fetchDeals() {
       try {
-        const { data, error } = await supabase
+        const { data } = await supabase
           .from('deals')
           .select('*')
           .order('created_at', { ascending: false });
 
         if (data && data.length > 0) {
-          setDeals(data);
+          setDeals(data as PropertyDeal[]);
         } else {
           // Default underwritten sample duplex inventory
           setDeals([
@@ -117,29 +146,68 @@ export default function HomePage() {
     fetchDeals();
   }, []);
 
-  const filteredDeals = deals.filter((deal) => {
-    const query = searchQuery.toLowerCase();
-    const matchesSearch = 
-      !query ||
-      deal.title?.toLowerCase().includes(query) ||
-      deal.city?.toLowerCase().includes(query) ||
-      deal.state?.toLowerCase().includes(query) ||
-      deal.zip_code?.includes(query);
+  // Filtered inventory based on active state
+  const filteredDeals = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    return deals.filter((deal) => {
+      const matchesSearch = 
+        !query ||
+        deal.title?.toLowerCase().includes(query) ||
+        deal.city?.toLowerCase().includes(query) ||
+        deal.state?.toLowerCase().includes(query) ||
+        deal.zip_code?.includes(query);
 
-    const matchesCity = 
-      selectedCity === 'ALL' || 
-      deal.city?.toLowerCase() === selectedCity.toLowerCase();
+      const matchesCity = 
+        selectedCity === 'ALL' || 
+        deal.city?.toLowerCase() === selectedCity.toLowerCase();
 
-    const matchesCap = (deal.cap_rate || 0) >= minCapRate;
-    const matchesPrice = (deal.price || 0) <= maxPrice;
+      const matchesCap = Number(deal.cap_rate || 0) >= minCapRate;
+      const matchesPrice = Number(deal.price || 0) <= maxPrice;
 
-    return matchesSearch && matchesCity && matchesCap && matchesPrice;
-  });
+      return matchesSearch && matchesCity && matchesCap && matchesPrice;
+    });
+  }, [deals, searchQuery, selectedCity, minCapRate, maxPrice]);
+
+  // Aggregate Market Stats Calculation
+  const marketStats = useMemo(() => {
+    const targetPool = filteredDeals.length > 0 ? filteredDeals : deals;
+    if (targetPool.length === 0) {
+      return { totalDeals: 0, avgCapRate: '0.0', avgGrossYield: '0.0', avgPrice: 0, avgMonthlyRent: 0, rentToPriceRatio: '0.00' };
+    }
+
+    const totalDeals = targetPool.length;
+    const sumCap = targetPool.reduce((acc, d) => acc + Number(d.cap_rate || 0), 0);
+    const sumPrice = targetPool.reduce((acc, d) => acc + Number(d.price || 0), 0);
+    const sumRent = targetPool.reduce((acc, d) => acc + Number(d.monthly_rent_estimate || 0), 0);
+    const sumGrossYield = targetPool.reduce((acc, d) => {
+      const yieldVal = d.gross_yield ? Number(d.gross_yield) : ((Number(d.monthly_rent_estimate || 0) * 12) / (Number(d.price) || 1)) * 100;
+      return acc + yieldVal;
+    }, 0);
+
+    const avgPrice = Math.round(sumPrice / totalDeals);
+    const avgMonthlyRent = Math.round(sumRent / totalDeals);
+    const rentToPrice = avgPrice > 0 ? ((avgMonthlyRent / avgPrice) * 100).toFixed(2) : '0.00';
+
+    return {
+      totalDeals,
+      avgCapRate: (sumCap / totalDeals).toFixed(1),
+      avgGrossYield: (sumGrossYield / totalDeals).toFixed(1),
+      avgPrice,
+      avgMonthlyRent,
+      rentToPriceRatio: rentToPrice
+    };
+  }, [deals, filteredDeals]);
+
+  // Helper count per city for badge indicators
+  const getCityDealCount = (cityName: string) => {
+    if (cityName === 'ALL') return deals.length;
+    return deals.filter(d => d.city?.toLowerCase() === cityName.toLowerCase()).length;
+  };
 
   return (
     <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
       
-      {/* Top Navbar */}
+      {/* Top Navigation */}
       <header className="border-b border-slate-800/80 bg-[#06080F]/90 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
@@ -158,24 +226,125 @@ export default function HomePage() {
       </header>
 
       {/* Hero Section */}
-      <section className="pt-14 pb-8 text-center px-4 max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-semibold mb-5">
+      <section className="pt-12 pb-6 text-center px-4 max-w-4xl mx-auto">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 text-emerald-400 text-xs font-semibold mb-4">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
           Live US Multi-Family Yield Scanner
         </div>
 
-        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-4 leading-tight">
-          Discover High-Yield Duplexes <br />
+        <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white mb-3 leading-tight">
+          Find High-Yield Duplexes <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400">
             With 12%+ Cap Rates
           </span>
         </h1>
 
-        <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto mb-8">
-          Pre-underwritten off-market multi-family deals, audited rent estimates, and direct wholesaler assignment contacts.
+        <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto mb-6">
+          Pre-underwritten off-market multi-family deals, verified rent estimates, and direct wholesaler assignment contacts.
         </p>
 
-        {/* FULL FILTER CONTROL BAR */}
+        {/* 1. CITY QUICK-SELECTOR CARDS */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between max-w-4xl mx-auto mb-3 px-1">
+            <span className="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+              <MapPin className="w-3.5 h-3.5 text-emerald-400" /> Target Multi-Family Markets
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium">Click city to filter</span>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 max-w-4xl mx-auto">
+            {FEATURED_CITIES.map((city) => {
+              const isActive = selectedCity.toLowerCase() === city.name.toLowerCase();
+              const count = getCityDealCount(city.name);
+              return (
+                <button
+                  key={city.name}
+                  type="button"
+                  onClick={() => setSelectedCity(city.name)}
+                  className={`relative overflow-hidden rounded-2xl border text-left p-3 transition-all cursor-pointer group flex flex-col justify-between h-24 ${
+                    isActive 
+                      ? 'border-emerald-400 ring-2 ring-emerald-500/40 bg-slate-900 shadow-lg shadow-emerald-500/10' 
+                      : 'border-slate-800 bg-slate-950/80 hover:border-slate-700 hover:bg-slate-900/60'
+                  }`}
+                >
+                  <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity pointer-events-none">
+                    <img src={city.img} alt={city.label} className="w-full h-full object-cover" />
+                  </div>
+                  <div className="relative z-10 flex items-center justify-between w-full">
+                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${isActive ? 'bg-emerald-500 text-black' : 'bg-slate-800/80 text-slate-300'}`}>
+                      {city.state}
+                    </span>
+                    <span className="text-[10px] font-mono text-emerald-400 font-bold">
+                      {count} {count === 1 ? 'deal' : 'deals'}
+                    </span>
+                  </div>
+                  <div className="relative z-10 font-bold text-xs text-white group-hover:text-emerald-400 transition-colors">
+                    {city.label}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. LIVE MARKET INTELLIGENCE MATRIX (Aggregated Statistics Box) */}
+        <div className="bg-gradient-to-r from-slate-900 via-slate-900 to-[#0B1320] border border-slate-800 p-5 rounded-3xl max-w-4xl mx-auto shadow-2xl backdrop-blur mb-6 text-left">
+          <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                Live Underwriting Metrics ({selectedCity === 'ALL' ? 'National Average' : selectedCity})
+              </h3>
+            </div>
+            <div className="text-[11px] text-slate-400 font-mono">
+              Market Depth: <strong className="text-emerald-400">{marketStats.totalDeals} Properties</strong>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="bg-slate-950/70 border border-slate-800/80 p-3.5 rounded-2xl">
+              <div className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1">
+                <Percent className="w-3 h-3 text-emerald-400" /> Average Cap Rate
+              </div>
+              <div className="text-2xl font-black text-emerald-400 font-mono mt-1">
+                {marketStats.avgCapRate}%
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Net cash yield</div>
+            </div>
+
+            <div className="bg-slate-950/70 border border-slate-800/80 p-3.5 rounded-2xl">
+              <div className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1">
+                <TrendingUp className="w-3 h-3 text-cyan-400" /> Avg Gross Yield
+              </div>
+              <div className="text-2xl font-black text-cyan-300 font-mono mt-1">
+                {marketStats.avgGrossYield}%
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Annual gross return</div>
+            </div>
+
+            <div className="bg-slate-950/70 border border-slate-800/80 p-3.5 rounded-2xl">
+              <div className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1">
+                <DollarSign className="w-3 h-3 text-white" /> Average Price
+              </div>
+              <div className="text-2xl font-black text-white font-mono mt-1">
+                ${marketStats.avgPrice.toLocaleString()}
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Off-market baseline</div>
+            </div>
+
+            <div className="bg-slate-950/70 border border-slate-800/80 p-3.5 rounded-2xl">
+              <div className="text-[10px] uppercase font-bold text-slate-500 flex items-center gap-1">
+                <BarChart3 className="w-3 h-3 text-amber-400" /> Rent-to-Price
+              </div>
+              <div className="text-2xl font-black text-amber-300 font-mono mt-1">
+                {marketStats.rentToPriceRatio}%
+              </div>
+              <div className="text-[10px] text-slate-500 mt-0.5">Rule of thumb matrix</div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. FILTER SEARCH CONTROL BAR */}
         <div className="bg-slate-900/90 border border-slate-800 p-3 sm:p-4 rounded-3xl max-w-4xl mx-auto shadow-2xl backdrop-blur">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             
@@ -191,7 +360,7 @@ export default function HomePage() {
               />
             </div>
 
-            {/* City Filter */}
+            {/* City Dropdown */}
             <div className="relative">
               <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <select
@@ -240,10 +409,10 @@ export default function HomePage() {
 
           </div>
 
-          {/* Active Filter Chips */}
+          {/* Active Filter Status & Reset */}
           <div className="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400 px-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Filter status:</span>
+              <span className="text-slate-500 font-bold uppercase tracking-wider text-[10px]">Active Filters:</span>
               {selectedCity !== 'ALL' && (
                 <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-md">
                   📍 {selectedCity}
@@ -260,7 +429,7 @@ export default function HomePage() {
                 </span>
               )}
               {selectedCity === 'ALL' && minCapRate === 0 && maxPrice === 1000000 && !searchQuery && (
-                <span className="text-slate-500">Showing all available inventory</span>
+                <span className="text-slate-500">Showing all {deals.length} properties</span>
               )}
             </div>
 
@@ -282,7 +451,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Deals Inventory Grid */}
+      {/* 4. DEALS INVENTORY GRID */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
@@ -296,9 +465,9 @@ export default function HomePage() {
             Scanning multi-family databases &amp; underwriting cash-flows...
           </div>
         ) : filteredDeals.length === 0 ? (
-          <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-3xl p-8">
+          <div className="text-center py-16 bg-slate-900/40 border border-slate-800 rounded-3xl p-8 max-w-lg mx-auto">
             <p className="text-sm font-bold text-white mb-1">No properties matching your criteria</p>
-            <p className="text-xs text-slate-400 mb-4">Try broadening your search or resetting the filters.</p>
+            <p className="text-xs text-slate-400 mb-4">Try broadening your search or resetting the active filters.</p>
             <button
               onClick={() => {
                 setSelectedCity('ALL');
@@ -354,7 +523,7 @@ export default function HomePage() {
                   </div>
                 </div>
 
-                {/* Card Action Buttons */}
+                {/* Action Buttons */}
                 <div className="p-6 pt-0 space-y-2">
                   <Link
                     href={`/deals/${deal.id}`}
