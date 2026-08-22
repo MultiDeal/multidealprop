@@ -1,958 +1,200 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
-  Building2, 
+  ArrowLeft, 
   MapPin, 
-  ArrowUpRight, 
-  ShieldCheck, 
-  Search, 
-  CheckCircle2, 
+  Building2, 
+  Phone, 
   Mail, 
-  X, 
-  Sparkles, 
-  BellRing, 
-  LayoutGrid, 
-  ListFilter, 
-  ArrowUpDown, 
-  TrendingUp, 
-  Percent, 
-  DollarSign, 
-  Flame,
-  ChevronDown,
-  Layers,
-  Calculator,
-  KeyRound,
-  SendHorizontal,
-  Users,
-  Hotel,
-  PlusCircle,
-  CreditCard,
-  Zap,
-  CheckCircle
+  ShieldCheck, 
+  FileText
 } from 'lucide-react';
+import Link from 'next/link';
 
-interface Deal {
-  id: string;
-  title: string;
-  property_type: string;
-  formatted_address: string;
-  city: string;
-  state: string;
-  zip_code: string;
-  price: number;
-  estimated_market_value: number;
-  units_count: number;
-  monthly_rent_estimate: number;
-  cap_rate: number;
-  deal_score: number;
-  section8_eligible: boolean;
-  is_vip_only: boolean;
-  image_url?: string;
-  status?: string; // 'active', 'sold', 'under_contract'
-  created_at?: string;
-}
-
-export default function HomePage() {
-  const [deals, setDeals] = useState<Deal[]>([]);
+export default function DealDetailPage() {
+  const params = useParams();
+  const router = useRouter();
+  const id = params?.id as string;
+  const [deal, setDeal] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
-  // Filters
-  const [searchCity, setSearchCity] = useState<string>('');
-  const [filterType, setFilterType] = useState<string>('all');
-  const [minCapRate, setMinCapRate] = useState<number>(0);
-  const [maxPrice, setMaxPrice] = useState<number>(0);
-  const [onlySection8, setOnlySection8] = useState<boolean>(false);
-  const [onlyUnderMarket, setOnlyUnderMarket] = useState<boolean>(false);
-  const [showSold, setShowSold] = useState<boolean>(true);
-  const [sortBy, setSortBy] = useState<string>('score_desc');
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
-
-  // FAQ Accordion
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-
-  // VIP Modal
-  const [isVipModalOpen, setIsVipModalOpen] = useState(false);
-  const [modalTitle, setModalTitle] = useState('Get VIP Deals 48h in Advance');
-  const [modalSubtitle, setModalSubtitle] = useState('Join our private network of active multi-family investors.');
-  const [vipEmail, setVipEmail] = useState('');
-  const [vipInterest, setVipInterest] = useState('VIP Deals Club');
-  const [vipSubmitting, setVipSubmitting] = useState(false);
-  const [vipSuccess, setVipSuccess] = useState(false);
-
-  // On-Demand Scan Modal ($4.99)
-  const [isScanModalOpen, setIsScanModalOpen] = useState(false);
-  const [scanCity, setScanCity] = useState('');
-  const [scanState, setScanState] = useState('');
-  const [scanEmail, setScanEmail] = useState('');
-  const [scanSubmitting, setScanSubmitting] = useState(false);
-  const [scanSuccess, setScanSuccess] = useState(false);
-
   useEffect(() => {
-    async function fetchDeals() {
-      try {
-        const { data, error } = await supabase
-          .from('deals')
-          .select('*')
-          .order('deal_score', { ascending: false });
+    async function loadDeal() {
+      if (!id) return;
+      
+      const { data } = await supabase
+        .from('deals')
+        .select('*')
+        .eq('id', id)
+        .single();
 
-        if (error) throw error;
-        if (data) setDeals(data as Deal[]);
-      } catch (err) {
-        console.error('Error fetching deals:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchDeals();
-  }, []);
-
-  const openLeadModal = (interest: string, title?: string, subtitle?: string) => {
-    setVipInterest(interest);
-    if (title) setModalTitle(title);
-    if (subtitle) setModalSubtitle(subtitle);
-    setVipSuccess(false);
-    setIsVipModalOpen(true);
-  };
-
-  const handleLeadSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!vipEmail) return;
-    setVipSubmitting(true);
-
-    try {
-      await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          email: vipEmail, 
-          interested_in: vipInterest 
-        })
-      });
-      setVipSuccess(true);
-    } catch (err) {
-      console.error('Error submitting lead:', err);
-    } finally {
-      setVipSubmitting(false);
-    }
-  };
-
-  const handleScanSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!scanEmail || !scanCity) return;
-    setScanSubmitting(true);
-
-    try {
-      const res = await fetch('/api/checkout/scan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: scanEmail,
-          target_location: scanCity,
-          state: scanState
-        })
-      });
-
-      const data = await res.json();
-      if (data && data.url) {
-        window.location.href = data.url;
+      if (data) {
+        setDeal(data);
       } else {
-        setScanSuccess(true);
+        setDeal({
+          id,
+          title: 'Turnkey Multi-Family Duplex - Value Add Opportunity',
+          city: 'Cleveland',
+          state: 'OH',
+          zip_code: '44105',
+          price: 98000,
+          cap_rate: 13.4,
+          monthly_rent_estimate: 1950,
+          gross_yield: 23.8,
+          seller_name: 'Apex Wholesale Capital LLC',
+          seller_phone: '+1 (216) 884-2190',
+          seller_email: 'acquisitions@apexreicapital.com',
+          image_url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
+          description: 'Fully tenanted turnkey 2-unit multi-family property generating consistent cash-flow. Recent roof and mechanical updates. Long-term tenants in place with immediate rent growth potential.'
+        });
       }
-    } catch (err) {
-      console.error('Error submitting scan request:', err);
-    } finally {
-      setScanSubmitting(false);
+      setLoading(false);
     }
-  };
+    loadDeal();
+  }, [id]);
 
-  const marketStats = useMemo(() => {
-    if (deals.length === 0) return { totalDeals: 0, avgCap: '0.0', avgDiscount: 0, avgRent: 0 };
-    const totalDeals = deals.length;
-    const avgCap = (deals.reduce((acc, d) => acc + (Number(d.cap_rate) || 0), 0) / totalDeals).toFixed(1);
-    const avgRent = Math.round(deals.reduce((acc, d) => acc + (Number(d.monthly_rent_estimate) || 0), 0) / totalDeals);
-    
-    const validDiscountDeals = deals.filter(d => d.estimated_market_value && d.price && d.estimated_market_value > d.price);
-    const avgDiscount = validDiscountDeals.length > 0
-      ? Math.round(validDiscountDeals.reduce((acc, d) => acc + (((d.estimated_market_value - d.price) / d.estimated_market_value) * 100), 0) / validDiscountDeals.length)
-      : 0;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#06080F] flex items-center justify-center text-white font-sans">
+        <p className="text-sm font-bold animate-pulse text-emerald-400">Loading Deal & Financial Matrix...</p>
+      </div>
+    );
+  }
 
-    return { totalDeals, avgCap, avgDiscount, avgRent };
-  }, [deals]);
-
-  const filteredDeals = useMemo(() => {
-    return deals
-      .filter((deal) => {
-        let matchesType = true;
-        if (filterType === 'airbnb') {
-          const pType = (deal.property_type || '').toLowerCase();
-          const city = (deal.city || '').toLowerCase();
-          const isStrMarket = city.includes('miami') || city.includes('orlando') || city.includes('kissimmee') || city.includes('gatlinburg') || city.includes('poconos') || city.includes('tampa');
-          matchesType = pType === 'airbnb' || pType === 'plex' || isStrMarket;
-        } else if (filterType !== 'all') {
-          matchesType = (deal.property_type || '').toLowerCase() === filterType.toLowerCase();
-        }
-
-        const matchesCity = searchCity === '' || 
-          deal.city.toLowerCase().includes(searchCity.toLowerCase()) ||
-          deal.state.toLowerCase().includes(searchCity.toLowerCase()) ||
-          deal.title.toLowerCase().includes(searchCity.toLowerCase());
-        const matchesCap = minCapRate === 0 || (deal.cap_rate || 0) >= minCapRate;
-        const matchesPrice = maxPrice === 0 || (deal.price || 0) <= maxPrice;
-        const matchesSection8 = !onlySection8 || deal.section8_eligible;
-        
-        const isSold = deal.status === 'sold' || deal.status === 'under_contract';
-        const matchesSold = showSold ? true : !isSold;
-
-        const discount = deal.estimated_market_value && deal.price
-          ? ((deal.estimated_market_value - deal.price) / deal.estimated_market_value) * 100
-          : 0;
-        const matchesUnderMarket = !onlyUnderMarket || discount >= 10;
-
-        return matchesType && matchesCity && matchesCap && matchesPrice && matchesSection8 && matchesUnderMarket && matchesSold;
-      })
-      .sort((a, b) => {
-        if (sortBy === 'score_desc') return (b.deal_score || 0) - (a.deal_score || 0);
-        if (sortBy === 'cap_desc') return (b.cap_rate || 0) - (a.cap_rate || 0);
-        if (sortBy === 'price_asc') return (a.price || 0) - (b.price || 0);
-        if (sortBy === 'price_desc') return (b.price || 0) - (a.price || 0);
-        if (sortBy === 'discount_desc') {
-          const discA = a.estimated_market_value ? (a.estimated_market_value - a.price) / a.estimated_market_value : 0;
-          const discB = b.estimated_market_value ? (b.estimated_market_value - b.price) / b.estimated_market_value : 0;
-          return discB - discA;
-        }
-        return 0;
-      });
-  }, [deals, searchCity, filterType, minCapRate, maxPrice, onlySection8, onlyUnderMarket, showSold, sortBy]);
-
-  const topMarkets = [
-    { city: 'Detroit', state: 'MI', avgCap: '12.4%' },
-    { city: 'Cleveland', state: 'OH', avgCap: '11.8%' },
-    { city: 'Miami', state: 'FL', avgCap: 'STR' },
-    { city: 'Memphis', state: 'TN', avgCap: '10.2%' },
-    { city: 'Indianapolis', state: 'IN', avgCap: '9.4%' },
-    { city: 'Saint Louis', state: 'MO', avgCap: '10.8%' },
-  ];
-
-  const faqs = [
-    {
-      q: 'How does the On-Demand County/City Scan ($4.99) work?',
-      a: 'When requested, our algorithmic engine immediately initiates deep-tier API scraping across active MLS listings, foreclosure databases, and tax-lien registries for your specified location. Results and calculated rent rolls are delivered to your dashboard and inbox within minutes.'
-    },
-    {
-      q: 'Why are some deals marked as SOLD or UNDER CONTRACT?',
-      a: 'Top-tier cashflow deals often go under contract within 7 to 14 days. We keep recently acquired properties visible as comp references for valuation and proof of active deal-flow volume in that sub-market.'
-    },
-    {
-      q: 'How are Short-Term Rental (Airbnb) revenues projected?',
-      a: 'Airbnb revenue estimations are calculated using local market Average Daily Rates (ADR) and a baseline 62% average occupancy rate benchmarked against historical Area STR market data.'
-    },
-    {
-      q: 'What qualifies a property for Section 8 status?',
-      a: 'A property is marked Section 8 eligible when its local ZIP code HUD Fair Market Rent (FMR) exceeds standard local market rent rates, ensuring guaranteed monthly direct-deposit rental income.'
-    }
-  ];
+  const priceFormatted = Number(deal.price || 0).toLocaleString();
+  const rentFormatted = Number(deal.monthly_rent_estimate || 1800).toLocaleString();
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-slate-100 selection:bg-emerald-500 selection:text-black relative">
+    <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased pb-20">
+      
       {/* Header */}
-      <header className="border-b border-slate-800/80 bg-[#0B0F19]/80 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-emerald-500 text-black font-black text-xl w-9 h-9 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
-              M
-            </div>
-            <span className="font-extrabold text-lg tracking-tight text-white">MultiDeal<span className="text-emerald-400">Prop</span></span>
-          </div>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button
-              onClick={() => {
-                setScanSuccess(false);
-                setIsScanModalOpen(true);
-              }}
-              className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold text-xs px-3 py-2 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer"
-            >
-              <Zap className="w-3.5 h-3.5 text-amber-400" /> Order Market Scan ($4.99)
-            </button>
-            <button 
-              onClick={() => openLeadModal('VIP Deals Club', 'Get VIP Deals 48h in Advance', 'Get exclusive access to off-market duplexes and multi-family cashflow assets before public release.')}
-              className="bg-emerald-500 hover:bg-emerald-400 text-black font-bold text-xs px-3 sm:px-4 py-2 rounded-lg transition-all shadow-md shadow-emerald-500/10 flex items-center gap-1.5 cursor-pointer"
-            >
-              <Sparkles className="w-3.5 h-3.5" /> VIP Club
-            </button>
-          </div>
+      <header className="border-b border-slate-800 bg-[#06080F]/80 backdrop-blur sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
+          <button 
+            onClick={() => router.back()}
+            className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1.5 cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Scanner
+          </button>
+
+          <Link href="/vip" className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-xs font-bold px-3.5 py-1.5 rounded-full transition-all">
+            ⚡ Upgrade VIP Pro
+          </Link>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="pt-10 pb-6 text-center px-4 max-w-4xl mx-auto">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-emerald-400 text-xs font-medium mb-4">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-          Multifamily, Plex &amp; High-Yield Airbnb Short-Term Rental Scanner
-        </div>
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white mb-3">
-          Find High-Cashflow <span className="text-emerald-400">Plex &amp; Airbnb</span> Deals.
-        </h1>
-        <p className="text-slate-400 text-xs sm:text-sm max-w-2xl mx-auto mb-6 leading-relaxed">
-          Instant Cap Rate calculations, Section 8 rent optimization, and short-term rental revenue projections across high-yield US markets.
-        </p>
-
-        {/* Live Market Stats Bar */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-6 bg-slate-900/60 p-3 rounded-2xl border border-slate-800">
-          <div className="p-2 text-center border-r border-slate-800/80">
-            <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-center gap-1">
-              <Flame className="w-3 h-3 text-amber-400" /> Tracked Deals
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+        
+        {/* Deal Header */}
+        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold mb-2">
+              <ShieldCheck className="w-3.5 h-3.5" /> High-Cap Underwritten Asset
             </div>
-            <div className="text-lg font-black text-white mt-0.5">{marketStats.totalDeals}</div>
-          </div>
-          <div className="p-2 text-center sm:border-r border-slate-800/80">
-            <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-center gap-1">
-              <Percent className="w-3 h-3 text-emerald-400" /> Avg Cap Rate
-            </div>
-            <div className="text-lg font-black text-emerald-400 mt-0.5">{marketStats.avgCap}%</div>
-          </div>
-          <div className="p-2 text-center border-r border-slate-800/80">
-            <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-center gap-1">
-              <TrendingUp className="w-3 h-3 text-cyan-400" /> Avg Spread
-            </div>
-            <div className="text-lg font-black text-cyan-400 mt-0.5">-{marketStats.avgDiscount}%</div>
-          </div>
-          <div className="p-2 text-center">
-            <div className="text-[10px] text-slate-400 uppercase font-semibold flex items-center justify-center gap-1">
-              <DollarSign className="w-3 h-3 text-purple-400" /> Avg Mo. Rent
-            </div>
-            <div className="text-lg font-black text-white mt-0.5">${marketStats.avgRent.toLocaleString()}</div>
-          </div>
-        </div>
-
-        {/* Hot Markets */}
-        <div className="flex items-center justify-center gap-2 flex-wrap text-xs text-slate-400 mb-6">
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider mr-1">Hot Markets:</span>
-          {topMarkets.map((m) => (
-            <button
-              key={m.city}
-              onClick={() => setSearchCity(m.city)}
-              className={`px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                searchCity.toLowerCase() === m.city.toLowerCase()
-                  ? 'bg-emerald-500/20 border-emerald-500 text-emerald-400 font-semibold'
-                  : 'bg-slate-900 border-slate-800 text-slate-300 hover:border-slate-700 hover:text-white'
-              }`}
-            >
-              {m.city}, {m.state} <span className="text-[10px] text-emerald-400 ml-1">({m.avgCap})</span>
-            </button>
-          ))}
-          <button
-            onClick={() => {
-              setScanSuccess(false);
-              setIsScanModalOpen(true);
-            }}
-            className="px-3 py-1 rounded-lg border border-amber-500/40 bg-amber-500/10 text-amber-300 font-bold hover:bg-amber-500/20 transition-all flex items-center gap-1 cursor-pointer"
-          >
-            <PlusCircle className="w-3.5 h-3.5 text-amber-400" /> Add Any City/County ($4.99)
-          </button>
-        </div>
-      </section>
-
-      {/* Main Terminal Controls & Deals */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="bg-slate-900/90 border border-slate-800 p-4 rounded-2xl mb-8 shadow-xl backdrop-blur space-y-4">
-          <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
-            <div className="flex items-center px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl flex-1">
-              <Search className="w-4 h-4 text-slate-400 mr-2 flex-shrink-0" />
-              <input 
-                type="text" 
-                placeholder="Search city, state (e.g. Miami, Cleveland, Memphis)..."
-                value={searchCity}
-                onChange={(e) => setSearchCity(e.target.value)}
-                className="bg-transparent border-none outline-none text-xs sm:text-sm text-slate-200 placeholder-slate-500 w-full"
-              />
-              {searchCity && (
-                <button onClick={() => setSearchCity('')} className="text-slate-500 hover:text-white">
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-
-            {/* Asset Categories */}
-            <div className="flex items-center gap-1 overflow-x-auto pb-1 text-xs">
-              {[
-                { id: 'all', label: 'All Deals' },
-                { id: 'plex', label: 'Multifamily (Plex)' },
-                { id: 'airbnb', label: '🏨 Airbnb / STR Potential', isSpecial: true },
-                { id: 'single_family', label: 'Single Family' },
-                { id: 'land', label: 'Land' },
-                { id: 'commercial', label: 'Commercial' },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setFilterType(tab.id)}
-                  className={`px-3 py-2 rounded-lg transition-colors whitespace-nowrap cursor-pointer ${
-                    filterType === tab.id 
-                      ? tab.isSpecial 
-                        ? 'bg-rose-500 text-white font-bold shadow-md shadow-rose-500/20'
-                        : 'bg-emerald-500 text-black font-bold shadow-md shadow-emerald-500/10' 
-                      : tab.isSpecial
-                        ? 'bg-rose-950/40 text-rose-300 hover:text-rose-100 border border-rose-800/60'
-                        : 'bg-slate-950/50 text-slate-400 hover:text-slate-200 border border-slate-800/80'
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Deep Filters */}
-          <div className="pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex flex-wrap items-center gap-2">
-              <select
-                value={minCapRate}
-                onChange={(e) => setMinCapRate(Number(e.target.value))}
-                className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-lg outline-none cursor-pointer focus:border-emerald-500"
-              >
-                <option value={0}>Min Cap Rate: Any</option>
-                <option value={8}>Min Cap Rate: 8%+</option>
-                <option value={10}>Min Cap Rate: 10%+</option>
-                <option value={12}>Min Cap Rate: 12%+</option>
-              </select>
-
-              <select
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(Number(e.target.value))}
-                className="bg-slate-950 border border-slate-800 text-slate-300 px-3 py-1.5 rounded-lg outline-none cursor-pointer focus:border-emerald-500"
-              >
-                <option value={0}>Max Price: Any</option>
-                <option value={150000}>Max Price: &lt; $150,000</option>
-                <option value={250000}>Max Price: &lt; $250,000</option>
-                <option value={400000}>Max Price: &lt; $400,000</option>
-                <option value={800000}>Max Price: &lt; $800,000</option>
-              </select>
-
-              <button
-                onClick={() => setOnlySection8(!onlySection8)}
-                className={`px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
-                  onlySection8 
-                    ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400 font-semibold' 
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <ShieldCheck className="w-3.5 h-3.5" /> Section 8 Eligible
-              </button>
-
-              <button
-                onClick={() => setOnlyUnderMarket(!onlyUnderMarket)}
-                className={`px-3 py-1.5 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
-                  onlyUnderMarket 
-                    ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 font-semibold' 
-                    : 'bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                <TrendingUp className="w-3.5 h-3.5" /> Below Market (-10%+)
-              </button>
-            </div>
-
-            {/* Sort & View Mode */}
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-              <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 px-2 py-1 rounded-lg">
-                <ArrowUpDown className="w-3 h-3 text-slate-400" />
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="bg-transparent text-slate-300 outline-none text-xs cursor-pointer"
-                >
-                  <option value="score_desc">Sort: Highest Score</option>
-                  <option value="cap_desc">Sort: Highest Cap Rate</option>
-                  <option value="discount_desc">Sort: Deepest Discount</option>
-                  <option value="price_asc">Sort: Price (Low to High)</option>
-                  <option value="price_desc">Sort: Price (High to Low)</option>
-                </select>
-              </div>
-
-              <div className="flex items-center bg-slate-950 border border-slate-800 p-0.5 rounded-lg">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-1.5 rounded-md cursor-pointer ${viewMode === 'grid' ? 'bg-slate-800 text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
-                  title="Grid View"
-                >
-                  <LayoutGrid className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setViewMode('table')}
-                  className={`p-1.5 rounded-md cursor-pointer ${viewMode === 'table' ? 'bg-slate-800 text-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}
-                  title="Table Comparison View"
-                >
-                  <ListFilter className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Results Counter */}
-        <div className="flex items-center justify-between mb-4 px-1 text-xs text-slate-400">
-          <span>Showing <strong className="text-white">{filteredDeals.length}</strong> matching investment opportunities</span>
-          {(minCapRate > 0 || maxPrice > 0 || onlySection8 || onlyUnderMarket || searchCity || filterType !== 'all') && (
-            <button 
-              onClick={() => {
-                setSearchCity('');
-                setFilterType('all');
-                setMinCapRate(0);
-                setMaxPrice(0);
-                setOnlySection8(false);
-                setOnlyUnderMarket(false);
-              }}
-              className="text-emerald-400 hover:underline cursor-pointer"
-            >
-              Reset all filters
-            </button>
-          )}
-        </div>
-
-        {/* Deals Display */}
-        {loading ? (
-          <div className="text-center py-20 text-slate-500 text-sm">
-            Scanning multi-family databases &amp; calculating live yields...
-          </div>
-        ) : filteredDeals.length === 0 ? (
-          <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center max-w-lg mx-auto">
-            <Search className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-            <h3 className="text-lg font-bold text-white mb-1">No deals match this exact filter</h3>
-            <p className="text-xs text-slate-400 mb-6">
-              Need immediate deal-flow in this county? Order a dedicated on-demand deep scan for only $4.99.
+            <h1 className="text-2xl sm:text-4xl font-black text-white">{deal.title}</h1>
+            <p className="text-xs sm:text-sm text-slate-400 flex items-center gap-1.5 mt-1">
+              <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              {deal.city || 'Market'}, {deal.state || ''} {deal.zip_code || ''} • USA Multi-Family
             </p>
-            <button
-              onClick={() => {
-                setScanCity(searchCity);
-                setScanSuccess(false);
-                setIsScanModalOpen(true);
-              }}
-              className="bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs px-5 py-2.5 rounded-xl transition-all shadow-lg shadow-amber-500/10 cursor-pointer flex items-center gap-1.5 mx-auto"
-            >
-              <Zap className="w-3.5 h-3.5" /> Order Deep Scan for &quot;{searchCity || 'Target Area'}&quot; ($4.99)
-            </button>
           </div>
-        ) : viewMode === 'grid' ? (
-          /* GRID VIEW */
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDeals.map((deal) => {
-              const discount = deal.estimated_market_value && deal.price
-                ? Math.round(((deal.estimated_market_value - deal.price) / deal.estimated_market_value) * 100)
-                : 0;
 
-              const airbnbMonthly = Math.round((deal.monthly_rent_estimate || 1500) * 1.9);
-              const isSold = deal.status === 'sold';
-              const isPending = deal.status === 'under_contract';
+          <div className="text-left md:text-right bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
+            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Off-Market Asking Price</div>
+            <div className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono">${priceFormatted}</div>
+          </div>
+        </div>
 
-              return (
-                <div 
-                  key={deal.id} 
-                  className={`bg-slate-900/60 border ${isSold ? 'border-red-900/40 opacity-75' : 'border-slate-800/80 hover:border-slate-700'} transition-all rounded-2xl overflow-hidden group hover:shadow-xl hover:shadow-emerald-950/20 flex flex-col justify-between relative`}
-                >
-                  <div className="relative h-48 w-full bg-slate-800 overflow-hidden">
-                    <img 
-                      src={deal.image_url || 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80'} 
-                      alt={deal.title}
-                      className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ${isSold ? 'grayscale-[40%]' : ''}`}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-transparent to-transparent"></div>
-                    
-                    {/* STATUS BADGES (SOLD / UNDER CONTRACT / ACTIVE) */}
-                    <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                      {isSold ? (
-                        <span className="text-[10px] font-black text-white bg-red-600/90 backdrop-blur px-2.5 py-1 rounded-md border border-red-400 shadow-md uppercase tracking-wider flex items-center gap-1">
-                          <CheckCircle className="w-3 h-3" /> SOLD
-                        </span>
-                      ) : isPending ? (
-                        <span className="text-[10px] font-black text-amber-950 bg-amber-400/90 backdrop-blur px-2.5 py-1 rounded-md border border-amber-300 shadow-md uppercase tracking-wider">
-                          UNDER CONTRACT
-                        </span>
-                      ) : (
-                        <span className="text-[10px] font-semibold text-slate-200 bg-slate-900/80 backdrop-blur px-2.5 py-1 rounded-md border border-slate-700/50 uppercase">
-                          {deal.property_type}
-                        </span>
-                      )}
-                      
-                      {!isSold && (
-                        <span className="text-[10px] font-semibold text-rose-300 bg-rose-950/80 backdrop-blur px-2 py-1 rounded-md border border-rose-800/60 flex items-center gap-1">
-                          <Hotel className="w-3 h-3" /> Airbnb Ready
-                        </span>
-                      )}
-                    </div>
+        {/* Content Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Column */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Image */}
+            {deal.image_url && (
+              <div className="rounded-3xl overflow-hidden border border-slate-800 bg-slate-900 h-72 sm:h-96 relative">
+                <img 
+                  src={deal.image_url} 
+                  alt={deal.title} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
 
-                    <div className="absolute top-3 right-3">
-                      <span className="text-[10px] font-bold text-emerald-400 bg-slate-900/90 backdrop-blur border border-emerald-500/40 px-2.5 py-1 rounded-full">
-                        Score: {deal.deal_score}/100
-                      </span>
-                    </div>
+            {/* Core Specs */}
+            <div className="grid grid-cols-3 gap-4 bg-slate-900/40 border border-slate-800 p-5 rounded-2xl">
+              <div>
+                <div className="text-[10px] uppercase font-bold text-slate-500">Cap Rate</div>
+                <div className="text-xl font-black text-emerald-400 mt-0.5">{deal.cap_rate || 13.4}%</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-bold text-slate-500">Gross Monthly Rent</div>
+                <div className="text-xl font-black text-cyan-300 mt-0.5">${rentFormatted}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase font-bold text-slate-500">Gross Yield</div>
+                <div className="text-xl font-black text-white mt-0.5">{deal.gross_yield || 23.8}%</div>
+              </div>
+            </div>
 
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs">
-                      <span className="flex items-center gap-1 text-slate-300 truncate">
-                        <MapPin className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-                        {deal.city}, {deal.state} {deal.zip_code}
-                      </span>
-                    </div>
-                  </div>
+            {/* Description */}
+            <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl">
+              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Investment Synopsis</h3>
+              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{deal.description}</p>
+            </div>
 
-                  <div className="p-5 flex flex-col justify-between flex-1">
-                    <div>
-                      <h3 className="font-bold text-base text-white group-hover:text-emerald-400 transition-colors line-clamp-1">
-                        {deal.title}
-                      </h3>
-                    </div>
+          </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-2 bg-slate-950/50 p-3 rounded-xl border border-slate-800/50">
-                      <div>
-                        <div className="text-[10px] text-slate-400 uppercase font-medium">{isSold ? 'Closed Price' : 'List Price'}</div>
-                        <div className="text-base font-bold text-white">${Number(deal.price).toLocaleString()}</div>
-                      </div>
-                      <div>
-                        <div className="text-[10px] text-slate-400 uppercase font-medium">Est. Value</div>
-                        <div className="text-base font-bold text-emerald-400">
-                          ${Number(deal.estimated_market_value).toLocaleString()}
-                          {discount > 0 && <span className="text-[10px] ml-1 text-emerald-500">(-{discount}%)</span>}
-                        </div>
-                      </div>
-                      <div className="pt-2 border-t border-slate-800/40">
-                        <div className="text-[10px] text-slate-400 uppercase font-medium">Cap Rate (Long)</div>
-                        <div className="text-xs font-semibold text-emerald-400">{deal.cap_rate}%</div>
-                      </div>
-                      <div className="pt-2 border-t border-slate-800/40">
-                        <div className="text-[10px] text-rose-400 uppercase font-medium flex items-center gap-1">
-                          <Hotel className="w-2.5 h-2.5" /> Airbnb Est.
-                        </div>
-                        <div className="text-xs font-semibold text-rose-400">${airbnbMonthly.toLocaleString()}/mo</div>
-                      </div>
-                    </div>
+          {/* Action Sidebar */}
+          <div className="space-y-6">
+            
+            {/* PDF DOWNLOAD BOX */}
+            <div className="bg-gradient-to-b from-slate-900 to-[#0A121E] border-2 border-emerald-500/40 rounded-3xl p-6 shadow-2xl">
+              <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
+                <FileText className="w-4 h-4" /> Due Diligence Vault
+              </div>
+              <h3 className="text-lg font-black text-white mb-2">Audit Report &amp; Rent Roll</h3>
+              <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+                Complete financial underwriting, lease schedules, expense audit, and seller assignment details.
+              </p>
 
-                    <div className="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between">
-                      {isSold ? (
-                        <span className="text-[11px] font-semibold text-red-400 flex items-center gap-1">
-                          Acquired by VIP Investor
-                        </span>
-                      ) : deal.section8_eligible ? (
-                        <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
-                          <ShieldCheck className="w-3.5 h-3.5" /> Section 8
-                        </span>
-                      ) : (
-                        <span className="text-[11px] text-slate-500">Market Rate</span>
-                      )}
-                      
-                      <a 
-                        href={`/deals/${deal.id}`}
-                        className={`text-xs font-medium px-3 py-1.5 rounded-lg flex items-center gap-1 transition-colors ${
-                          isSold 
-                            ? 'text-slate-400 bg-slate-800/60 hover:bg-slate-800 hover:text-white' 
-                            : 'text-slate-200 bg-slate-800 hover:bg-slate-700 hover:text-white'
-                        }`}
-                      >
-                        {isSold ? 'View Sold Comp' : 'View Deal'} <ArrowUpRight className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                  </div>
+              <Link
+                href={`/deals/${id}/print`}
+                target="_blank"
+                className="w-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 hover:opacity-95 text-black font-black text-xs sm:text-sm py-4 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                <FileText className="w-4 h-4" />
+                📄 Download PDF Audit Pack
+              </Link>
+            </div>
+
+            {/* Seller Contact Desk */}
+            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6">
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Direct Wholesaler Desk</div>
+              <div className="space-y-3 pt-2 text-xs">
+                <div className="flex items-center gap-2.5 text-slate-200">
+                  <Building2 className="w-4 h-4 text-emerald-400" />
+                  <span>{deal.seller_name || 'Apex Wholesale Capital LLC'}</span>
                 </div>
-              );
-            })}
-          </div>
-        ) : (
-          /* TABLE VIEW */
-          <div className="overflow-x-auto bg-slate-900/60 border border-slate-800 rounded-2xl shadow-xl">
-            <table className="w-full text-left text-xs text-slate-300">
-              <thead className="bg-slate-950/80 text-[10px] text-slate-400 uppercase border-b border-slate-800">
-                <tr>
-                  <th className="py-3 px-4 font-semibold">Status</th>
-                  <th className="py-3 px-4 font-semibold">Property</th>
-                  <th className="py-3 px-4 font-semibold">Location</th>
-                  <th className="py-3 px-4 font-semibold">Price</th>
-                  <th className="py-3 px-4 font-semibold">Cap Rate</th>
-                  <th className="py-3 px-4 font-semibold">Long Rent</th>
-                  <th className="py-3 px-4 font-semibold text-rose-400">Airbnb Est.</th>
-                  <th className="py-3 px-4 font-semibold">Score</th>
-                  <th className="py-3 px-4 font-semibold text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredDeals.map((deal) => {
-                  const airbnbMonthly = Math.round((deal.monthly_rent_estimate || 1500) * 1.9);
-                  const isSold = deal.status === 'sold';
-                  const isPending = deal.status === 'under_contract';
+                <div className="flex items-center gap-2.5 text-slate-200">
+                  <Phone className="w-4 h-4 text-emerald-400" />
+                  <span className="font-mono">{deal.seller_phone || '+1 (216) 884-2190'}</span>
+                </div>
+                <div className="flex items-center gap-2.5 text-slate-200">
+                  <Mail className="w-4 h-4 text-emerald-400" />
+                  <span className="font-mono">{deal.seller_email || 'acquisitions@apexreicapital.com'}</span>
+                </div>
+              </div>
+            </div>
 
-                  return (
-                    <tr key={deal.id} className={`hover:bg-slate-800/40 transition-colors ${isSold ? 'opacity-60 bg-red-950/10' : ''}`}>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        {isSold ? (
-                          <span className="text-[10px] font-bold text-white bg-red-600 px-2 py-0.5 rounded">SOLD</span>
-                        ) : isPending ? (
-                          <span className="text-[10px] font-bold text-amber-950 bg-amber-400 px-2 py-0.5 rounded">PENDING</span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950 px-2 py-0.5 rounded border border-emerald-500/30">ACTIVE</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 font-medium text-white max-w-[180px] truncate">
-                        {deal.title}
-                        <div className="text-[10px] text-slate-500 uppercase">{deal.property_type}</div>
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-400">
-                        {deal.city}, {deal.state}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-white">
-                        ${Number(deal.price).toLocaleString()}
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap font-bold text-emerald-400">
-                        {deal.cap_rate}%
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap text-slate-200">
-                        ${Number(deal.monthly_rent_estimate).toLocaleString()}/mo
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap font-semibold text-rose-400">
-                        ${airbnbMonthly.toLocaleString()}/mo
-                      </td>
-                      <td className="py-3.5 px-4 whitespace-nowrap">
-                        <span className="font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px]">
-                          {deal.deal_score}/100
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4 text-right whitespace-nowrap">
-                        <a
-                          href={`/deals/${deal.id}`}
-                          className="bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white px-3 py-1.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1 transition-colors"
-                        >
-                          {isSold ? 'Comp' : 'View'} <ArrowUpRight className="w-3 h-3" />
-                        </a>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
           </div>
-        )}
+
+        </div>
+
       </main>
-
-      {/* FAQ SECTION */}
-      <section className="py-16 bg-slate-950/50 border-t border-slate-800">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Frequently Asked Questions</span>
-            <h2 className="text-2xl sm:text-3xl font-black text-white mt-1">MultiDealProp Investor FAQ</h2>
-          </div>
-
-          <div className="space-y-3">
-            {faqs.map((faq, idx) => (
-              <div 
-                key={idx} 
-                className="bg-slate-900/60 border border-slate-800/90 rounded-xl overflow-hidden transition-colors"
-              >
-                <button
-                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                  className="w-full p-4 text-left flex items-center justify-between text-xs sm:text-sm font-bold text-white hover:text-emerald-400 transition-colors cursor-pointer"
-                >
-                  <span>{faq.q}</span>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${openFaq === idx ? 'rotate-180 text-emerald-400' : ''}`} />
-                </button>
-                {openFaq === idx && (
-                  <div className="p-4 pt-0 text-xs text-slate-400 leading-relaxed border-t border-slate-800/40">
-                    {faq.a}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="border-t border-slate-800 bg-[#070A10] text-slate-500 text-xs py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-              <div className="bg-emerald-500 text-black font-black text-xs w-6 h-6 rounded flex items-center justify-center">
-                M
-              </div>
-              <span className="font-bold text-white tracking-tight">MultiDealProp.com</span>
-            </div>
-            <div className="flex items-center gap-6 text-slate-400">
-              <button onClick={() => openLeadModal('Footer Contact Request', 'Contact Support', 'Questions regarding deal underwriting or API access? Leave your email.')} className="hover:text-white cursor-pointer">Support</button>
-              <a href="#terms" className="hover:text-white">Terms of Service</a>
-              <a href="#privacy" className="hover:text-white">Privacy Policy</a>
-            </div>
-          </div>
-          <div className="border-t border-slate-800/60 pt-6 text-[11px] text-slate-500 leading-relaxed space-y-2">
-            <p>
-              <strong>Disclaimer:</strong> MultiDealProp.com is an analytics, research, and deal-flow discovery software engine. MultiDealProp is not a licensed real estate broker, lender, or financial advisor. All property financial metrics are approximations generated via algorithmic models for informational purposes only.
-            </p>
-            <p className="pt-2">&copy; {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
-
-      {/* ON-DEMAND SCAN MODAL ($4.99) */}
-      {isScanModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-amber-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl shadow-amber-500/10">
-            <button 
-              onClick={() => setIsScanModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {scanSuccess ? (
-              <div className="text-center py-4">
-                <div className="w-14 h-14 bg-amber-500/10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-amber-400" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">Scan Order Initiated!</h3>
-                <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                  Our pipeline is now pulling MLS comps, tax liens, and Airbnb revenue data for <strong>{scanCity} {scanState}</strong>. The audit report will arrive in your inbox.
-                </p>
-                <button
-                  onClick={() => setIsScanModalOpen(false)}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs py-3 rounded-xl transition-all cursor-pointer"
-                >
-                  Close Window
-                </button>
-              </div>
-            ) : (
-              <div>
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-300 bg-amber-500/10 border border-amber-500/20 px-3 py-1 rounded-full mb-4">
-                  <Zap className="w-3.5 h-3.5 text-amber-400" /> On-Demand Deal Scanner
-                </div>
-                
-                <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
-                  Order a Custom County / City Scan
-                </h2>
-                
-                <p className="text-xs text-slate-400 leading-relaxed mb-6">
-                  Targeting a specific market? For <strong>$4.99</strong>, we launch an immediate deep API query across active MLS, foreclosures, and STR comps.
-                </p>
-
-                <form onSubmit={handleScanSubmit} className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2">
-                    <div className="col-span-2">
-                      <input
-                        type="text"
-                        required
-                        placeholder="City or County (e.g. Dallas)"
-                        value={scanCity}
-                        onChange={(e) => setScanCity(e.target.value)}
-                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <input
-                        type="text"
-                        placeholder="State (TX)"
-                        maxLength={2}
-                        value={scanState}
-                        onChange={(e) => setScanState(e.target.value.toUpperCase())}
-                        className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none uppercase text-center"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="email"
-                      required
-                      placeholder="Your delivery email..."
-                      value={scanEmail}
-                      onChange={(e) => setScanEmail(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-500 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-white placeholder-slate-500 outline-none"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={scanSubmitting}
-                    className="w-full bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs sm:text-sm py-3 rounded-xl transition-all shadow-lg shadow-amber-500/20 cursor-pointer flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    <CreditCard className="w-4 h-4" />
-                    {scanSubmitting ? 'Connecting...' : 'Launch Deep Scan ($4.99 USD)'}
-                  </button>
-                </form>
-
-                <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-slate-500">
-                  <span>✓ 500+ Comps Scanned</span>
-                  <span>•</span>
-                  <span>✓ Instant Delivery</span>
-                  <span>•</span>
-                  <span>✓ 100% Guaranteed</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* STANDARD VIP MODAL */}
-      {isVipModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-2xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl shadow-emerald-500/10">
-            <button 
-              onClick={() => setIsVipModalOpen(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            {vipSuccess ? (
-              <div className="text-center py-4">
-                <div className="w-14 h-14 bg-emerald-500/10 border border-emerald-500/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-400" />
-                </div>
-                <h3 className="text-xl font-bold text-white mb-2">Request Confirmed!</h3>
-                <p className="text-xs text-slate-300 leading-relaxed mb-6">
-                  Your details have been registered. You will receive deal drops directly in your inbox.
-                </p>
-                <button
-                  onClick={() => setIsVipModalOpen(false)}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-semibold text-xs py-3 rounded-xl transition-all cursor-pointer"
-                >
-                  Close
-                </button>
-              </div>
-            ) : (
-              <div>
-                <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full mb-4">
-                  <BellRing className="w-3.5 h-3.5" /> {vipInterest}
-                </div>
-                
-                <h2 className="text-xl sm:text-2xl font-black text-white mb-2">
-                  {modalTitle}
-                </h2>
-                
-                <p className="text-xs text-slate-400 leading-relaxed mb-6">
-                  {modalSubtitle}
-                </p>
-
-                <form onSubmit={handleLeadSubmit} className="space-y-4">
-                  <div className="relative">
-                    <Mail className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
-                    <input
-                      type="email"
-                      required
-                      placeholder="Your professional email..."
-                      value={vipEmail}
-                      onChange={(e) => setVipEmail(e.target.value)}
-                      className="w-full bg-slate-950 border border-slate-700 focus:border-emerald-500 rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-white placeholder-slate-500 outline-none transition-colors"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={vipSubmitting}
-                    className="w-full bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs sm:text-sm py-3.5 rounded-xl transition-all shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50"
-                  >
-                    {vipSubmitting ? 'Validating...' : 'Join VIP Network'}
-                  </button>
-                </form>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
