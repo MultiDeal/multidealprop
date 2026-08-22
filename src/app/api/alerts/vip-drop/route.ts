@@ -8,6 +8,12 @@ async function sendTwilioSms(toPhone: string, deal: any) {
 
   if (!accountSid || !authToken || !fromNumber || !toPhone) return;
 
+  // Assurer le format international E.164 (+1...)
+  let formattedPhone = toPhone.trim().replace(/[^0-9+]/g, '');
+  if (!formattedPhone.startsWith('+')) {
+    formattedPhone = '+' + formattedPhone;
+  }
+
   const capRate = deal.cap_rate ?? 12.0;
   const price = Number(deal.price).toLocaleString();
   const rent = Number(deal.monthly_rent_estimate ?? 1800).toLocaleString();
@@ -16,22 +22,27 @@ async function sendTwilioSms(toPhone: string, deal: any) {
   const messageBody = `🔥 MULTIDEALPROP VIP DROP (${capRate}% Cap Rate)\n\n` +
     `📍 ${deal.city || 'US Market'}, ${deal.state || ''}\n` +
     `💰 Price: $${price} | Est. Rent: $${rent}/mo\n\n` +
-    `👉 View Deal & Seller Info:\n${dealUrl}`;
+    `👉 View Deal:\n${dealUrl}`;
 
   const authHeader = 'Basic ' + Buffer.from(`${accountSid}:${authToken}`).toString('base64');
 
-  await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
+  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`, {
     method: 'POST',
     headers: {
       'Authorization': authHeader,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: new URLSearchParams({
-      To: toPhone,
+      To: formattedPhone,
       From: fromNumber,
       Body: messageBody,
     }).toString(),
   });
+
+  const twilioData = await res.json();
+  if (twilioData.error_message) {
+    console.error('Twilio SMS Error:', twilioData.error_message);
+  }
 }
 
 export async function POST(request: Request) {
@@ -45,7 +56,7 @@ export async function POST(request: Request) {
 
     const resendApiKey = process.env.RESEND_API_KEY;
 
-    // 1. Récupérer les leads VIP avec email et téléphone éventuel
+    // 1. Récupérer les leads VIP
     const { data: vipUsers, error: fetchError } = await supabase
       .from('leads')
       .select('email, phone')
@@ -78,7 +89,7 @@ export async function POST(request: Request) {
     const smsPromises = phones.map((p) => sendTwilioSms(p, deal).catch(err => console.error('SMS Error:', err)));
     await Promise.all(smsPromises);
 
-    // 3. Envoi des Emails via Resend
+    // 3. Envoi des Emails via Resend (utilise le sender autorisé)
     if (resendApiKey && emails.length > 0) {
       const emailPromises = emails.map((recipient: string) =>
         fetch('https://api.resend.com/emails', {
@@ -88,44 +99,25 @@ export async function POST(request: Request) {
             'Authorization': `Bearer ${resendApiKey}`
           },
           body: JSON.stringify({
-            from: 'MultiDealProp VIP Alerts <alerts@multidealprop.com>',
+            from: 'MultiDealProp VIP <onboarding@resend.dev>',
             to: recipient,
             subject: `🔥 VIP DEAL DROP (${capRate}% Cap Rate): ${deal.title} - $${priceFormatted}`,
             html: `
-              <!DOCTYPE html>
-              <html>
-              <body style="background-color: #070A10; font-family: Arial, sans-serif; color: #FFFFFF; padding: 24px; margin: 0;">
-                <div style="max-width: 600px; margin: 0 auto; background-color: #0F172A; border: 1px solid #10B981; border-radius: 16px; overflow: hidden;">
-                  <div style="background: #10B981; padding: 18px 24px;">
-                    <span style="background-color: rgba(0,0,0,0.3); color: #FFFFFF; font-size: 11px; font-weight: bold; padding: 4px 10px; border-radius: 20px; text-transform: uppercase;">
-                      ⚡ Priority VIP Alert
-                    </span>
-                    <h1 style="color: #000000; font-size: 20px; margin: 8px 0 0 0; font-weight: 900;">
-                      ${capRate}% Cap Rate Opportunity
-                    </h1>
-                  </div>
-
-                  <div style="padding: 24px;">
-                    ${deal.image_url ? `<div style="margin-bottom: 20px; border-radius: 12px; overflow: hidden;"><img src="${deal.image_url}" alt="${deal.title}" style="width: 100%; height: auto; display: block;" /></div>` : ''}
-
-                    <h2 style="font-size: 18px; color: #FFFFFF; margin-top: 0;">${deal.title}</h2>
-                    <p style="color: #94A3B8; font-size: 13px; margin-bottom: 18px;">📍 ${deal.city || ''}, ${deal.state || ''} ${deal.zip_code || ''}</p>
-
-                    <div style="background-color: #070A10; padding: 16px; border-radius: 12px; border: 1px solid #334155; margin-bottom: 24px;">
-                      <p style="margin: 4px 0; font-size: 14px;"><strong>List Price :</strong> $${priceFormatted}</p>
-                      <p style="margin: 4px 0; font-size: 14px; color: #10B981;"><strong>Cap Rate :</strong> ${capRate}%</p>
-                      <p style="margin: 4px 0; font-size: 14px; color: #38BDF8;"><strong>Est. Monthly Rent :</strong> $${Number(monthlyRent).toLocaleString()} / mo</p>
-                    </div>
-
-                    <div style="text-align: center;">
-                      <a href="${dealUrl}" style="background-color: #10B981; color: #000000; font-size: 14px; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block;">
-                        View Unlocked Deal →
-                      </a>
-                    </div>
-                  </div>
+              <div style="background-color: #070A10; font-family: Arial, sans-serif; color: #FFFFFF; padding: 24px; border-radius: 12px;">
+                <div style="background: #10B981; padding: 16px; border-radius: 8px;">
+                  <h1 style="color: #000000; font-size: 20px; margin: 0; font-weight: 900;">
+                    ⚡ ${capRate}% Cap Rate Opportunity Detected
+                  </h1>
                 </div>
-              </body>
-              </html>
+                <div style="padding: 20px 0;">
+                  <h2 style="color: #FFFFFF; margin: 0 0 10px 0;">${deal.title}</h2>
+                  <p style="color: #94A3B8; margin: 0 0 15px 0;">📍 ${deal.city || 'Market'}, ${deal.state || ''} ${deal.zip_code || ''}</p>
+                  <p style="font-size: 16px;"><strong>Prix :</strong> $${priceFormatted} | <strong>Loyer estimé :</strong> $${Number(monthlyRent).toLocaleString()} / mo</p>
+                  <a href="${dealUrl}" style="background-color: #10B981; color: #000000; font-weight: bold; text-decoration: none; padding: 12px 24px; border-radius: 8px; display: inline-block; margin-top: 15px;">
+                    Voir la fiche complète →
+                  </a>
+                </div>
+              </div>
             `
           })
         })
