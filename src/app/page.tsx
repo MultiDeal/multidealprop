@@ -322,12 +322,12 @@ export default function HomePage() {
           </div>
           
           <Link
-            href="/vip"
-            className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-cyan-300 hover:text-white bg-cyan-950/60 border border-cyan-800/70 hover:border-cyan-400 px-3 py-1.5 rounded-xl transition-all w-fit"
-          >
-            <Compass className="w-3.5 h-3.5" />
-            <span>+ Request / Add New City ($4.99)</span>
-          </Link>
+  href="/request-city"
+  className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-cyan-300 hover:text-white bg-cyan-950/60 border border-cyan-800/70 hover:border-cyan-400 px-3 py-1.5 rounded-xl transition-all w-fit"
+>
+  <Compass className="w-3.5 h-3.5" />
+  <span>+ Request / Add New City ($4.99)</span>
+</Link>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
