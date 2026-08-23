@@ -548,22 +548,30 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800 bg-[#04060A] py-12 mt-20 text-slate-400 text-xs">
-  <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
-    <div>
-      <span className="text-white font-black tracking-wider text-sm">MULTIDEALPROP</span>
-      <p className="text-slate-500 mt-1">Institutional Off-Market Multi-Family Pipeline</p>
+      <footer className="border-t border-slate-800 bg-[#04060A] py-12 mt-20 text-slate-400 text-xs font-sans">
+  <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+      <div>
+        <span className="text-white font-black tracking-wider text-sm">MULTIDEALPROP</span>
+        <p className="text-slate-500 text-xs mt-1">Institutional Off-Market Multi-Family Pipeline &amp; Underwriting</p>
+      </div>
+
+      <div className="flex flex-wrap items-center justify-center gap-6 text-xs font-medium">
+        <Link href="/about" className="hover:text-emerald-400 transition-colors">About Us</Link>
+        <Link href="/vip" className="hover:text-emerald-400 transition-colors">Pricing Plans</Link>
+        <Link href="/contact" className="hover:text-emerald-400 transition-colors">Contact Desk</Link>
+        <Link href="/terms" className="hover:text-emerald-400 transition-colors">Terms &amp; Disclaimer</Link>
+        <Link href="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
+      </div>
     </div>
 
-    <div className="flex flex-wrap items-center gap-6">
-      <Link href="/vip" className="hover:text-emerald-400 transition-colors">Pricing Plans</Link>
-      <Link href="/contact" className="hover:text-emerald-400 transition-colors">Contact Desk</Link>
-      <Link href="/terms" className="hover:text-emerald-400 transition-colors">Terms &amp; Disclaimer</Link>
-      <Link href="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
-    </div>
-
-    <div className="text-slate-600 text-[11px]">
-      © {new Date().getFullYear()} MultiDealProp. All rights reserved.
+    <div className="border-t border-slate-900 pt-6 flex flex-col md:flex-row items-center justify-between gap-4 text-[11px] text-slate-600">
+      <p className="text-center md:text-left">
+        Disclaimer: MultiDealProp is a data aggregation platform and does not provide real estate brokerage, lending, or legal services.
+      </p>
+      <p className="flex-shrink-0">
+        © {new Date().getFullYear()} MultiDealProp. All rights reserved.
+      </p>
     </div>
   </div>
 </footer>
