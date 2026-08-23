@@ -8,13 +8,14 @@ import {
   TrendingUp, 
   MapPin, 
   ShieldCheck, 
-  Lock, 
   Zap, 
-  Filter, 
   Search,
   ArrowRight,
   Sparkles,
-  PlusCircle
+  PlusCircle,
+  Activity,
+  Layers,
+  Coins
 } from 'lucide-react';
 
 interface Deal {
@@ -35,6 +36,7 @@ interface Deal {
 export default function HomePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCity, setSelectedCity] = useState<string>('ALL');
   const [selectedState, setSelectedState] = useState<string>('ALL');
   const [minCapRate, setMinCapRate] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -49,7 +51,7 @@ export default function HomePage() {
       if (data && data.length > 0) {
         setDeals(data);
       } else {
-        // Fallback demo assets
+        // Jeu de données démo par défaut si la base est vide
         setDeals([
           {
             id: '1',
@@ -92,6 +94,20 @@ export default function HomePage() {
             units_count: 3,
             image_url: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
             is_verified: true
+          },
+          {
+            id: '4',
+            title: 'Under-Rented 2-Unit Solid Brick Construction',
+            city: 'Cleveland',
+            state: 'OH',
+            zip_code: '44108',
+            price: 89000,
+            cap_rate: 13.9,
+            monthly_rent_estimate: 1800,
+            gross_yield: 24.2,
+            units_count: 2,
+            image_url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
+            is_verified: true
           }
         ]);
       }
@@ -101,19 +117,38 @@ export default function HomePage() {
     fetchDeals();
   }, []);
 
+  // Calculs statistiques en temps réel
+  const totalDealsCount = deals.length;
+  const avgCapRate = totalDealsCount > 0 
+    ? (deals.reduce((acc, curr) => acc + (Number(curr.cap_rate) || 0), 0) / totalDealsCount).toFixed(1)
+    : '0.0';
+  const totalPipelineValue = deals.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
+  
+  // Regroupement par ville avec comptage
+  const cityCounts = deals.reduce((acc: { [key: string]: number }, deal) => {
+    if (deal.city) {
+      acc[deal.city] = (acc[deal.city] || 0) + 1;
+    }
+    return acc;
+  }, {});
+
+  const uniqueCities = Object.keys(cityCounts);
+
+  // Filtrage
   const filteredDeals = deals.filter(deal => {
+    const matchesCity = selectedCity === 'ALL' || deal.city.toLowerCase() === selectedCity.toLowerCase();
     const matchesState = selectedState === 'ALL' || deal.state === selectedState;
     const matchesCap = (deal.cap_rate || 0) >= minCapRate;
     const matchesSearch = deal.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           deal.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
                           deal.zip_code.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesState && matchesCap && matchesSearch;
+    return matchesCity && matchesState && matchesCap && matchesSearch;
   });
 
   return (
-    <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black pb-16">
       
-      {/* 1. Header Navigation with Wholesaler / Broker Link */}
+      {/* 1. Header Navigation */}
       <header className="border-b border-slate-800 bg-[#06080F]/90 backdrop-blur sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -124,7 +159,6 @@ export default function HomePage() {
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Wholesaler Submit Deal Button */}
             <Link 
               href="/submit-deal" 
               className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3.5 py-2 rounded-xl transition-all"
@@ -134,7 +168,6 @@ export default function HomePage() {
               <span className="sm:hidden">Submit</span>
             </Link>
 
-            {/* VIP Upgrade Button */}
             <Link 
               href="/vip" 
               className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-black text-xs px-4 py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center gap-1"
@@ -147,7 +180,7 @@ export default function HomePage() {
       </header>
 
       {/* 2. Hero Section */}
-      <section className="pt-12 pb-10 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+      <section className="pt-10 pb-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold mb-4">
           <Sparkles className="w-3.5 h-3.5" /> Live High-Yield Multi-Family Inventory
         </div>
@@ -162,14 +195,91 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* 3. Filters & Search */}
+      {/* 3. Global KPI Statistics Bar (RÉTABLI) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          <div className="bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <Layers className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Live Assets</div>
+              <div className="text-lg font-black text-white font-mono">{totalDealsCount} Properties</div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Avg Cap Rate</div>
+              <div className="text-lg font-black text-emerald-400 font-mono">{avgCapRate}% Net</div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400">
+              <Coins className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pipeline Volume</div>
+              <div className="text-lg font-black text-cyan-300 font-mono">${(totalPipelineValue / 1000).toFixed(0)}k Underwritten</div>
+            </div>
+          </div>
+
+          <div className="bg-slate-900/40 border border-slate-800/80 p-4 rounded-2xl flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Active Metros</div>
+              <div className="text-lg font-black text-white font-mono">{uniqueCities.length} Target Cities</div>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 4. Quick City Filter Pills (RÉTABLI) */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+          <button
+            onClick={() => setSelectedCity('ALL')}
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              selectedCity === 'ALL'
+                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
+                : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'
+            }`}
+          >
+            All Metros ({totalDealsCount})
+          </button>
+          
+          {uniqueCities.map(city => (
+            <button
+              key={city}
+              onClick={() => setSelectedCity(city)}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                selectedCity === city
+                  ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
+                  : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'
+              }`}
+            >
+              {city} ({cityCounts[city]})
+            </button>
+          ))}
+        </div>
+      </section>
+
+      {/* 5. Search & Advanced Filters */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="bg-slate-900/50 border border-slate-800 p-4 rounded-2xl flex flex-col md:flex-row items-center gap-4">
           <div className="relative flex-1 w-full">
             <Search className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder="Search by city, title, or zip..."
+              placeholder="Search by city, address, or keyword..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-emerald-400 transition-colors"
@@ -204,7 +314,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Deals Grid */}
+      {/* 6. Deals Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {loading ? (
           <div className="py-20 text-center">
@@ -280,7 +390,7 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* 5. Institutional Footer */}
+      {/* 7. Institutional Footer */}
       <footer className="border-t border-slate-800 bg-[#04060A] py-12 mt-20 text-slate-400 text-xs font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
