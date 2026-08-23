@@ -15,7 +15,8 @@ import {
   PlusCircle,
   Activity,
   Layers,
-  Coins
+  Coins,
+  Compass
 } from 'lucide-react';
 
 interface Deal {
@@ -32,21 +33,6 @@ interface Deal {
   image_url?: string;
   is_verified?: boolean;
 }
-
-// Photothèque des métropoles cibles (Liens Skylines fiables)
-const CITY_IMAGES: { [key: string]: string } = {
-  ALL: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
-  Detroit: 'https://images.unsplash.com/photo-1572508589741-0f3056da9cb9?auto=format&fit=crop&w=600&q=80',
-  Cleveland: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=600&q=80',
-  Memphis: 'https://images.unsplash.com/photo-1541888946425-d0fbb186f5f8?auto=format&fit=crop&w=600&q=80',
-  'Cape Coral': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
-  Columbus: 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=600&q=80',
-  Philadelphia: 'https://images.unsplash.com/photo-1569388330292-79cc1ec67270?auto=format&fit=crop&w=600&q=80',
-  Indianapolis: 'https://images.unsplash.com/photo-1588693951525-6b9eb471d4cb?auto=format&fit=crop&w=600&q=80',
-  Tampa: 'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?auto=format&fit=crop&w=600&q=80'
-};
-
-const DEFAULT_CITY_IMAGE = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80';
 
 export default function HomePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -66,7 +52,7 @@ export default function HomePage() {
       if (data && data.length > 0) {
         setDeals(data);
       } else {
-        // Jeu de démonstration
+        // Jeu par défaut
         setDeals([
           {
             id: '1',
@@ -139,24 +125,25 @@ export default function HomePage() {
     : '0.0';
   const totalPipelineValue = deals.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
   
-  // Regroupement par ville
+  // Extraction dynamique et automatique de toutes les villes de la base Supabase
   const cityCounts = deals.reduce((acc: { [key: string]: number }, deal) => {
     if (deal.city) {
-      acc[deal.city] = (acc[deal.city] || 0) + 1;
+      const cityName = deal.city.trim();
+      acc[cityName] = (acc[cityName] || 0) + 1;
     }
     return acc;
   }, {});
 
-  const uniqueCities = Object.keys(cityCounts);
+  const uniqueCities = Object.keys(cityCounts).sort();
 
   // Filtrage
   const filteredDeals = deals.filter(deal => {
-    const matchesCity = selectedCity === 'ALL' || deal.city.toLowerCase() === selectedCity.toLowerCase();
+    const matchesCity = selectedCity === 'ALL' || deal.city?.trim().toLowerCase() === selectedCity.toLowerCase();
     const matchesState = selectedState === 'ALL' || deal.state === selectedState;
     const matchesCap = (deal.cap_rate || 0) >= minCapRate;
-    const matchesSearch = deal.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          deal.city.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          deal.zip_code.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch = deal.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          deal.city?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          deal.zip_code?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCity && matchesState && matchesCap && matchesSearch;
   });
 
@@ -257,64 +244,67 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Visual Metro Market Cards with City Photos */}
+      {/* 4. Dynamic Auto-Updating City Filter Grid (Text & Badge Design) */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-xs font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
-            <MapPin className="w-3.5 h-3.5 text-emerald-400" /> Explore Target Metros
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+          <div className="text-xs font-extrabold uppercase tracking-widest text-slate-300 flex items-center gap-2">
+            <MapPin className="w-4 h-4 text-emerald-400" /> 
+            <span>Active Target Markets ({uniqueCities.length} Cities Online)</span>
           </div>
-          <span className="text-[11px] text-slate-500">Click to filter inventory</span>
+          
+          {/* Add City Monetization Button */}
+          <Link
+            href="/vip"
+            className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-cyan-300 hover:text-white bg-cyan-950/60 border border-cyan-800/70 hover:border-cyan-400 px-3 py-1.5 rounded-xl transition-all w-fit"
+          >
+            <Compass className="w-3.5 h-3.5" />
+            <span>+ Request / Add New City ($4.99)</span>
+          </Link>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+        {/* Clean, High-Contrast City Buttons Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2.5">
           
-          {/* Card: All Metros */}
-          <div
+          {/* Button: All Markets */}
+          <button
             onClick={() => setSelectedCity('ALL')}
-            className={`group relative h-28 rounded-2xl overflow-hidden cursor-pointer border transition-all duration-300 flex flex-col justify-end p-3 ${
+            className={`p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${
               selectedCity === 'ALL'
-                ? 'border-emerald-400 ring-2 ring-emerald-400/30 scale-[1.02] shadow-lg shadow-emerald-500/20'
-                : 'border-slate-800 hover:border-slate-600'
+                ? 'bg-emerald-500/15 border-emerald-400 text-white shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-400/50'
+                : 'bg-slate-900/60 border-slate-800/90 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
             }`}
           >
-            <img 
-              src={CITY_IMAGES['ALL']} 
-              alt="All Markets" 
-              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 brightness-[0.45]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#06080F] via-transparent to-transparent opacity-90"></div>
-            <div className="relative z-10">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 bg-slate-950/80 px-2 py-0.5 rounded-md border border-emerald-500/20">
-                {totalDealsCount} Total
-              </span>
-              <h4 className="text-xs font-black text-white mt-1.5 leading-tight">All Markets</h4>
-            </div>
-          </div>
+            <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400">
+              {totalDealsCount} Assets
+            </span>
+            <span className="text-xs sm:text-sm font-black text-white mt-1">
+              All Metros
+            </span>
+          </button>
 
-          {/* Dynamic Cards per City */}
+          {/* Dynamically Loaded Cities from Supabase */}
           {uniqueCities.map(city => (
-            <div
+            <button
               key={city}
               onClick={() => setSelectedCity(city)}
-              className={`group relative h-28 rounded-2xl overflow-hidden cursor-pointer border transition-all duration-300 flex flex-col justify-end p-3 ${
+              className={`p-3 rounded-2xl border text-left transition-all duration-200 cursor-pointer flex flex-col justify-between ${
                 selectedCity === city
-                  ? 'border-emerald-400 ring-2 ring-emerald-400/30 scale-[1.02] shadow-lg shadow-emerald-500/20'
-                  : 'border-slate-800 hover:border-slate-600'
+                  ? 'bg-emerald-500/15 border-emerald-400 text-white shadow-lg shadow-emerald-500/10 ring-1 ring-emerald-400/50'
+                  : 'bg-slate-900/60 border-slate-800/90 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
               }`}
             >
-              <img 
-                src={CITY_IMAGES[city] || DEFAULT_CITY_IMAGE} 
-                alt={city} 
-                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 brightness-[0.45]"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#06080F] via-transparent to-transparent opacity-90"></div>
-              <div className="relative z-10">
-                <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 bg-slate-950/80 px-2 py-0.5 rounded-md border border-cyan-500/20">
-                  {cityCounts[city]} {cityCounts[city] > 1 ? 'Deals' : 'Deal'}
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-mono font-black text-cyan-300 bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-800/60">
+                  {cityCounts[city]}
                 </span>
-                <h4 className="text-xs font-black text-white mt-1.5 leading-tight">{city}</h4>
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                  {cityCounts[city] > 1 ? 'Deals' : 'Deal'}
+                </span>
               </div>
-            </div>
+              <span className="text-xs sm:text-sm font-black text-white mt-2 truncate">
+                {city}
+              </span>
+            </button>
           ))}
 
         </div>
@@ -411,7 +401,7 @@ export default function HomePage() {
                   <div className="grid grid-cols-3 gap-2 bg-slate-950/60 p-3 rounded-2xl border border-slate-800/80 text-center">
                     <div>
                       <div className="text-[9px] uppercase font-bold text-slate-500">Asking</div>
-                      <div className="text-xs font-black text-white font-mono mt-0.5">${deal.price.toLocaleString()}</div>
+                      <div className="text-xs font-black text-white font-mono mt-0.5">${Number(deal.price).toLocaleString()}</div>
                     </div>
                     <div>
                       <div className="text-[9px] uppercase font-bold text-slate-500">Cap Rate</div>
@@ -419,7 +409,7 @@ export default function HomePage() {
                     </div>
                     <div>
                       <div className="text-[9px] uppercase font-bold text-slate-500">Est. Rent</div>
-                      <div className="text-xs font-black text-cyan-300 font-mono mt-0.5">${deal.monthly_rent_estimate?.toLocaleString() || 'N/A'}</div>
+                      <div className="text-xs font-black text-cyan-300 font-mono mt-0.5">${deal.monthly_rent_estimate ? Number(deal.monthly_rent_estimate).toLocaleString() : 'N/A'}</div>
                     </div>
                   </div>
 
