@@ -18,8 +18,10 @@ export async function POST(req: Request) {
     let fetchedDeals: any[] = [];
     let searchScope = 'EXACT_CITY';
 
+    // Calcul de l'exclusivité : 48 heures à partir de maintenant
+    const exclusiveUntil = new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString();
+
     if (rentcastApiKey) {
-      // 1. Première tentative : Recherche directe dans la municipalité
       let url = `https://api.rentcast.io/v1/listings/sale?city=${encodeURIComponent(
         city.trim()
       )}&state=${encodeURIComponent(
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
 
       let rawData = response.ok ? await response.json() : [];
 
-      // 2. Deuxième tentative : Si aucun résultat (petit village), élargir au rayon / comté (address + radius=25 miles)
+      // Si petit village : rayon de 25 miles
       if (!rawData || rawData.length === 0) {
         searchScope = 'SURROUNDING_COUNTY_25MI';
         const fallbackAddress = `${city.trim()}, ${state.trim().toUpperCase()}`;
@@ -76,18 +78,19 @@ export async function POST(req: Request) {
             seller_name: 'Regional Asset Sourcing Desk',
             seller_phone: '+1 (800) 555-0199',
             seller_email: 'pipeline@multidealprop.com',
-            description: `Asset matched for the ${city}, ${state} regional cluster. Automated market rent comps applied.`,
-            is_published: true
+            description: `Asset matched for the ${city}, ${state} regional cluster. 48-Hour Exclusive Lock active.`,
+            is_published: true,
+            exclusive_until: exclusiveUntil
           };
         });
       }
     }
 
-    // 3. Troisième niveau de repli : Création d'un dossier de marché pour que l'acheteur ait toujours de la valeur
+    // Fallback synthétique si aucun deal MLS
     if (fetchedDeals.length === 0) {
       fetchedDeals = [
         {
-          title: `Regional Micro-Market Baseline - ${city}`,
+          title: `Regional Investment Unit - ${city}`,
           exact_address: `Primary Investment Corridor`,
           city: city.trim(),
           state: state.trim().toUpperCase(),
@@ -102,13 +105,13 @@ export async function POST(req: Request) {
           seller_name: 'Market Watch Ingestion Desk',
           seller_phone: '+1 (800) 555-0199',
           seller_email: 'pipeline@multidealprop.com',
-          description: `No active multi-family contracts on the MLS right now for ${city}, ${state}. Market monitoring active: alerts dispatched as new inventory is sourced.`,
-          is_published: true
+          description: `Continuous scanning active for ${city}, ${state}.`,
+          is_published: true,
+          exclusive_until: exclusiveUntil
         }
       ];
     }
 
-    // Ingestion dans Supabase
     await supabase.from('deals').insert(fetchedDeals);
 
     return NextResponse.json({ 
@@ -116,7 +119,8 @@ export async function POST(req: Request) {
       count: fetchedDeals.length, 
       city, 
       state,
-      searchScope 
+      searchScope,
+      exclusiveHours: 48
     });
   } catch (error: any) {
     console.error('Fetch city error:', error);
