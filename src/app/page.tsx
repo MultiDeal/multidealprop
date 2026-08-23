@@ -323,10 +323,13 @@ export default function HomePage() {
           
           <Link
   href="/request-city"
-  className="inline-flex items-center gap-1.5 text-[11px] font-extrabold text-cyan-300 hover:text-white bg-cyan-950/60 border border-cyan-800/70 hover:border-cyan-400 px-3 py-1.5 rounded-xl transition-all w-fit"
+  className="inline-flex items-center gap-2 text-[11px] font-extrabold text-cyan-300 hover:text-white bg-cyan-950/60 border border-cyan-800/80 hover:border-cyan-400 px-3.5 py-2 rounded-xl transition-all shadow-lg shadow-cyan-950/40 w-fit group"
 >
-  <Compass className="w-3.5 h-3.5" />
-  <span>+ Request / Add New City ($4.99)</span>
+  <Compass className="w-3.5 h-3.5 text-cyan-400 group-hover:rotate-45 transition-transform" />
+  <span>+ Request City ($4.99)</span>
+  <span className="bg-cyan-400/15 text-cyan-300 text-[10px] font-black px-2 py-0.5 rounded-md border border-cyan-400/30">
+    🔒 48h Private Lock
+  </span>
 </Link>
         </div>
 
