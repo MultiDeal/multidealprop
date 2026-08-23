@@ -33,6 +33,21 @@ interface Deal {
   is_verified?: boolean;
 }
 
+// Photothèque des métropoles cibles (Skylines HD)
+const CITY_IMAGES: { [key: string]: string } = {
+  ALL: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
+  Cleveland: 'https://images.unsplash.com/photo-1572508589741-0f3056da9cb9?auto=format&fit=crop&w=600&q=80',
+  Detroit: 'https://images.unsplash.com/photo-1569429593410-b498b3fb3387?auto=format&fit=crop&w=600&q=80',
+  Memphis: 'https://images.unsplash.com/photo-1541888946425-d0fbb186f5f8?auto=format&fit=crop&w=600&q=80',
+  Philadelphia: 'https://images.unsplash.com/photo-1569388330292-79cc1ec67270?auto=format&fit=crop&w=600&q=80',
+  Indianapolis: 'https://images.unsplash.com/photo-1588693951525-6b9eb471d4cb?auto=format&fit=crop&w=600&q=80',
+  Tampa: 'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?auto=format&fit=crop&w=600&q=80',
+  Columbus: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
+  Baltimore: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80'
+};
+
+const DEFAULT_CITY_IMAGE = 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=600&q=80';
+
 export default function HomePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +66,7 @@ export default function HomePage() {
       if (data && data.length > 0) {
         setDeals(data);
       } else {
-        // Jeu de données démo par défaut si la base est vide
+        // Jeu de démonstration
         setDeals([
           {
             id: '1',
@@ -117,14 +132,14 @@ export default function HomePage() {
     fetchDeals();
   }, []);
 
-  // Calculs statistiques en temps réel
+  // Calculs statistiques
   const totalDealsCount = deals.length;
   const avgCapRate = totalDealsCount > 0 
     ? (deals.reduce((acc, curr) => acc + (Number(curr.cap_rate) || 0), 0) / totalDealsCount).toFixed(1)
     : '0.0';
   const totalPipelineValue = deals.reduce((acc, curr) => acc + (Number(curr.price) || 0), 0);
   
-  // Regroupement par ville avec comptage
+  // Regroupement par ville
   const cityCounts = deals.reduce((acc: { [key: string]: number }, deal) => {
     if (deal.city) {
       acc[deal.city] = (acc[deal.city] || 0) + 1;
@@ -195,7 +210,7 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* 3. Global KPI Statistics Bar (RÉTABLI) */}
+      {/* 3. Global KPI Statistics Bar */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           
@@ -242,33 +257,66 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Quick City Filter Pills (RÉTABLI) */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <button
+      {/* 4. Visual Metro Market Cards with City Photos */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-8">
+        <div className="flex items-center justify-between mb-3">
+          <div className="text-xs font-extrabold uppercase tracking-widest text-slate-400 flex items-center gap-1.5">
+            <MapPin className="w-3.5 h-3.5 text-emerald-400" /> Explore Target Metros
+          </div>
+          <span className="text-[11px] text-slate-500">Click to filter inventory</span>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
+          
+          {/* Card: All Metros */}
+          <div
             onClick={() => setSelectedCity('ALL')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+            className={`group relative h-28 rounded-2xl overflow-hidden cursor-pointer border transition-all duration-300 flex flex-col justify-end p-3 ${
               selectedCity === 'ALL'
-                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'
+                ? 'border-emerald-400 ring-2 ring-emerald-400/30 scale-[1.02] shadow-lg shadow-emerald-500/20'
+                : 'border-slate-800 hover:border-slate-600'
             }`}
           >
-            All Metros ({totalDealsCount})
-          </button>
-          
+            <img 
+              src={CITY_IMAGES['ALL']} 
+              alt="All Markets" 
+              className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 brightness-[0.45]"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#06080F] via-transparent to-transparent opacity-90"></div>
+            <div className="relative z-10">
+              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-400 bg-slate-950/80 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                {totalDealsCount} Total
+              </span>
+              <h4 className="text-xs font-black text-white mt-1.5 leading-tight">All Markets</h4>
+            </div>
+          </div>
+
+          {/* Dynamic Cards per City */}
           {uniqueCities.map(city => (
-            <button
+            <div
               key={city}
               onClick={() => setSelectedCity(city)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`group relative h-28 rounded-2xl overflow-hidden cursor-pointer border transition-all duration-300 flex flex-col justify-end p-3 ${
                 selectedCity === city
-                  ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                  : 'bg-slate-900/80 text-slate-400 border border-slate-800 hover:text-white'
+                  ? 'border-emerald-400 ring-2 ring-emerald-400/30 scale-[1.02] shadow-lg shadow-emerald-500/20'
+                  : 'border-slate-800 hover:border-slate-600'
               }`}
             >
-              {city} ({cityCounts[city]})
-            </button>
+              <img 
+                src={CITY_IMAGES[city] || DEFAULT_CITY_IMAGE} 
+                alt={city} 
+                className="absolute inset-0 w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 brightness-[0.45]"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#06080F] via-transparent to-transparent opacity-90"></div>
+              <div className="relative z-10">
+                <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-300 bg-slate-950/80 px-2 py-0.5 rounded-md border border-cyan-500/20">
+                  {cityCounts[city]} {cityCounts[city] > 1 ? 'Deals' : 'Deal'}
+                </span>
+                <h4 className="text-xs font-black text-white mt-1.5 leading-tight">{city}</h4>
+              </div>
+            </div>
           ))}
+
         </div>
       </section>
 
