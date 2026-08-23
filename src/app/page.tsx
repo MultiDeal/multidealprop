@@ -548,10 +548,25 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-800/80 bg-[#04060A] text-slate-500 text-xs py-8 text-center">
-        <p>© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
-        <p className="text-[10px] text-slate-600 mt-1">Real estate investment discovery &amp; algorithmic due diligence engine.</p>
-      </footer>
+      <footer className="border-t border-slate-800 bg-[#04060A] py-12 mt-20 text-slate-400 text-xs">
+  <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-6">
+    <div>
+      <span className="text-white font-black tracking-wider text-sm">MULTIDEALPROP</span>
+      <p className="text-slate-500 mt-1">Institutional Off-Market Multi-Family Pipeline</p>
+    </div>
+
+    <div className="flex flex-wrap items-center gap-6">
+      <Link href="/vip" className="hover:text-emerald-400 transition-colors">Pricing Plans</Link>
+      <Link href="/contact" className="hover:text-emerald-400 transition-colors">Contact Desk</Link>
+      <Link href="/terms" className="hover:text-emerald-400 transition-colors">Terms &amp; Disclaimer</Link>
+      <Link href="/privacy" className="hover:text-emerald-400 transition-colors">Privacy Policy</Link>
+    </div>
+
+    <div className="text-slate-600 text-[11px]">
+      © {new Date().getFullYear()} MultiDealProp. All rights reserved.
+    </div>
+  </div>
+</footer>
 
     </div>
   );
