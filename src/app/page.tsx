@@ -33,20 +33,20 @@ interface Deal {
   is_verified?: boolean;
 }
 
-// Photothèque des métropoles cibles (Skylines HD)
+// Photothèque des métropoles cibles (Liens Skylines fiables)
 const CITY_IMAGES: { [key: string]: string } = {
   ALL: 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80',
-  Cleveland: 'https://images.unsplash.com/photo-1572508589741-0f3056da9cb9?auto=format&fit=crop&w=600&q=80',
-  Detroit: 'https://images.unsplash.com/photo-1569429593410-b498b3fb3387?auto=format&fit=crop&w=600&q=80',
+  Detroit: 'https://images.unsplash.com/photo-1572508589741-0f3056da9cb9?auto=format&fit=crop&w=600&q=80',
+  Cleveland: 'https://images.unsplash.com/photo-1514565131-fce0801e5785?auto=format&fit=crop&w=600&q=80',
   Memphis: 'https://images.unsplash.com/photo-1541888946425-d0fbb186f5f8?auto=format&fit=crop&w=600&q=80',
+  'Cape Coral': 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=600&q=80',
+  Columbus: 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=600&q=80',
   Philadelphia: 'https://images.unsplash.com/photo-1569388330292-79cc1ec67270?auto=format&fit=crop&w=600&q=80',
   Indianapolis: 'https://images.unsplash.com/photo-1588693951525-6b9eb471d4cb?auto=format&fit=crop&w=600&q=80',
-  Tampa: 'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?auto=format&fit=crop&w=600&q=80',
-  Columbus: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=600&q=80',
-  Baltimore: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=600&q=80'
+  Tampa: 'https://images.unsplash.com/photo-1506146332389-18140dc7b2fb?auto=format&fit=crop&w=600&q=80'
 };
 
-const DEFAULT_CITY_IMAGE = 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?auto=format&fit=crop&w=600&q=80';
+const DEFAULT_CITY_IMAGE = 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=600&q=80';
 
 export default function HomePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
