@@ -1,251 +1,246 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { 
-  ArrowLeft, 
-  MapPin, 
-  Building2, 
-  Phone, 
-  Mail, 
-  ShieldCheck, 
-  FileText,
-  Lock,
-  Zap
-} from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
-export default function DealDetailPage() {
+export default function DealDetailsPage() {
   const params = useParams();
-  const router = useRouter();
-  const id = params?.id as string;
-  const [deal, setDeal] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [userTier, setUserTier] = useState<'FREE' | 'BASIC' | 'VIP'>('FREE');
+  const [isVip, setIsVip] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Vérifie si le statut VIP est actif dans le navigateur
   useEffect(() => {
-    async function loadData() {
-      if (!id) return;
-      
-      const savedTier = typeof window !== 'undefined' ? localStorage.getItem('user_tier') as 'FREE' | 'BASIC' | 'VIP' | null : null;
-      if (savedTier) setUserTier(savedTier);
-
-      const { data } = await supabase
-        .from('deals')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (data) {
-        setDeal(data);
-      } else {
-        setDeal({
-          id,
-          title: 'Turnkey Multi-Family Duplex - 2 Units Leased',
-          exact_address: '1428 E 71st Street',
-          city: 'Cleveland',
-          state: 'OH',
-          zip_code: '44105',
-          price: 98000,
-          cap_rate: 13.4,
-          monthly_rent_estimate: 1950,
-          gross_yield: 23.8,
-          units_count: 2,
-          seller_name: 'Apex Wholesale Capital LLC',
-          seller_phone: '+1 (216) 884-2190',
-          seller_email: 'acquisitions@apexreicapital.com',
-          image_url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
-          description: 'Fully occupied 2-unit turnkey multi-family property generating consistent cash-flow. Recent roof and mechanical updates. Long-term tenants in place with immediate rent growth potential.'
-        });
-      }
-      setLoading(false);
+    if (typeof window !== 'undefined') {
+      const vipStatus = localStorage.getItem('multideal_vip') === 'true';
+      setIsVip(vipStatus);
+      setIsLoading(false);
     }
-    loadData();
-  }, [id]);
+  }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#06080F] flex items-center justify-center text-white font-sans">
-        <p className="text-xs font-bold animate-pulse text-emerald-400">Loading Deal Data &amp; Financial Matrix...</p>
-      </div>
-    );
-  }
-
-  const isPaidUser = userTier === 'BASIC' || userTier === 'VIP';
-  const priceFormatted = Number(deal?.price || 0).toLocaleString();
-  const rentFormatted = Number(deal?.monthly_rent_estimate || 1800).toLocaleString();
+  // Données de démonstration du deal (ou issues de votre base Supabase)
+  const deal = {
+    id: params?.id || 'deal-1',
+    title: 'Renovated 3-Bed Brick Home - Section 8 Ready',
+    tag: 'High-Cap Underwritten Asset',
+    streetAddress: '12408 St Clair Ave',
+    cityStateZip: 'Cleveland, OH 44120',
+    price: '$89,500',
+    capRate: '10.8%',
+    monthlyRent: '$1,250',
+    grossYield: '23.8%',
+    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
+    wholesaler: {
+      name: 'Apex Wholesale Capital LLC',
+      phone: '+1 (216) 485-9921',
+      email: 'acquisitions@apexwholesaledesk.com',
+      assignmentFee: '$5,000 included in price',
+    },
+    synopsis: 'Solid turnkey turn-around asset in high-occupancy rental corridor. Long-term Section 8 tenant in place paying full market rate with zero landlord utility overhead.',
+  };
 
   return (
-    <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased pb-20">
-      
-      {/* Navigation Header */}
-      <header className="border-b border-slate-800 bg-[#06080F]/80 backdrop-blur sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-          <button 
-            onClick={() => router.back()}
-            className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1.5 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4" /> Back to Scanner
-          </button>
-
-          <Link href="/vip" className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-black text-xs px-4 py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all">
-            ⚡ Upgrade Plan ($29 - $49)
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+    <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
+      <div className="max-w-7xl mx-auto">
         
-        {/* Deal Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        {/* Navigation & Header Status */}
+        <div className="flex items-center justify-between mb-8">
+          <Link
+            href="/"
+            className="text-slate-400 hover:text-white transition flex items-center gap-2 text-sm font-medium"
+          >
+            ← Back to Scanner
+          </Link>
+
+          {!isVip ? (
+            <Link
+              href="/vip"
+              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider py-2.5 px-5 rounded-full shadow-lg transition flex items-center gap-2"
+            >
+              ⚡ Upgrade Plan ($29 - $49)
+            </Link>
+          ) : (
+            <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-full flex items-center gap-1.5">
+              ✓ VIP Member Access Unlocked
+            </span>
+          )}
+        </div>
+
+        {/* Title & Tag */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold mb-2">
-              <ShieldCheck className="w-3.5 h-3.5" /> High-Cap Underwritten Asset
-            </div>
-            <h1 className="text-2xl sm:text-4xl font-black text-white">{deal.title}</h1>
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
+              🛡️ {deal.tag}
+            </span>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">
+              {deal.title}
+            </h1>
             
-            {/* Address Display */}
-            <div className="text-xs sm:text-sm text-slate-400 flex items-center gap-1.5 mt-1">
-              <MapPin className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              {isPaidUser ? (
-                <span className="text-white font-semibold">{deal.exact_address || '1428 E 71st Street'}, {deal.city}, {deal.state} {deal.zip_code}</span>
+            {/* Address Display (Unlocked for VIP vs Masked for Public) */}
+            <div className="flex items-center gap-2 text-slate-400 text-sm sm:text-base">
+              <span className="text-emerald-400">📍</span>
+              {isVip ? (
+                <span className="text-white font-semibold underline decoration-emerald-500/50">
+                  {deal.streetAddress}, {deal.cityStateZip}
+                </span>
               ) : (
-                <span className="flex items-center gap-2">
-                  <span className="filter blur-sm select-none font-mono text-slate-500 bg-slate-800 px-2 py-0.5 rounded">1428 E 71st St</span>
-                  <span>{deal.city || 'Cleveland'}, {deal.state || 'OH'} {deal.zip_code || '44105'} <span className="text-amber-400 text-xs font-bold">(Exact Street Locked 🔒)</span></span>
+                <span>
+                  <span className="blur-sm select-none text-slate-500">12408 St Clair Ave</span>{' '}
+                  {deal.cityStateZip}{' '}
+                  <span className="text-amber-400 font-medium text-xs bg-amber-400/10 px-2 py-0.5 rounded ml-1">
+                    (Exact Street Locked 🔒)
+                  </span>
                 </span>
               )}
             </div>
           </div>
 
-          <div className="text-left md:text-right bg-slate-900/60 border border-slate-800 p-4 rounded-2xl">
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-widest">Off-Market Asking Price</div>
-            <div className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono">${priceFormatted}</div>
+          {/* Asking Price Box */}
+          <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-right min-w-[220px]">
+            <p className="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-1">
+              Off-Market Asking Price
+            </p>
+            <p className="text-3xl sm:text-4xl font-black text-emerald-400 tracking-tight">
+              {deal.price}
+            </p>
           </div>
         </div>
 
-        {/* Content Layout */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Main Column */}
+          {/* Left Column: Image & Financial Metrics */}
           <div className="lg:col-span-2 space-y-6">
-            
-            {/* Image */}
-            {deal.image_url && (
-              <div className="rounded-3xl overflow-hidden border border-slate-800 bg-slate-900 h-72 sm:h-96 relative">
-                <img 
-                  src={deal.image_url} 
-                  alt={deal.title} 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
+            <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
+              <img
+                src={deal.image}
+                alt={deal.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
 
-            {/* Core Financial Metrics */}
-            <div className="grid grid-cols-3 gap-4 bg-slate-900/40 border border-slate-800 p-5 rounded-2xl">
+            {/* Financial Metrics Cards */}
+            <div className="grid grid-cols-3 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-6 text-center">
               <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Cap Rate</div>
-                <div className="text-xl font-black text-emerald-400 mt-0.5">{deal.cap_rate || 13.4}%</div>
+                <p className="text-xs text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
+                <p className="text-2xl font-black text-emerald-400">{deal.capRate}</p>
+              </div>
+              <div className="border-x border-slate-800">
+                <p className="text-xs text-slate-400 uppercase font-semibold mb-1">Gross Monthly Rent</p>
+                <p className="text-2xl font-black text-sky-400">{deal.monthlyRent}</p>
               </div>
               <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Gross Monthly Rent</div>
-                <div className="text-xl font-black text-cyan-300 mt-0.5">${rentFormatted}</div>
-              </div>
-              <div>
-                <div className="text-[10px] uppercase font-bold text-slate-500">Gross Yield</div>
-                <div className="text-xl font-black text-white mt-0.5">{deal.gross_yield || 23.8}%</div>
+                <p className="text-xs text-slate-400 uppercase font-semibold mb-1">Gross Yield</p>
+                <p className="text-2xl font-black text-white">{deal.grossYield}</p>
               </div>
             </div>
 
-            {/* Synopsis */}
-            <div className="bg-slate-900/40 border border-slate-800 p-6 rounded-2xl">
-              <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-3">Investment Synopsis</h3>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">{deal.description}</p>
+            {/* Investment Synopsis */}
+            <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+                Investment Synopsis
+              </h3>
+              <p className="text-slate-300 leading-relaxed text-sm sm:text-base">
+                {deal.synopsis}
+              </p>
             </div>
-
           </div>
 
-          {/* Action Sidebar */}
+          {/* Right Column: Due Diligence & Wholesaler Desk */}
           <div className="space-y-6">
             
-            {/* PDF Pack Download Box (GATED) */}
-            <div className="bg-gradient-to-b from-slate-900 to-[#0A121E] border-2 border-emerald-500/40 rounded-3xl p-6 shadow-2xl">
-              <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1 flex items-center gap-1.5">
-                <FileText className="w-4 h-4" /> Due Diligence Vault
+            {/* Due Diligence Vault */}
+            <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
+              <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
+                📄 Due Diligence Vault
               </div>
-              <h3 className="text-lg font-black text-white mb-2">Audit Report &amp; Rent Roll</h3>
-              <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+              <h3 className="text-xl font-bold text-white mb-2">Audit Report & Rent Roll</h3>
+              <p className="text-slate-400 text-xs mb-6 leading-relaxed">
                 Full underwriting breakdown, expense schedule, and seller assignment details.
               </p>
 
-              {isPaidUser ? (
-                <Link
-                  href={`/deals/${id}/print`}
-                  target="_blank"
-                  className="w-full bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 hover:opacity-95 text-black font-black text-xs sm:text-sm py-4 px-4 rounded-xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 transition-all cursor-pointer"
+              {isVip ? (
+                <button
+                  onClick={() => alert('Téléchargement du dossier complet de vérification...')}
+                  className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow"
                 >
-                  <FileText className="w-4 h-4" />
-                  📄 Download PDF Audit Pack
-                </Link>
+                  📥 Download Full PDF Audit Pack
+                </button>
               ) : (
                 <Link
                   href="/vip"
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs py-3.5 px-4 rounded-xl flex items-center justify-center gap-2 border border-slate-700 transition-all"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#131d36] hover:bg-[#1a2747] text-slate-300 border border-slate-700 font-semibold py-3.5 px-4 rounded-xl transition text-sm"
                 >
-                  <Lock className="w-4 h-4 text-emerald-400" />
-                  Unlock Full PDF Pack (Basic/VIP)
+                  🔒 Unlock Full PDF Pack (Basic/VIP)
                 </Link>
               )}
             </div>
 
-            {/* Direct Wholesaler Desk (LOCKED FOR FREE TIER) */}
-            <div className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 relative overflow-hidden">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between">
-                <span>Direct Wholesaler Desk</span>
-                {!isPaidUser && <span className="text-[10px] text-amber-400 font-bold bg-amber-400/10 px-2 py-0.5 rounded">🔒 Locked</span>}
+            {/* Direct Wholesaler Desk */}
+            <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                  Direct Wholesaler Desk
+                </h3>
+                {isVip ? (
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
+                    UNLOCKED
+                  </span>
+                ) : (
+                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded flex items-center gap-1">
+                    🔒 LOCKED
+                  </span>
+                )}
               </div>
 
-              {isPaidUser ? (
-                <div className="space-y-3 pt-2 text-xs">
-                  <div className="flex items-center gap-2.5 text-slate-200">
-                    <Building2 className="w-4 h-4 text-emerald-400" />
-                    <span>{deal.seller_name || 'Apex Wholesale Capital LLC'}</span>
+              {isVip ? (
+                /* VIP UNLOCKED VIEW */
+                <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-5 space-y-3">
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase font-semibold">Wholesaler Entity</p>
+                    <p className="text-white font-bold text-base">{deal.wholesaler.name}</p>
                   </div>
-                  <div className="flex items-center gap-2.5 text-slate-200">
-                    <Phone className="w-4 h-4 text-emerald-400" />
-                    <span className="font-mono">{deal.seller_phone || '+1 (216) 884-2190'}</span>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase font-semibold">Direct Phone</p>
+                    <a
+                      href={`tel:${deal.wholesaler.phone}`}
+                      className="text-emerald-400 font-extrabold hover:underline"
+                    >
+                      {deal.wholesaler.phone}
+                    </a>
                   </div>
-                  <div className="flex items-center gap-2.5 text-slate-200">
-                    <Mail className="w-4 h-4 text-emerald-400" />
-                    <span className="font-mono">{deal.seller_email || 'acquisitions@apexreicapital.com'}</span>
+                  <div>
+                    <p className="text-xs text-slate-400 uppercase font-semibold">Direct Email</p>
+                    <a
+                      href={`mailto:${deal.wholesaler.email}`}
+                      className="text-sky-400 hover:underline text-sm break-all"
+                    >
+                      {deal.wholesaler.email}
+                    </a>
+                  </div>
+                  <div className="pt-2 border-t border-slate-800/80">
+                    <p className="text-xs text-slate-400">{deal.wholesaler.assignmentFee}</p>
                   </div>
                 </div>
               ) : (
-                <div className="pt-2">
-                  <div className="space-y-3 filter blur-sm select-none opacity-40 text-xs pointer-events-none">
-                    <div className="flex items-center gap-2.5 text-slate-200">
-                      <Building2 className="w-4 h-4" /> Apex Wholesale Capital LLC
-                    </div>
-                    <div className="flex items-center gap-2.5 text-slate-200">
-                      <Phone className="w-4 h-4" /> +1 (216) 884-XXXX
-                    </div>
-                    <div className="flex items-center gap-2.5 text-slate-200">
-                      <Mail className="w-4 h-4" /> acquisitions@apexrei...
-                    </div>
+                /* PUBLIC LOCKED VIEW */
+                <div className="space-y-4">
+                  <div className="p-4 bg-[#131d36]/60 rounded-xl space-y-2 select-none filter blur-[4px]">
+                    <p className="text-slate-400 text-sm">👤 Apex Wholesaler Capital LLC</p>
+                    <p className="text-slate-400 text-sm">📞 +1 (216) 485-0000</p>
+                    <p className="text-slate-400 text-sm">✉️ acquisitions@dealdesk.com</p>
                   </div>
 
-                  <div className="mt-4 p-4 rounded-xl bg-slate-950/80 border border-slate-800 text-center">
-                    <p className="text-xs text-slate-300 font-medium mb-3">
-                      Unlock exact address &amp; seller assignment direct contact starting at $29/mo.
-                    </p>
-                    <Link
-                      href="/vip"
-                      className="inline-flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-400 text-black font-extrabold text-xs px-4 py-2 rounded-xl transition-all"
-                    >
-                      <Zap className="w-3.5 h-3.5" /> Unlock Contacts Now
-                    </Link>
-                  </div>
+                  <p className="text-xs text-slate-400 text-center">
+                    Unlock exact address & seller assignment direct contact starting at $29/mo.
+                  </p>
+
+                  <Link
+                    href="/vip"
+                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold py-3.5 px-4 rounded-xl transition shadow-lg text-sm"
+                  >
+                    ⚡ Unlock Contacts Now
+                  </Link>
                 </div>
               )}
             </div>
@@ -254,7 +249,7 @@ export default function DealDetailPage() {
 
         </div>
 
-      </main>
+      </div>
     </div>
   );
 }
