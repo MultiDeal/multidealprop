@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function RequestCityPage() {
+function RequestCityForm() {
   const searchParams = useSearchParams();
   const isSuccess = searchParams.get('success') === 'true';
   const successCity = searchParams.get('city') || 'your requested area';
@@ -44,31 +44,29 @@ export default function RequestCityPage() {
 
   if (isSuccess) {
     return (
-      <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center p-4">
-        <div className="max-w-xl w-full bg-[#0d1527] border border-emerald-500/30 rounded-3xl p-8 text-center shadow-2xl">
-          <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
-            ✓
-          </div>
-          <span className="inline-block bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-4 py-1.5 rounded-full mb-4 uppercase tracking-wider">
-            🔒 48-Hour First-Look Lock Activated
-          </span>
-          <h2 className="text-3xl font-extrabold mb-3">Market Ingested & Secured!</h2>
-          <p className="text-slate-300 mb-8">
-            <strong className="text-emerald-400 capitalize">{successCity} {successState}</strong> is now live in your pipeline.
-          </p>
-          <a
-            href="/"
-            className="inline-block w-full bg-gradient-to-r from-teal-400 to-emerald-400 hover:opacity-90 text-slate-950 font-bold py-3.5 px-6 rounded-xl transition"
-          >
-            🚀 Access {successCity} Live Inventory Now
-          </a>
+      <div className="max-w-xl w-full bg-[#0d1527] border border-emerald-500/30 rounded-3xl p-8 text-center shadow-2xl">
+        <div className="w-16 h-16 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-6 text-2xl">
+          ✓
         </div>
+        <span className="inline-block bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold px-4 py-1.5 rounded-full mb-4 uppercase tracking-wider">
+          🔒 48-Hour First-Look Lock Activated
+        </span>
+        <h2 className="text-3xl font-extrabold mb-3">Market Ingested & Secured!</h2>
+        <p className="text-slate-300 mb-8">
+          <strong className="text-emerald-400 capitalize">{successCity} {successState}</strong> is now live in your pipeline.
+        </p>
+        <a
+          href="/"
+          className="inline-block w-full bg-gradient-to-r from-teal-400 to-emerald-400 hover:opacity-90 text-slate-950 font-bold py-3.5 px-6 rounded-xl transition"
+        >
+          🚀 Access {successCity} Live Inventory Now
+        </a>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white flex flex-col items-center justify-center p-4">
+    <div className="w-full flex flex-col items-center">
       <div className="max-w-xl w-full text-center mb-8">
         <span className="inline-block bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold px-4 py-1.5 rounded-full mb-4">
           ⏱ 48-HOUR EXCLUSIVE LOCKOUT WINDOW
@@ -128,6 +126,16 @@ export default function RequestCityPage() {
           </button>
         </form>
       </div>
+    </div>
+  );
+}
+
+export default function RequestCityPage() {
+  return (
+    <div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center p-4">
+      <Suspense fallback={<div className="text-slate-400">Loading...</div>}>
+        <RequestCityForm />
+      </Suspense>
     </div>
   );
 }
