@@ -1,18 +1,25 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16' as any,
-});
-
 export async function POST(req: Request) {
   try {
+    const secretKey = process.env.STRIPE_SECRET_KEY;
+    if (!secretKey) {
+      return NextResponse.json(
+        { error: 'Clé secrète Stripe introuvable dans Vercel.' },
+        { status: 500 }
+      );
+    }
+
+    const stripe = new Stripe(secretKey);
     const { city, state, email } = await req.json();
 
-    const priceId = process.env.STRIPE_PRICE_ID_CITY_499 || '';
-
+    const priceId = process.env.STRIPE_PRICE_ID_CITY_499;
     if (!priceId) {
-      return NextResponse.json({ error: 'City Scan Price ID is missing in environment variables' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Variable STRIPE_PRICE_ID_CITY_499 manquante dans Vercel.' },
+        { status: 400 }
+      );
     }
 
     const origin = req.headers.get('origin') || 'https://multidealprop.com';
@@ -25,7 +32,7 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      mode: 'payment', // Paiement unique
+      mode: 'payment',
       customer_email: email || undefined,
       metadata: {
         city: city || '',
