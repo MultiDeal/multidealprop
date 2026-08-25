@@ -7,20 +7,19 @@ import { useParams } from 'next/navigation';
 export default function DealDetailsPage() {
   const params = useParams();
   const [isVip, setIsVip] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [downloading, setDownloading] = useState<boolean>(false);
 
-  // Vérifie si le statut VIP est actif dans le navigateur
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const vipStatus = localStorage.getItem('multideal_vip') === 'true';
       setIsVip(vipStatus);
-      setIsLoading(false);
     }
   }, []);
 
-  // Données de démonstration du deal (ou issues de votre base Supabase)
+  const dealId = (params?.id as string) || 'deal-1';
+
   const deal = {
-    id: params?.id || 'deal-1',
+    id: dealId,
     title: 'Renovated 3-Bed Brick Home - Section 8 Ready',
     tag: 'High-Cap Underwritten Asset',
     streetAddress: '12408 St Clair Ave',
@@ -39,11 +38,33 @@ export default function DealDetailsPage() {
     synopsis: 'Solid turnkey turn-around asset in high-occupancy rental corridor. Long-term Section 8 tenant in place paying full market rate with zero landlord utility overhead.',
   };
 
+  const handleDownloadAudit = async () => {
+    try {
+      setDownloading(true);
+      const res = await fetch(`/api/deals/${dealId}/audit`);
+      if (!res.ok) throw new Error('Download failed');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Due_Diligence_Audit_${dealId}.txt`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      alert('Erreur lors du téléchargement : ' + err.message);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
       <div className="max-w-7xl mx-auto">
         
-        {/* Navigation & Header Status */}
+        {/* Navigation bar */}
         <div className="flex items-center justify-between mb-8">
           <Link
             href="/"
@@ -55,18 +76,18 @@ export default function DealDetailsPage() {
           {!isVip ? (
             <Link
               href="/vip"
-              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider py-2.5 px-5 rounded-full shadow-lg transition flex items-center gap-2"
+              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider py-2.5 px-5 rounded-full shadow-lg transition"
             >
               ⚡ Upgrade Plan ($29 - $49)
             </Link>
           ) : (
             <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-full flex items-center gap-1.5">
-              ✓ VIP Member Access Unlocked
+              ✓ VIP Member Access Active
             </span>
           )}
         </div>
 
-        {/* Title & Tag */}
+        {/* Header Header Info */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
@@ -76,7 +97,6 @@ export default function DealDetailsPage() {
               {deal.title}
             </h1>
             
-            {/* Address Display (Unlocked for VIP vs Masked for Public) */}
             <div className="flex items-center gap-2 text-slate-400 text-sm sm:text-base">
               <span className="text-emerald-400">📍</span>
               {isVip ? (
@@ -95,7 +115,6 @@ export default function DealDetailsPage() {
             </div>
           </div>
 
-          {/* Asking Price Box */}
           <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-right min-w-[220px]">
             <p className="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-1">
               Off-Market Asking Price
@@ -106,10 +125,10 @@ export default function DealDetailsPage() {
           </div>
         </div>
 
-        {/* Main Grid */}
+        {/* Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column: Image & Financial Metrics */}
+          {/* Main Visuals & Financials */}
           <div className="lg:col-span-2 space-y-6">
             <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
@@ -119,7 +138,6 @@ export default function DealDetailsPage() {
               />
             </div>
 
-            {/* Financial Metrics Cards */}
             <div className="grid grid-cols-3 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-6 text-center">
               <div>
                 <p className="text-xs text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
@@ -135,7 +153,6 @@ export default function DealDetailsPage() {
               </div>
             </div>
 
-            {/* Investment Synopsis */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-6">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
                 Investment Synopsis
@@ -146,10 +163,10 @@ export default function DealDetailsPage() {
             </div>
           </div>
 
-          {/* Right Column: Due Diligence & Wholesaler Desk */}
+          {/* Action Boxes */}
           <div className="space-y-6">
             
-            {/* Due Diligence Vault */}
+            {/* Vault Box */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
                 📄 Due Diligence Vault
@@ -161,10 +178,11 @@ export default function DealDetailsPage() {
 
               {isVip ? (
                 <button
-                  onClick={() => alert('Téléchargement du dossier complet de vérification...')}
+                  onClick={handleDownloadAudit}
+                  disabled={downloading}
                   className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow"
                 >
-                  📥 Download Full PDF Audit Pack
+                  {downloading ? 'Downloading...' : '📥 Download Full Audit Pack'}
                 </button>
               ) : (
                 <Link
@@ -176,7 +194,7 @@ export default function DealDetailsPage() {
               )}
             </div>
 
-            {/* Direct Wholesaler Desk */}
+            {/* Wholesaler Box */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -194,7 +212,6 @@ export default function DealDetailsPage() {
               </div>
 
               {isVip ? (
-                /* VIP UNLOCKED VIEW */
                 <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-5 space-y-3">
                   <div>
                     <p className="text-xs text-slate-400 uppercase font-semibold">Wholesaler Entity</p>
@@ -223,7 +240,6 @@ export default function DealDetailsPage() {
                   </div>
                 </div>
               ) : (
-                /* PUBLIC LOCKED VIEW */
                 <div className="space-y-4">
                   <div className="p-4 bg-[#131d36]/60 rounded-xl space-y-2 select-none filter blur-[4px]">
                     <p className="text-slate-400 text-sm">👤 Apex Wholesaler Capital LLC</p>
