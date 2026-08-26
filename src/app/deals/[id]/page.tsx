@@ -14,6 +14,14 @@ export default function DealDetailsPage() {
   const [interestRate, setInterestRate] = useState<number>(7.5);
   const [loanTermYears, setLoanTermYears] = useState<number>(30);
 
+  // ÉTATS DU MODAL LOI (LETTER OF INTENT)
+  const [showLoiModal, setShowLoiModal] = useState<boolean>(false);
+  const [loiOfferPrice, setLoiOfferPrice] = useState<number>(89500);
+  const [loiEmd, setLoiEmd] = useState<number>(2500);
+  const [loiInspectionDays, setLoiInspectionDays] = useState<number>(5);
+  const [loiClosingDays, setLoiClosingDays] = useState<number>(14);
+  const [loiBuyerName, setLoiBuyerName] = useState<string>('Apex Capital Holdings LLC');
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const isVip = localStorage.getItem('multideal_vip') === 'true';
@@ -88,7 +96,7 @@ export default function DealDetailsPage() {
     const purchasePrice = deal.priceNumeric;
     const downPaymentAmount = (purchasePrice * downPaymentPct) / 100;
     const loanAmount = purchasePrice - downPaymentAmount;
-    const estimatedClosingCosts = purchasePrice * 0.03; // ~3%
+    const estimatedClosingCosts = purchasePrice * 0.03;
     const totalCashInvested = downPaymentAmount + estimatedClosingCosts;
 
     let monthlyDebtService = 0;
@@ -121,7 +129,83 @@ export default function DealDetailsPage() {
     };
   }, [deal.priceNumeric, deal.noiNumeric, downPaymentPct, interestRate, loanTermYears]);
 
-  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PROFESSIONNEL
+  // GÉNÉRATEUR DU TEXTE DE LA LETTRE D'INTENTION D'ACHAT (LOI)
+  const generateLoiText = () => {
+    return `================================================================================
+NON-BINDING LETTER OF INTENT (LOI) TO PURCHASE REAL ESTATE
+================================================================================
+Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+
+TO (Seller / Wholesaler Entity):
+  Entity Name: ${deal.wholesaler.name}
+  Contact Desk: ${deal.wholesaler.email} | ${deal.wholesaler.phone}
+
+FROM (Prospective Buyer):
+  Buyer Name / Entity: ${loiBuyerName || '[Buyer Entity / Individual Name]'}
+
+PROPERTY IDENTIFICATION:
+  Property Address: ${deal.streetAddress}, ${deal.cityStateZip}
+  Asset Tracking ID: ${deal.id}
+
+--------------------------------------------------------------------------------
+PROPOSED TRANSACTION TERMS:
+--------------------------------------------------------------------------------
+1. PURCHASE / ASSIGNMENT PRICE:
+   $${loiOfferPrice.toLocaleString()} USD (All Cash or Pre-Approved Financing)
+
+2. EARNEST MONEY DEPOSIT (EMD):
+   $${loiEmd.toLocaleString()} USD to be deposited with the designated Title & Escrow
+   Agency (${deal.wholesaler.titleCompany}) within two (2) business days of mutual execution.
+
+3. DUE DILIGENCE & INSPECTION PERIOD:
+   Buyer shall have ${loiInspectionDays} business days from contract assignment execution
+   to perform physical property inspections and review the existing rent roll / tenant file.
+
+4. CLOSING TIMELINE:
+   Transaction to close on or before ${loiClosingDays} days following the expiration
+   of the inspection period.
+
+5. PRORATIONS & TITLE CHARGES:
+   Property taxes, water/sewer escrows, and in-place tenant rents shall be prorated
+   to the date of closing. Clear and marketable title to be conveyed via standard deed.
+
+--------------------------------------------------------------------------------
+INTENT & EXECUTION:
+--------------------------------------------------------------------------------
+This Letter of Intent outlines the principal terms upon which the Buyer proposes
+to acquire the subject property and does not constitute a legally binding agreement
+until formal purchase/assignment agreements are executed by all parties.
+
+Submitted by:
+Signature: ___________________________     Date: ________________________
+Buyer: ${loiBuyerName || '[Buyer Name]'}
+
+Accepted & Agreed by Seller / Assignment Agent:
+Signature: ___________________________     Date: ________________________
+Entity: ${deal.wholesaler.name}
+================================================================================`;
+  };
+
+  const handleDownloadLoi = () => {
+    const text = generateLoiText();
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `LOI_${deal.id}_${loiOfferPrice}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const handleEmailLoi = () => {
+    const subject = encodeURIComponent(`Letter of Intent (LOI) - ${deal.streetAddress} ($${loiOfferPrice.toLocaleString()})`);
+    const body = encodeURIComponent(generateLoiText());
+    window.location.href = `mailto:${deal.wholesaler.email}?subject=${subject}&body=${body}`;
+  };
+
+  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PRO
   const handleDownloadPdf = () => {
     try {
       setDownloading(true);
@@ -347,7 +431,7 @@ export default function DealDetailsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
+    <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10 relative">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Navigation & Badges */}
@@ -431,7 +515,7 @@ export default function DealDetailsPage() {
               />
             </div>
 
-            {/* Barre de métriques financières recalculées en direct */}
+            {/* Barre de métriques financières */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-center">
               <div>
                 <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
@@ -451,7 +535,7 @@ export default function DealDetailsPage() {
               </div>
             </div>
 
-            {/* MODULE 2 : CALCULATEUR D'HYPOTHÈQUE & CASH-ON-CASH INTERACTIF */}
+            {/* CALCULATEUR D'HYPOTHÈQUE INTERACTIF */}
             <div className="bg-[#0d1527] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
                 <div>
@@ -469,8 +553,6 @@ export default function DealDetailsPage() {
 
               {/* Contrôles du Calculateur */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                
-                {/* 1. Down Payment Control */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-400 font-bold uppercase">Down Payment</span>
@@ -492,7 +574,6 @@ export default function DealDetailsPage() {
                   </div>
                 </div>
 
-                {/* 2. Interest Rate Control */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-400 font-bold uppercase">Interest Rate</span>
@@ -514,7 +595,6 @@ export default function DealDetailsPage() {
                   </div>
                 </div>
 
-                {/* 3. Loan Term Control */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-400 font-bold uppercase">Loan Term</span>
@@ -543,15 +623,14 @@ export default function DealDetailsPage() {
                     </button>
                   </div>
                 </div>
-
               </div>
 
-              {/* Résultats Dynamiques Calculés */}
+              {/* Résultats Dynamiques */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#131d36] border border-slate-800 rounded-2xl p-4 text-center">
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-400">Total Cash In</p>
                   <p className="text-base sm:text-lg font-black text-white">${calcResults.totalCashInvested.toLocaleString()}</p>
-                  <p className="text-[9px] text-slate-500 mt-0.5">Down + 3% Est. Closing</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">Down + 3% Closing</p>
                 </div>
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-400">Mortgage P&I</p>
@@ -587,7 +666,7 @@ export default function DealDetailsPage() {
                 </span>
               </div>
 
-              {/* 1. Tableau Pro-Forma (P&L 12 Mois) */}
+              {/* 1. Tableau Pro-Forma */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <span>💰</span> 12-Month Pro-Forma Cash Flow Breakdown
@@ -690,7 +769,7 @@ export default function DealDetailsPage() {
 
           </div>
 
-          {/* Colonne Droite : Téléchargement PDF & Coordonnées Vendeur */}
+          {/* Colonne Droite : Bouton PDF, Coordonnées Vendeur & Bouton LOI */}
           <div className="space-y-6">
             
             {/* Box Téléchargement PDF */}
@@ -717,6 +796,36 @@ export default function DealDetailsPage() {
                   className="w-full inline-flex items-center justify-center gap-2 bg-[#131d36] hover:bg-[#1a2747] text-slate-300 border border-slate-700 font-semibold py-3.5 px-4 rounded-xl transition text-sm"
                 >
                   🔒 Unlock Pro PDF Pack (Basic/VIP)
+                </Link>
+              )}
+            </div>
+
+            {/* MODULE 3 : SOUMETTRE UNE OFFRE / LOI */}
+            <div className="bg-[#0d1527] border border-sky-500/40 rounded-3xl p-6 shadow-xl relative overflow-hidden">
+              <span className="absolute -top-3 right-6 bg-sky-500 text-slate-950 text-[10px] font-black uppercase tracking-wider py-1 px-3 rounded-full">
+                Contract Desk
+              </span>
+              <div className="flex items-center gap-2 text-sky-400 text-xs font-bold uppercase tracking-wider mb-2">
+                ✍️ Fast-Track Acquisition
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Submit an Offer / LOI</h3>
+              <p className="text-slate-400 text-xs mb-6 leading-relaxed">
+                Generate and submit an official Letter of Intent directly to the wholesaler to lock this contract.
+              </p>
+
+              {isUnlocked ? (
+                <button
+                  onClick={() => setShowLoiModal(true)}
+                  className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black py-4 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+                >
+                  📝 Generate & Submit LOI
+                </button>
+              ) : (
+                <Link
+                  href="/vip"
+                  className="w-full inline-flex items-center justify-center gap-2 bg-[#131d36] hover:bg-[#1a2747] text-slate-300 border border-slate-700 font-semibold py-3.5 px-4 rounded-xl transition text-sm"
+                >
+                  🔒 Unlock LOI Generator (Basic/VIP)
                 </Link>
               )}
             </div>
@@ -794,6 +903,111 @@ export default function DealDetailsPage() {
         </div>
 
       </div>
+
+      {/* MODAL POPUP DU GÉNÉRATEUR DE LOI */}
+      {showLoiModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-[#0d1527] border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
+            
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div>
+                <span className="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
+                  Letter of Intent (LOI) Generator
+                </span>
+                <h3 className="text-2xl font-black text-white mt-2">Submit Purchase Offer</h3>
+                <p className="text-xs text-slate-400">Target Asset: {deal.streetAddress}, {deal.cityStateZip}</p>
+              </div>
+              <button
+                onClick={() => setShowLoiModal(false)}
+                className="text-slate-400 hover:text-white text-xl font-bold bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center transition"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+              
+              <div>
+                <label className="block text-slate-400 uppercase font-bold mb-1">
+                  Buyer Entity / Full Name
+                </label>
+                <input
+                  type="text"
+                  value={loiBuyerName}
+                  onChange={(e) => setLoiBuyerName(e.target.value)}
+                  className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 uppercase font-bold mb-1">
+                  Proposed Purchase Price ($ USD)
+                </label>
+                <input
+                  type="number"
+                  value={loiOfferPrice}
+                  onChange={(e) => setLoiOfferPrice(Number(e.target.value))}
+                  className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 uppercase font-bold mb-1">
+                  Earnest Money Deposit ($ EMD)
+                </label>
+                <input
+                  type="number"
+                  value={loiEmd}
+                  onChange={(e) => setLoiEmd(Number(e.target.value))}
+                  className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-400 uppercase font-bold mb-1">
+                  Inspection Period (Days)
+                </label>
+                <input
+                  type="number"
+                  value={loiInspectionDays}
+                  onChange={(e) => setLoiInspectionDays(Number(e.target.value))}
+                  className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+            </div>
+
+            {/* Aperçu du document LOI */}
+            <div className="space-y-2">
+              <label className="block text-[11px] text-slate-400 uppercase font-bold">
+                Generated Legal Preview
+              </label>
+              <pre className="w-full bg-[#070b14] border border-slate-800 rounded-2xl p-4 text-[10px] text-slate-300 font-mono overflow-x-auto max-h-48 leading-relaxed whitespace-pre-wrap">
+                {generateLoiText()}
+              </pre>
+            </div>
+
+            {/* Boutons d'Action */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              <button
+                onClick={handleDownloadLoi}
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3.5 px-4 rounded-xl transition border border-slate-700 text-xs flex items-center justify-center gap-2 cursor-pointer"
+              >
+                📥 Download Legal LOI Document (.txt)
+              </button>
+
+              <button
+                onClick={handleEmailLoi}
+                className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 text-white font-extrabold py-3.5 px-4 rounded-xl transition text-xs flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+              >
+                ✉️ Send LOI Directly to Wholesaler Desk
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
