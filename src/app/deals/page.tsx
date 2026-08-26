@@ -32,7 +32,7 @@ const SAMPLE_DEALS: Deal[] = [
     monthlyRent: '$1,250',
     grossYield: '23.8%',
     units: 1,
-    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Apex Wholesale Capital LLC',
   },
   {
@@ -47,7 +47,7 @@ const SAMPLE_DEALS: Deal[] = [
     monthlyRent: '$1,650',
     grossYield: '21.2%',
     units: 2,
-    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
+    image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Midwest Off-Market Direct',
   },
   {
@@ -64,6 +64,96 @@ const SAMPLE_DEALS: Deal[] = [
     units: 3,
     image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Delta Acquisition Group',
+  },
+  {
+    id: 'detroit-fourplex-high-yield',
+    title: 'High-Yield Fourplex (4 x 1-Bed Units)',
+    tag: 'Cash Cow Portfolio',
+    city: 'Detroit',
+    state: 'MI',
+    zip: '48227',
+    price: '$165,000',
+    capRate: '13.5%',
+    monthlyRent: '$2,800',
+    grossYield: '20.4%',
+    units: 4,
+    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'MotorCity Deal Hub',
+  },
+  {
+    id: 'baltimore-rowhome-duplex',
+    title: 'Historic Brick Duplex - Fully Leased',
+    tag: 'Section 8 Certified',
+    city: 'Baltimore',
+    state: 'MD',
+    zip: '21215',
+    price: '$139,000',
+    capRate: '11.1%',
+    monthlyRent: '$1,900',
+    grossYield: '16.4%',
+    units: 2,
+    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Chesapeake Property Wholesalers',
+  },
+  {
+    id: 'indianapolis-triplex-cashflow',
+    title: 'Fully Occupied Triplex Near University Corridor',
+    tag: 'Turnkey Asset',
+    city: 'Indianapolis',
+    state: 'IN',
+    zip: '46201',
+    price: '$175,000',
+    capRate: '10.5%',
+    monthlyRent: '$2,250',
+    grossYield: '15.4%',
+    units: 3,
+    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Crossroads Acquisition Desk',
+  },
+  {
+    id: 'philly-duplex-value-add',
+    title: 'Multi-Family Duplex - Separate Utilities',
+    tag: 'Value-Add Spread',
+    city: 'Philadelphia',
+    state: 'PA',
+    zip: '19134',
+    price: '$129,000',
+    capRate: '11.8%',
+    monthlyRent: '$1,750',
+    grossYield: '16.3%',
+    units: 2,
+    image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Keystone Off-Market Exchange',
+  },
+  {
+    id: 'kansas-city-fourplex-core',
+    title: 'Solid Brick 4-Plex - 100% In-Place Leases',
+    tag: 'High-Cap Underwritten',
+    city: 'Kansas City',
+    state: 'MO',
+    zip: '64130',
+    price: '$189,000',
+    capRate: '12.8%',
+    monthlyRent: '$3,100',
+    grossYield: '19.7%',
+    units: 4,
+    image: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Midwest Metro Wholesale',
+  },
+  {
+    id: 'st-louis-duplex-turnkey',
+    title: 'Turnkey 2-Unit Residential Income Property',
+    tag: 'Cashflow Asset',
+    city: 'St. Louis',
+    state: 'MO',
+    zip: '63118',
+    price: '$105,000',
+    capRate: '12.0%',
+    monthlyRent: '$1,500',
+    grossYield: '17.1%',
+    units: 2,
+    image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Gateway Deal Network',
   },
 ];
 
@@ -85,10 +175,10 @@ function DealsFeed() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
-              Live Verified Opportunities
+              Live Verified Opportunities ({SAMPLE_DEALS.length} Available)
             </span>
             <h1 className="text-3xl font-black mt-2 tracking-tight">Multi-Family Deals Feed</h1>
-            <p className="text-sm text-slate-400">Underwritten properties with live cashflow metrics.</p>
+            <p className="text-sm text-slate-400">Underwritten properties with live cashflow metrics and direct assignment contracts.</p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -108,13 +198,13 @@ function DealsFeed() {
               </Link>
             ) : (
               <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider py-2 px-3 rounded-xl flex items-center gap-1">
-                ✓ VIP Unlocked
+                ✓ VIP UNLOCKED
               </span>
             )}
           </div>
         </div>
 
-        {/* Deals Cards Grid */}
+        {/* Deals Cards Grid (3x3) */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {SAMPLE_DEALS.map((deal) => (
             <div
@@ -170,7 +260,7 @@ function DealsFeed() {
                     {isVip ? (
                       <span className="text-emerald-400 font-semibold">{deal.wholesaler}</span>
                     ) : (
-                      <span className="blur-sm select-none text-slate-500">Apex Wholesale Capital LLC</span>
+                      <span className="blur-sm select-none text-slate-500">{deal.wholesaler}</span>
                     )}
                   </div>
                 </div>
