@@ -6,15 +6,16 @@ import { useParams } from 'next/navigation';
 
 export default function DealDetailsPage() {
   const params = useParams();
-  const [isVip, setIsVip] = useState<boolean>(false);
+  const [userTier, setUserTier] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const vipStatus = localStorage.getItem('multideal_vip') === 'true';
-      setIsVip(vipStatus);
+      const isVip = localStorage.getItem('multideal_vip') === 'true';
+      const tier = localStorage.getItem('multideal_tier') || (isVip ? 'starter' : null);
+      setUserTier(tier);
 
-      // Préchargement de jsPDF
+      // Préchargement de la bibliothèque jsPDF
       if (!(window as any).jspdf) {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -24,7 +25,8 @@ export default function DealDetailsPage() {
     }
   }, []);
 
-  const dealId = (params?.id as string) || 'deal-1';
+  const isUnlocked = userTier !== null;
+  const dealId = (params?.id as string) || 'OH-CLE-44120-01';
 
   const deal = {
     id: dealId,
@@ -75,8 +77,8 @@ export default function DealDetailsPage() {
     }
   };
 
-  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PROFESSIONNEL
-  const handleDownloadPdf = async () => {
+  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PRO
+  const handleDownloadPdf = () => {
     try {
       setDownloading(true);
       const { jsPDF } = (window as any).jspdf || {};
@@ -92,11 +94,11 @@ export default function DealDetailsPage() {
         format: 'a4',
       });
 
-      // Fond sombre (#070B14)
+      // Fond sombre institutionnel (#070B14)
       doc.setFillColor(7, 11, 20);
       doc.rect(0, 0, 210, 297, 'F');
 
-      // Header
+      // Header Brand
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(255, 255, 255);
@@ -111,7 +113,7 @@ export default function DealDetailsPage() {
       doc.setTextColor(56, 189, 248);
       doc.text('| Real Estate Intelligence Desk', 52, 16);
 
-      // Badge VIP
+      // Badge Certification
       doc.setFillColor(16, 185, 129);
       doc.roundedRect(145, 10, 53, 8, 2, 2, 'F');
       doc.setFont('helvetica', 'bold');
@@ -122,7 +124,7 @@ export default function DealDetailsPage() {
       doc.setDrawColor(30, 41, 59);
       doc.line(12, 22, 198, 22);
 
-      // Hero Card
+      // Hero Box
       doc.setFillColor(13, 21, 39);
       doc.setDrawColor(30, 41, 59);
       doc.roundedRect(12, 26, 186, 26, 3, 3, 'FD');
@@ -141,6 +143,7 @@ export default function DealDetailsPage() {
       doc.setTextColor(203, 213, 225);
       doc.text(`Exact Address: ${deal.streetAddress}, ${deal.cityStateZip}`, 16, 46);
 
+      // Box Prix à droite
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(148, 163, 184);
@@ -153,14 +156,14 @@ export default function DealDetailsPage() {
       doc.setFontSize(7);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(148, 163, 184);
-      doc.text(`Est. ARV: $115,000`, 145, 46);
+      doc.text(`Est. ARV: ${deal.arv}`, 145, 46);
 
-      // KPIs
+      // 4 KPIs
       const kpis = [
-        { lbl: 'CAP RATE', val: '12.04%', color: [16, 185, 129] },
-        { lbl: 'CASH-ON-CASH', val: '18.60%', color: [245, 158, 11] },
-        { lbl: 'GROSS RENT', val: '$1,250 / mo', color: [56, 189, 248] },
-        { lbl: 'ANNUAL NOI', val: '$10,780 / yr', color: [255, 255, 255] },
+        { lbl: 'CAP RATE', val: deal.capRate, color: [16, 185, 129] },
+        { lbl: 'CASH-ON-CASH', val: deal.cashOnCash, color: [245, 158, 11] },
+        { lbl: 'GROSS RENT', val: `${deal.monthlyRent} / mo`, color: [56, 189, 248] },
+        { lbl: 'ANNUAL NOI', val: `${deal.noi} / yr`, color: [255, 255, 255] },
       ];
 
       kpis.forEach((kpi, idx) => {
@@ -190,16 +193,16 @@ export default function DealDetailsPage() {
       doc.line(16, 85, 98, 85);
 
       const pnlRows = [
-        ['Gross Rent ($1,250 x 12)', '$15,000', [255, 255, 255]],
-        ['(-) Vacancy Loss (5%)', '-$750', [248, 113, 113]],
-        ['(=) Effective Gross Income', '$14,250', [56, 189, 248]],
-        ['• Property Taxes', '-$1,420', [203, 213, 225]],
-        ['• Insurance (Hazard)', '-$850', [203, 213, 225]],
-        ['• Management Fee (8%)', '-$1,200', [203, 213, 225]],
-        ['• CapEx / Maintenance', '-$750', [203, 213, 225]],
-        ['• Owner Water Escrow', '-$780', [203, 213, 225]],
-        ['(=) NET OPERATING INCOME', '$10,780 / yr', [16, 185, 129]],
-        ['Leveraged Cashflow (80% LTV)', '+$4,940 / yr', [245, 158, 11]],
+        ['Gross Rent ($1,250 x 12)', `$${deal.proforma.grossIncome.toLocaleString()}`, [255, 255, 255]],
+        ['(-) Vacancy Loss (5%)', `-$${deal.proforma.vacancy.toLocaleString()}`, [248, 113, 113]],
+        ['(=) Effective Gross Income', `$${deal.proforma.effectiveGrossIncome.toLocaleString()}`, [56, 189, 248]],
+        ['• Property Taxes', `-$${deal.proforma.taxes.toLocaleString()}`, [203, 213, 225]],
+        ['• Insurance (Hazard)', `-$${deal.proforma.insurance.toLocaleString()}`, [203, 213, 225]],
+        ['• Management Fee (8%)', `-$${deal.proforma.management.toLocaleString()}`, [203, 213, 225]],
+        ['• CapEx / Maintenance', `-$${deal.proforma.maintenance.toLocaleString()}`, [203, 213, 225]],
+        ['• Owner Water Escrow', `-$${deal.proforma.waterSewer.toLocaleString()}`, [203, 213, 225]],
+        ['(=) NET OPERATING INCOME', `$${deal.proforma.noi.toLocaleString()} / yr`, [16, 185, 129]],
+        ['Leveraged Cashflow (80% LTV)', `+$${deal.proforma.netCashFlow.toLocaleString()} / yr`, [245, 158, 11]],
       ];
 
       let yPnl = 92;
@@ -238,13 +241,13 @@ export default function DealDetailsPage() {
       doc.line(112, 85, 194, 85);
 
       const specs = [
-        ['Year Built / Rehab:', '1952 / Full Rehab 2024'],
-        ['Layout / Sqft:', '3 Beds | 1 Bath | 1,340 sqft'],
-        ['Roof System:', 'Architectural Shingles (2021)'],
-        ['Electrical Panel:', '100A Breakers (Up to Code)'],
-        ['Plumbing Lines:', 'PEX Supply & PVC Waste'],
-        ['Heating / HVAC:', 'Forced Air High-Eff. (2022)'],
-        ['Hot Water Tank:', '40-Gal Gas (Late 2023)'],
+        ['Year Built / Rehab:', `${deal.specs.yearBuilt} / Full Rehab ${deal.specs.rehabYear}`],
+        ['Layout / Sqft:', `3 Beds | 1 Bath | ${deal.specs.sqft}`],
+        ['Roof System:', deal.specs.roof],
+        ['Electrical Panel:', deal.specs.electrical],
+        ['Plumbing Lines:', deal.specs.plumbing],
+        ['Heating / HVAC:', deal.specs.hvac],
+        ['Hot Water Tank:', deal.specs.waterHeater],
       ];
 
       let ySpec = 92;
@@ -271,14 +274,14 @@ export default function DealDetailsPage() {
 
       doc.setFontSize(7);
       doc.setTextColor(203, 213, 225);
-      doc.text('Entity: Apex Wholesale Capital LLC', 116, 158);
+      doc.text(`Entity: ${deal.wholesaler.name}`, 116, 158);
       doc.setTextColor(16, 185, 129);
-      doc.text('Phone: +1 (216) 485-9921', 116, 164);
+      doc.text(`Phone: ${deal.wholesaler.phone}`, 116, 164);
       doc.setTextColor(56, 189, 248);
-      doc.text('Email: acquisitions@apexwholesaledesk.com', 116, 170);
+      doc.text(`Email: ${deal.wholesaler.email}`, 116, 170);
       doc.setTextColor(148, 163, 184);
-      doc.text('Fee: $5,000 (Included in $89,500)', 116, 176);
-      doc.text('Title: First Choice Title ($2,500 EMD)', 116, 182);
+      doc.text(`Fee: ${deal.wholesaler.assignmentFee}`, 116, 176);
+      doc.text(`Title: ${deal.wholesaler.titleCompany}`, 116, 182);
 
       // Disclaimer
       doc.setFontSize(6);
@@ -299,7 +302,7 @@ export default function DealDetailsPage() {
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Navigation & Status Header */}
+        {/* En-tête de navigation avec badge de statut d'abonnement */}
         <div className="flex items-center justify-between">
           <Link
             href="/deals"
@@ -308,21 +311,25 @@ export default function DealDetailsPage() {
             ← Back to Deals Feed
           </Link>
 
-          {!isVip ? (
+          {!isUnlocked ? (
             <Link
               href="/vip"
               className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider py-2.5 px-5 rounded-full shadow-lg transition"
             >
               ⚡ Upgrade Plan ($29 - $49)
             </Link>
+          ) : userTier === 'starter' ? (
+            <span className="bg-sky-500/10 border border-sky-500/30 text-sky-400 font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-full flex items-center gap-1.5">
+              ✓ Pro Starter Active ($29/mo)
+            </span>
           ) : (
             <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-full flex items-center gap-1.5">
-              ✓ VIP Member Access Active
+              ✓ VIP Elite Active ($49/mo)
             </span>
           )}
         </div>
 
-        {/* Title & Asking Price */}
+        {/* Titre & Prix d'acquisition */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
@@ -334,7 +341,7 @@ export default function DealDetailsPage() {
             
             <div className="flex items-center gap-2 text-slate-400 text-sm sm:text-base">
               <span className="text-emerald-400">📍</span>
-              {isVip ? (
+              {isUnlocked ? (
                 <span className="text-white font-semibold underline decoration-emerald-500/50">
                   {deal.streetAddress}, {deal.cityStateZip}
                 </span>
@@ -361,13 +368,13 @@ export default function DealDetailsPage() {
           </div>
         </div>
 
-        {/* Main Grid */}
+        {/* Grille Principale */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Left Column: Visuals & Complete Institutional Synopsis */}
+          {/* Colonne de Gauche : Photo, KPIs et Investment Synopsis Complet */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Hero Image */}
+            {/* Photo principale */}
             <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
                 src={deal.image}
@@ -376,7 +383,7 @@ export default function DealDetailsPage() {
               />
             </div>
 
-            {/* Quick KPI Bar */}
+            {/* Barre de métriques financières */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-center">
               <div>
                 <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
@@ -396,7 +403,7 @@ export default function DealDetailsPage() {
               </div>
             </div>
 
-            {/* LA SECTION INVESTMENT SYNOPSIS COMPLÈTE & DÉTAILLÉE */}
+            {/* SECTION INVESTMENT SYNOPSIS COMPLÈTE & DÉTAILLÉE */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-8 shadow-xl">
               
               <div className="flex items-center justify-between border-b border-slate-800 pb-4">
@@ -413,7 +420,7 @@ export default function DealDetailsPage() {
                 </span>
               </div>
 
-              {/* 1. Pro-Forma Statement */}
+              {/* 1. Tableau Pro-Forma (P&L 12 Mois) */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <span>💰</span> 12-Month Pro-Forma Cash Flow Breakdown
@@ -471,7 +478,7 @@ export default function DealDetailsPage() {
                 </div>
               </div>
 
-              {/* 2. Asset Condition Grid */}
+              {/* 2. Audit physique et des composantes */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <span>🔨</span> Asset Condition & Mechanicals Audit
@@ -497,7 +504,7 @@ export default function DealDetailsPage() {
                 </div>
               </div>
 
-              {/* 3. Section 8 Tenant Guarantee */}
+              {/* 3. Garantie Section 8 */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <span>🏛️</span> Tenant Profile & Government Subsidy Status
@@ -517,10 +524,10 @@ export default function DealDetailsPage() {
 
           </div>
 
-          {/* Right Action Sidebars */}
+          {/* Colonne de Droite : Bouton PDF et Coordonnées Vendeur */}
           <div className="space-y-6">
             
-            {/* Download Real PDF Button */}
+            {/* Box Téléchargement PDF */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
                 📄 Institutional Due Diligence Vault
@@ -530,7 +537,7 @@ export default function DealDetailsPage() {
                 Download verified institutional PDF pack with complete pro-forma, cap rates, and direct contract assignment.
               </p>
 
-              {isVip ? (
+              {isUnlocked ? (
                 <button
                   onClick={handleDownloadPdf}
                   disabled={downloading}
@@ -548,13 +555,13 @@ export default function DealDetailsPage() {
               )}
             </div>
 
-            {/* Wholesaler Direct Desk */}
+            {/* Box Desk Vendeur / Grossiste */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
                   Direct Wholesaler Desk
                 </h3>
-                {isVip ? (
+                {isUnlocked ? (
                   <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
                     UNLOCKED
                   </span>
@@ -565,7 +572,7 @@ export default function DealDetailsPage() {
                 )}
               </div>
 
-              {isVip ? (
+              {isUnlocked ? (
                 <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-5 space-y-3">
                   <div>
                     <p className="text-xs text-slate-400 uppercase font-semibold">Wholesaler Entity</p>
