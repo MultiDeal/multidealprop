@@ -9,6 +9,25 @@ export default function DealDetailsPage() {
   const [userTier, setUserTier] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<boolean>(false);
 
+  // ÉTAT DU COMPTE À REBOURS 48H (FOMO)
+  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
+    hours: 33,
+    minutes: 42,
+    seconds: 18,
+  });
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
+        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        return prev;
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
   // ÉTATS DU CALCULATEUR D'HYPOTHÈQUE INTERACTIF
   const [downPaymentPct, setDownPaymentPct] = useState<number>(20);
   const [interestRate, setInterestRate] = useState<number>(7.5);
@@ -28,7 +47,6 @@ export default function DealDetailsPage() {
       const tier = localStorage.getItem('multideal_tier') || (isVip ? 'starter' : null);
       setUserTier(tier);
 
-      // Préchargement de la bibliothèque jsPDF
       if (!(window as any).jspdf) {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
@@ -91,7 +109,6 @@ export default function DealDetailsPage() {
     }
   };
 
-  // CALCULS DYNAMIQUES EN TEMPS RÉEL (CALCULATEUR INTERACTIF)
   const calcResults = useMemo(() => {
     const purchasePrice = deal.priceNumeric;
     const downPaymentAmount = (purchasePrice * downPaymentPct) / 100;
@@ -129,60 +146,23 @@ export default function DealDetailsPage() {
     };
   }, [deal.priceNumeric, deal.noiNumeric, downPaymentPct, interestRate, loanTermYears]);
 
-  // GÉNÉRATEUR DU TEXTE DE LA LETTRE D'INTENTION D'ACHAT (LOI)
   const generateLoiText = () => {
     return `================================================================================
 NON-BINDING LETTER OF INTENT (LOI) TO PURCHASE REAL ESTATE
 ================================================================================
 Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
 
-TO (Seller / Wholesaler Entity):
-  Entity Name: ${deal.wholesaler.name}
-  Contact Desk: ${deal.wholesaler.email} | ${deal.wholesaler.phone}
+TO: ${deal.wholesaler.name} (${deal.wholesaler.email} | ${deal.wholesaler.phone})
+FROM: ${loiBuyerName || '[Buyer Entity / Individual Name]'}
+PROPERTY: ${deal.streetAddress}, ${deal.cityStateZip} (ID: ${deal.id})
 
-FROM (Prospective Buyer):
-  Buyer Name / Entity: ${loiBuyerName || '[Buyer Entity / Individual Name]'}
+PROPOSED TERMS:
+1. Purchase Price: $${loiOfferPrice.toLocaleString()} USD
+2. Earnest Money Deposit: $${loiEmd.toLocaleString()} USD (Title: ${deal.wholesaler.titleCompany})
+3. Due Diligence: ${loiInspectionDays} Business Days
+4. Closing Timeline: ${loiClosingDays} Days from Inspection Expiration
 
-PROPERTY IDENTIFICATION:
-  Property Address: ${deal.streetAddress}, ${deal.cityStateZip}
-  Asset Tracking ID: ${deal.id}
-
---------------------------------------------------------------------------------
-PROPOSED TRANSACTION TERMS:
---------------------------------------------------------------------------------
-1. PURCHASE / ASSIGNMENT PRICE:
-   $${loiOfferPrice.toLocaleString()} USD (All Cash or Pre-Approved Financing)
-
-2. EARNEST MONEY DEPOSIT (EMD):
-   $${loiEmd.toLocaleString()} USD to be deposited with the designated Title & Escrow
-   Agency (${deal.wholesaler.titleCompany}) within two (2) business days of mutual execution.
-
-3. DUE DILIGENCE & INSPECTION PERIOD:
-   Buyer shall have ${loiInspectionDays} business days from contract assignment execution
-   to perform physical property inspections and review the existing rent roll / tenant file.
-
-4. CLOSING TIMELINE:
-   Transaction to close on or before ${loiClosingDays} days following the expiration
-   of the inspection period.
-
-5. PRORATIONS & TITLE CHARGES:
-   Property taxes, water/sewer escrows, and in-place tenant rents shall be prorated
-   to the date of closing. Clear and marketable title to be conveyed via standard deed.
-
---------------------------------------------------------------------------------
-INTENT & EXECUTION:
---------------------------------------------------------------------------------
-This Letter of Intent outlines the principal terms upon which the Buyer proposes
-to acquire the subject property and does not constitute a legally binding agreement
-until formal purchase/assignment agreements are executed by all parties.
-
-Submitted by:
-Signature: ___________________________     Date: ________________________
-Buyer: ${loiBuyerName || '[Buyer Name]'}
-
-Accepted & Agreed by Seller / Assignment Agent:
-Signature: ___________________________     Date: ________________________
-Entity: ${deal.wholesaler.name}
+Submitted by: ${loiBuyerName || '[Buyer Name]'}
 ================================================================================`;
   };
 
@@ -205,7 +185,6 @@ Entity: ${deal.wholesaler.name}
     window.location.href = `mailto:${deal.wholesaler.email}?subject=${subject}&body=${body}`;
   };
 
-  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PRO
   const handleDownloadPdf = () => {
     try {
       setDownloading(true);
@@ -216,12 +195,7 @@ Entity: ${deal.wholesaler.name}
         return;
       }
 
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4',
-      });
-
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
       doc.setFillColor(7, 11, 20);
       doc.rect(0, 0, 210, 297, 'F');
 
@@ -301,12 +275,10 @@ Entity: ${deal.wholesaler.name}
         const x = 12 + idx * 47.5;
         doc.setFillColor(13, 21, 39);
         doc.roundedRect(x, 56, 43.5, 16, 2, 2, 'FD');
-
         doc.setFontSize(6.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(148, 163, 184);
         doc.text(kpi.lbl, x + 4, 62);
-
         doc.setFontSize(10.5);
         doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
         doc.text(kpi.val, x + 4, 68);
@@ -314,7 +286,6 @@ Entity: ${deal.wholesaler.name}
 
       doc.setFillColor(13, 21, 39);
       doc.roundedRect(12, 76, 90, 118, 3, 3, 'FD');
-
       doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
@@ -341,7 +312,6 @@ Entity: ${deal.wholesaler.name}
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(148, 163, 184);
         doc.text(r[0] as string, 16, yPnl);
-
         doc.setFont('helvetica', 'bold');
         const c = r[2] as number[];
         doc.setTextColor(c[0], c[1], c[2]);
@@ -358,11 +328,9 @@ Entity: ${deal.wholesaler.name}
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(203, 213, 225);
       doc.text('100% of $1,250/mo direct deposited by Cuyahoga PHA.', 19, 178);
-      doc.text('Tenant tenure: 2.5 yrs with 0 default history.', 19, 183);
 
       doc.setFillColor(13, 21, 39);
       doc.roundedRect(108, 76, 90, 118, 3, 3, 'FD');
-
       doc.setFontSize(8.5);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(255, 255, 255);
@@ -385,7 +353,6 @@ Entity: ${deal.wholesaler.name}
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(148, 163, 184);
         doc.text(s[0], 112, ySpec);
-
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255);
         doc.text(s[1], 194, ySpec, { align: 'right' });
@@ -395,12 +362,10 @@ Entity: ${deal.wholesaler.name}
       doc.setFillColor(16, 185, 129, 0.1);
       doc.setDrawColor(16, 185, 129);
       doc.roundedRect(112, 146, 82, 42, 2, 2, 'FD');
-
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(16, 185, 129);
       doc.text('DIRECT WHOLESALER & ASSIGNMENT DESK', 116, 152);
-
       doc.setFontSize(7);
       doc.setTextColor(203, 213, 225);
       doc.text(`Entity: ${deal.wholesaler.name}`, 116, 158);
@@ -412,16 +377,6 @@ Entity: ${deal.wholesaler.name}
       doc.text(`Fee: ${deal.wholesaler.assignmentFee}`, 116, 176);
       doc.text(`Title: ${deal.wholesaler.titleCompany}`, 116, 182);
 
-      doc.setFontSize(6);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 116, 139);
-      doc.text(
-        `CONFIDENTIALITY NOTICE: Proprietary underwriting compiled for MultiDealProp ${isElite ? 'VIP Elite' : 'Pro Starter'} members.`,
-        12,
-        202
-      );
-      doc.text('All Cap Rates, cashflows, and estimates must be independently verified during the 5-day inspection period.', 12, 206);
-
       doc.save(`MultiDealProp_Underwriting_${dealId}.pdf`);
     } catch (err: any) {
       window.open(`/deals/${dealId}/print`, '_blank');
@@ -432,7 +387,7 @@ Entity: ${deal.wholesaler.name}
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10 relative">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         
         {/* Navigation & Badges */}
         <div className="flex items-center justify-between">
@@ -461,8 +416,56 @@ Entity: ${deal.wholesaler.name}
           )}
         </div>
 
+        {/* BANDEAU COMPTE À REBOURS EXCLUSIVITÉ 48H (FOMO) */}
+        {isElite ? (
+          <div className="bg-gradient-to-r from-emerald-950/60 via-[#0d1527] to-emerald-950/60 border border-emerald-500/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl animate-pulse">🛡️</span>
+              <div>
+                <p className="text-sm font-black text-white">VIP 48H PRIORITY ACCESS ACTIVE</p>
+                <p className="text-xs text-emerald-400">You are viewing this off-market contract 48 hours before public release.</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 font-mono text-xs bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-emerald-300 font-bold">
+              <span>Time Left in Priority Window:</span>
+              <span className="text-white bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-r from-amber-950/50 via-[#0d1527] to-amber-950/50 border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl animate-bounce">⚡</span>
+              <div>
+                <p className="text-sm font-black text-amber-400 flex items-center gap-2">
+                  VIP EARLY ACCESS WINDOW ACTIVE
+                </p>
+                <p className="text-xs text-slate-300">
+                  VIP Elite investors are currently locking contracts on this asset. Opens to Starter in:
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 font-mono text-sm font-black bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-xl text-amber-400">
+                <span className="bg-slate-900 px-2 py-1 rounded border border-slate-800">{timeLeft.hours}h</span>
+                <span>:</span>
+                <span className="bg-slate-900 px-2 py-1 rounded border border-slate-800">{timeLeft.minutes}m</span>
+                <span>:</span>
+                <span className="bg-slate-900 px-2 py-1 rounded border border-slate-800">{timeLeft.seconds}s</span>
+              </div>
+              <Link
+                href="/vip"
+                className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl transition uppercase tracking-wider whitespace-nowrap shadow-lg"
+              >
+                Skip Wait (VIP $49)
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Titre & Prix */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-2">
           <div>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
               🛡️ {deal.tag}
@@ -502,11 +505,8 @@ Entity: ${deal.wholesaler.name}
 
         {/* Grille Principale */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Colonne de Gauche : Photo, KPIs, Calculateur Interactif & Investment Synopsis */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Photo principale */}
             <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
                 src={deal.image}
@@ -515,7 +515,6 @@ Entity: ${deal.wholesaler.name}
               />
             </div>
 
-            {/* Barre de métriques financières */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-center">
               <div>
                 <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
@@ -535,7 +534,7 @@ Entity: ${deal.wholesaler.name}
               </div>
             </div>
 
-            {/* CALCULATEUR D'HYPOTHÈQUE INTERACTIF */}
+            {/* CALCULATEUR D'HYPOTHÈQUE */}
             <div className="bg-[#0d1527] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
                 <div>
@@ -551,7 +550,6 @@ Entity: ${deal.wholesaler.name}
                 </span>
               </div>
 
-              {/* Contrôles du Calculateur */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
@@ -625,7 +623,6 @@ Entity: ${deal.wholesaler.name}
                 </div>
               </div>
 
-              {/* Résultats Dynamiques */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#131d36] border border-slate-800 rounded-2xl p-4 text-center">
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-400">Total Cash In</p>
@@ -650,7 +647,7 @@ Entity: ${deal.wholesaler.name}
               </div>
             </div>
 
-            {/* SECTION INVESTMENT SYNOPSIS COMPLÈTE */}
+            {/* INVESTMENT SYNOPSIS */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-8 shadow-xl">
               <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div>
@@ -666,7 +663,6 @@ Entity: ${deal.wholesaler.name}
                 </span>
               </div>
 
-              {/* 1. Tableau Pro-Forma */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <span>💰</span> 12-Month Pro-Forma Cash Flow Breakdown
@@ -724,7 +720,6 @@ Entity: ${deal.wholesaler.name}
                 </div>
               </div>
 
-              {/* 2. Audit physique */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <span>🔨</span> Asset Condition & Mechanicals Audit
@@ -750,7 +745,6 @@ Entity: ${deal.wholesaler.name}
                 </div>
               </div>
 
-              {/* 3. Garantie Section 8 */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <span>🏛️</span> Tenant Profile & Government Subsidy Status
@@ -769,7 +763,6 @@ Entity: ${deal.wholesaler.name}
 
           </div>
 
-          {/* Colonne Droite : Bouton PDF, Coordonnées Vendeur & Bouton LOI */}
           <div className="space-y-6">
             
             {/* Box Téléchargement PDF */}
@@ -800,7 +793,7 @@ Entity: ${deal.wholesaler.name}
               )}
             </div>
 
-            {/* MODULE 3 : SOUMETTRE UNE OFFRE / LOI */}
+            {/* LOI Button */}
             <div className="bg-[#0d1527] border border-sky-500/40 rounded-3xl p-6 shadow-xl relative overflow-hidden">
               <span className="absolute -top-3 right-6 bg-sky-500 text-slate-950 text-[10px] font-black uppercase tracking-wider py-1 px-3 rounded-full">
                 Contract Desk
@@ -830,7 +823,7 @@ Entity: ${deal.wholesaler.name}
               )}
             </div>
 
-            {/* Box Desk Vendeur / Grossiste */}
+            {/* Wholesaler Box */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -899,12 +892,10 @@ Entity: ${deal.wholesaler.name}
             </div>
 
           </div>
-
         </div>
-
       </div>
 
-      {/* MODAL POPUP DU GÉNÉRATEUR DE LOI */}
+      {/* LOI MODAL */}
       {showLoiModal && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-[#0d1527] border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
@@ -926,7 +917,6 @@ Entity: ${deal.wholesaler.name}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              
               <div>
                 <label className="block text-slate-400 uppercase font-bold mb-1">
                   Buyer Entity / Full Name
@@ -974,10 +964,8 @@ Entity: ${deal.wholesaler.name}
                   className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-sky-500"
                 />
               </div>
-
             </div>
 
-            {/* Aperçu du document LOI */}
             <div className="space-y-2">
               <label className="block text-[11px] text-slate-400 uppercase font-bold">
                 Generated Legal Preview
@@ -987,7 +975,6 @@ Entity: ${deal.wholesaler.name}
               </pre>
             </div>
 
-            {/* Boutons d'Action */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <button
                 onClick={handleDownloadLoi}
