@@ -26,6 +26,7 @@ export default function DealDetailsPage() {
   }, []);
 
   const isUnlocked = userTier !== null;
+  const isElite = userTier === 'vip';
   const dealId = (params?.id as string) || 'OH-CLE-44120-01';
 
   const deal = {
@@ -77,7 +78,7 @@ export default function DealDetailsPage() {
     }
   };
 
-  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PRO
+  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PROFESSIONNEL AVEC BADGE DYNAMIQUE
   const handleDownloadPdf = () => {
     try {
       setDownloading(true);
@@ -113,13 +114,22 @@ export default function DealDetailsPage() {
       doc.setTextColor(56, 189, 248);
       doc.text('| Real Estate Intelligence Desk', 52, 16);
 
-      // Badge Certification
-      doc.setFillColor(16, 185, 129);
-      doc.roundedRect(145, 10, 53, 8, 2, 2, 'F');
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(7.5);
-      doc.setTextColor(7, 11, 20);
-      doc.text('✓ VIP AUDIT CERTIFIED', 151, 15.5);
+      // Badge dynamique : Pro Starter (Bleu) vs VIP Elite (Émeraude)
+      if (isElite) {
+        doc.setFillColor(16, 185, 129); // Émeraude
+        doc.roundedRect(138, 10, 60, 8, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(7, 11, 20);
+        doc.text('✓ VIP ELITE AUDIT CERTIFIED', 141, 15.5);
+      } else {
+        doc.setFillColor(56, 189, 248); // Bleu ciel Starter
+        doc.roundedRect(144, 10, 54, 8, 2, 2, 'F');
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7.5);
+        doc.setTextColor(7, 11, 20);
+        doc.text('✓ PRO STARTER AUDIT', 148, 15.5);
+      }
 
       doc.setDrawColor(30, 41, 59);
       doc.line(12, 22, 198, 22);
@@ -287,7 +297,11 @@ export default function DealDetailsPage() {
       doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 116, 139);
-      doc.text('CONFIDENTIALITY NOTICE: Proprietary underwriting compiled exclusively for MultiDealProp active members.', 12, 202);
+      doc.text(
+        `CONFIDENTIALITY NOTICE: Proprietary underwriting compiled for MultiDealProp ${isElite ? 'VIP Elite' : 'Pro Starter'} members.`,
+        12,
+        202
+      );
       doc.text('All Cap Rates, cashflows, and estimates must be independently verified during the 5-day inspection period.', 12, 206);
 
       doc.save(`MultiDealProp_Underwriting_${dealId}.pdf`);
@@ -302,7 +316,7 @@ export default function DealDetailsPage() {
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* En-tête de navigation avec badge de statut d'abonnement */}
+        {/* En-tête avec badge adapté */}
         <div className="flex items-center justify-between">
           <Link
             href="/deals"
@@ -329,7 +343,7 @@ export default function DealDetailsPage() {
           )}
         </div>
 
-        {/* Titre & Prix d'acquisition */}
+        {/* Titre & Prix */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
           <div>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
@@ -371,10 +385,9 @@ export default function DealDetailsPage() {
         {/* Grille Principale */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Colonne de Gauche : Photo, KPIs et Investment Synopsis Complet */}
+          {/* Colonne Gauche : Photo, KPIs et Investment Synopsis */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Photo principale */}
             <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
                 src={deal.image}
@@ -383,7 +396,6 @@ export default function DealDetailsPage() {
               />
             </div>
 
-            {/* Barre de métriques financières */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-center">
               <div>
                 <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
@@ -478,7 +490,7 @@ export default function DealDetailsPage() {
                 </div>
               </div>
 
-              {/* 2. Audit physique et des composantes */}
+              {/* 2. Audit physique */}
               <div className="space-y-4">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
                   <span>🔨</span> Asset Condition & Mechanicals Audit
@@ -524,7 +536,7 @@ export default function DealDetailsPage() {
 
           </div>
 
-          {/* Colonne de Droite : Bouton PDF et Coordonnées Vendeur */}
+          {/* Colonne Droite : Bouton PDF et Coordonnées Vendeur */}
           <div className="space-y-6">
             
             {/* Box Téléchargement PDF */}
@@ -543,7 +555,7 @@ export default function DealDetailsPage() {
                   disabled={downloading}
                   className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black py-4 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-xl cursor-pointer"
                 >
-                  {downloading ? 'Generating Official PDF...' : '📥 Download Pro PDF Audit Pack'}
+                  {downloading ? 'Generating Official PDF...' : `📥 Download ${isElite ? 'VIP Elite' : 'Pro Starter'} PDF Pack`}
                 </button>
               ) : (
                 <Link
