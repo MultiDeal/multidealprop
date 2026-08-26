@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
@@ -8,6 +8,11 @@ export default function DealDetailsPage() {
   const params = useParams();
   const [userTier, setUserTier] = useState<string | null>(null);
   const [downloading, setDownloading] = useState<boolean>(false);
+
+  // ÉTATS DU CALCULATEUR D'HYPOTHÈQUE INTERACTIF
+  const [downPaymentPct, setDownPaymentPct] = useState<number>(20);
+  const [interestRate, setInterestRate] = useState<number>(7.5);
+  const [loanTermYears, setLoanTermYears] = useState<number>(30);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -35,13 +40,15 @@ export default function DealDetailsPage() {
     tag: 'High-Cap Underwritten Asset',
     streetAddress: '12408 St Clair Ave',
     cityStateZip: 'Cleveland, OH 44120',
+    priceNumeric: 89500,
     price: '$89,500',
     arv: '$115,000',
     capRate: '12.04%',
-    cashOnCash: '18.60%',
+    monthlyRentNumeric: 1250,
     monthlyRent: '$1,250',
     grossAnnualRent: '$15,000',
     grossYield: '16.76%',
+    noiNumeric: 10780,
     noi: '$10,780',
     image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80',
     wholesaler: {
@@ -61,8 +68,6 @@ export default function DealDetailsPage() {
       maintenance: 750,
       waterSewer: 780,
       noi: 10780,
-      debtService: 5840,
-      netCashFlow: 4940,
     },
     specs: {
       yearBuilt: 1952,
@@ -78,7 +83,45 @@ export default function DealDetailsPage() {
     }
   };
 
-  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PROFESSIONNEL AVEC BADGE DYNAMIQUE
+  // CALCULS DYNAMIQUES EN TEMPS RÉEL (CALCULATEUR INTERACTIF)
+  const calcResults = useMemo(() => {
+    const purchasePrice = deal.priceNumeric;
+    const downPaymentAmount = (purchasePrice * downPaymentPct) / 100;
+    const loanAmount = purchasePrice - downPaymentAmount;
+    const estimatedClosingCosts = purchasePrice * 0.03; // ~3%
+    const totalCashInvested = downPaymentAmount + estimatedClosingCosts;
+
+    let monthlyDebtService = 0;
+    let annualDebtService = 0;
+
+    if (loanAmount > 0 && interestRate > 0) {
+      const monthlyRate = interestRate / 100 / 12;
+      const totalPayments = loanTermYears * 12;
+      monthlyDebtService =
+        (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments))) /
+        (Math.pow(1 + monthlyRate, totalPayments) - 1);
+      annualDebtService = monthlyDebtService * 12;
+    }
+
+    const netAnnualCashFlow = deal.noiNumeric - annualDebtService;
+    const netMonthlyCashFlow = netAnnualCashFlow / 12;
+    const cashOnCashReturn = totalCashInvested > 0 ? (netAnnualCashFlow / totalCashInvested) * 100 : 0;
+    const dscr = annualDebtService > 0 ? deal.noiNumeric / annualDebtService : 99.9;
+
+    return {
+      downPaymentAmount,
+      loanAmount,
+      totalCashInvested,
+      monthlyDebtService: Math.round(monthlyDebtService),
+      annualDebtService: Math.round(annualDebtService),
+      netAnnualCashFlow: Math.round(netAnnualCashFlow),
+      netMonthlyCashFlow: Math.round(netMonthlyCashFlow),
+      cashOnCashReturn: cashOnCashReturn.toFixed(2),
+      dscr: dscr.toFixed(2),
+    };
+  }, [deal.priceNumeric, deal.noiNumeric, downPaymentPct, interestRate, loanTermYears]);
+
+  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PROFESSIONNEL
   const handleDownloadPdf = () => {
     try {
       setDownloading(true);
@@ -95,11 +138,9 @@ export default function DealDetailsPage() {
         format: 'a4',
       });
 
-      // Fond sombre institutionnel (#070B14)
       doc.setFillColor(7, 11, 20);
       doc.rect(0, 0, 210, 297, 'F');
 
-      // Header Brand
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(255, 255, 255);
@@ -114,16 +155,15 @@ export default function DealDetailsPage() {
       doc.setTextColor(56, 189, 248);
       doc.text('| Real Estate Intelligence Desk', 52, 16);
 
-      // Badge dynamique : Pro Starter (Bleu) vs VIP Elite (Émeraude)
       if (isElite) {
-        doc.setFillColor(16, 185, 129); // Émeraude
+        doc.setFillColor(16, 185, 129);
         doc.roundedRect(138, 10, 60, 8, 2, 2, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
         doc.setTextColor(7, 11, 20);
         doc.text('✓ VIP ELITE AUDIT CERTIFIED', 141, 15.5);
       } else {
-        doc.setFillColor(56, 189, 248); // Bleu ciel Starter
+        doc.setFillColor(56, 189, 248);
         doc.roundedRect(144, 10, 54, 8, 2, 2, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
@@ -134,7 +174,6 @@ export default function DealDetailsPage() {
       doc.setDrawColor(30, 41, 59);
       doc.line(12, 22, 198, 22);
 
-      // Hero Box
       doc.setFillColor(13, 21, 39);
       doc.setDrawColor(30, 41, 59);
       doc.roundedRect(12, 26, 186, 26, 3, 3, 'FD');
@@ -153,7 +192,6 @@ export default function DealDetailsPage() {
       doc.setTextColor(203, 213, 225);
       doc.text(`Exact Address: ${deal.streetAddress}, ${deal.cityStateZip}`, 16, 46);
 
-      // Box Prix à droite
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(148, 163, 184);
@@ -168,10 +206,9 @@ export default function DealDetailsPage() {
       doc.setTextColor(148, 163, 184);
       doc.text(`Est. ARV: ${deal.arv}`, 145, 46);
 
-      // 4 KPIs
       const kpis = [
         { lbl: 'CAP RATE', val: deal.capRate, color: [16, 185, 129] },
-        { lbl: 'CASH-ON-CASH', val: deal.cashOnCash, color: [245, 158, 11] },
+        { lbl: 'CASH-ON-CASH', val: `${calcResults.cashOnCashReturn}%`, color: [245, 158, 11] },
         { lbl: 'GROSS RENT', val: `${deal.monthlyRent} / mo`, color: [56, 189, 248] },
         { lbl: 'ANNUAL NOI', val: `${deal.noi} / yr`, color: [255, 255, 255] },
       ];
@@ -191,7 +228,6 @@ export default function DealDetailsPage() {
         doc.text(kpi.val, x + 4, 68);
       });
 
-      // P&L Statement (Gauche)
       doc.setFillColor(13, 21, 39);
       doc.roundedRect(12, 76, 90, 118, 3, 3, 'FD');
 
@@ -212,7 +248,7 @@ export default function DealDetailsPage() {
         ['• CapEx / Maintenance', `-$${deal.proforma.maintenance.toLocaleString()}`, [203, 213, 225]],
         ['• Owner Water Escrow', `-$${deal.proforma.waterSewer.toLocaleString()}`, [203, 213, 225]],
         ['(=) NET OPERATING INCOME', `$${deal.proforma.noi.toLocaleString()} / yr`, [16, 185, 129]],
-        ['Leveraged Cashflow (80% LTV)', `+$${deal.proforma.netCashFlow.toLocaleString()} / yr`, [245, 158, 11]],
+        [`Leveraged Cashflow (${downPaymentPct}% Down)`, `+$${calcResults.netAnnualCashFlow.toLocaleString()} / yr`, [245, 158, 11]],
       ];
 
       let yPnl = 92;
@@ -240,7 +276,6 @@ export default function DealDetailsPage() {
       doc.text('100% of $1,250/mo direct deposited by Cuyahoga PHA.', 19, 178);
       doc.text('Tenant tenure: 2.5 yrs with 0 default history.', 19, 183);
 
-      // Specs & Wholesaler (Droite)
       doc.setFillColor(13, 21, 39);
       doc.roundedRect(108, 76, 90, 118, 3, 3, 'FD');
 
@@ -293,7 +328,6 @@ export default function DealDetailsPage() {
       doc.text(`Fee: ${deal.wholesaler.assignmentFee}`, 116, 176);
       doc.text(`Title: ${deal.wholesaler.titleCompany}`, 116, 182);
 
-      // Disclaimer
       doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 116, 139);
@@ -316,7 +350,7 @@ export default function DealDetailsPage() {
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* En-tête avec badge adapté */}
+        {/* Navigation & Badges */}
         <div className="flex items-center justify-between">
           <Link
             href="/deals"
@@ -385,9 +419,10 @@ export default function DealDetailsPage() {
         {/* Grille Principale */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Colonne Gauche : Photo, KPIs et Investment Synopsis */}
+          {/* Colonne de Gauche : Photo, KPIs, Calculateur Interactif & Investment Synopsis */}
           <div className="lg:col-span-2 space-y-6">
             
+            {/* Photo principale */}
             <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
                 src={deal.image}
@@ -396,6 +431,7 @@ export default function DealDetailsPage() {
               />
             </div>
 
+            {/* Barre de métriques financières recalculées en direct */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-center">
               <div>
                 <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
@@ -403,7 +439,7 @@ export default function DealDetailsPage() {
               </div>
               <div className="border-l border-slate-800">
                 <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cash-on-Cash</p>
-                <p className="text-2xl font-black text-amber-400">{deal.cashOnCash}</p>
+                <p className="text-2xl font-black text-amber-400">{calcResults.cashOnCashReturn}%</p>
               </div>
               <div className="border-l border-slate-800">
                 <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Gross Rent</p>
@@ -415,9 +451,128 @@ export default function DealDetailsPage() {
               </div>
             </div>
 
-            {/* SECTION INVESTMENT SYNOPSIS COMPLÈTE & DÉTAILLÉE */}
+            {/* MODULE 2 : CALCULATEUR D'HYPOTHÈQUE & CASH-ON-CASH INTERACTIF */}
+            <div className="bg-[#0d1527] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-2">
+                    🧮 Interactive Leveraged Cash-Flow & Mortgage Modeler
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Adjust financing assumptions to dynamically model your exact return on equity.
+                  </p>
+                </div>
+                <span className="text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase self-start sm:self-auto">
+                  Live Calculator
+                </span>
+              </div>
+
+              {/* Contrôles du Calculateur */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+                
+                {/* 1. Down Payment Control */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-bold uppercase">Down Payment</span>
+                    <span className="text-emerald-400 font-bold">{downPaymentPct}% (${calcResults.downPaymentAmount.toLocaleString()})</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="10"
+                    max="100"
+                    step="5"
+                    value={downPaymentPct}
+                    onChange={(e) => setDownPaymentPct(Number(e.target.value))}
+                    className="w-full accent-emerald-500 cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500">
+                    <button onClick={() => setDownPaymentPct(20)} className="hover:text-emerald-400">20%</button>
+                    <button onClick={() => setDownPaymentPct(25)} className="hover:text-emerald-400">25%</button>
+                    <button onClick={() => setDownPaymentPct(100)} className="hover:text-emerald-400">100% Cash</button>
+                  </div>
+                </div>
+
+                {/* 2. Interest Rate Control */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-bold uppercase">Interest Rate</span>
+                    <span className="text-sky-400 font-bold">{interestRate}%</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="4.5"
+                    max="11.5"
+                    step="0.25"
+                    value={interestRate}
+                    onChange={(e) => setInterestRate(Number(e.target.value))}
+                    className="w-full accent-sky-500 cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-slate-500">
+                    <span>6.5%</span>
+                    <span>7.5%</span>
+                    <span>8.5%</span>
+                  </div>
+                </div>
+
+                {/* 3. Loan Term Control */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-slate-400 font-bold uppercase">Loan Term</span>
+                    <span className="text-amber-400 font-bold">{loanTermYears} Years</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <button
+                      onClick={() => setLoanTermYears(30)}
+                      className={`py-2 rounded-xl text-xs font-bold transition border ${
+                        loanTermYears === 30
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                          : 'bg-[#131d36] text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      30 Years
+                    </button>
+                    <button
+                      onClick={() => setLoanTermYears(15)}
+                      className={`py-2 rounded-xl text-xs font-bold transition border ${
+                        loanTermYears === 15
+                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
+                          : 'bg-[#131d36] text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      15 Years
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Résultats Dynamiques Calculés */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#131d36] border border-slate-800 rounded-2xl p-4 text-center">
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Total Cash In</p>
+                  <p className="text-base sm:text-lg font-black text-white">${calcResults.totalCashInvested.toLocaleString()}</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">Down + 3% Est. Closing</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Mortgage P&I</p>
+                  <p className="text-base sm:text-lg font-black text-rose-400">${calcResults.monthlyDebtService}/mo</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">${calcResults.annualDebtService.toLocaleString()}/yr</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Net Cash Flow</p>
+                  <p className="text-base sm:text-lg font-black text-emerald-400">+${calcResults.netMonthlyCashFlow}/mo</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">+${calcResults.netAnnualCashFlow.toLocaleString()}/yr</p>
+                </div>
+                <div>
+                  <p className="text-[10px] uppercase font-bold text-slate-400">Cash-on-Cash</p>
+                  <p className="text-base sm:text-lg font-black text-amber-400">{calcResults.cashOnCashReturn}%</p>
+                  <p className="text-[9px] text-slate-500 mt-0.5">DSCR: {calcResults.dscr}x</p>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION INVESTMENT SYNOPSIS COMPLÈTE */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-8 shadow-xl">
-              
               <div className="flex items-center justify-between border-b border-slate-800 pb-4">
                 <div>
                   <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
@@ -480,12 +635,12 @@ export default function DealDetailsPage() {
                   </div>
 
                   <div className="flex justify-between text-slate-400 text-xs pl-4">
-                    <span>(-) Estimated Debt Service (80% LTV @ 7.5% Interest)</span>
-                    <span className="text-rose-400">-${deal.proforma.debtService.toLocaleString()} / yr</span>
+                    <span>(-) Dynamic Mortgage Debt Service ({downPaymentPct}% Down @ {interestRate}%)</span>
+                    <span className="text-rose-400">-${calcResults.annualDebtService.toLocaleString()} / yr</span>
                   </div>
                   <div className="flex justify-between text-amber-400 font-bold text-sm pt-1">
                     <span className="font-sans">(=) Net Leveraged Cash Flow</span>
-                    <span>+${deal.proforma.netCashFlow.toLocaleString()} / yr (+$411/mo)</span>
+                    <span>+${calcResults.netAnnualCashFlow.toLocaleString()} / yr (+${calcResults.netMonthlyCashFlow}/mo)</span>
                   </div>
                 </div>
               </div>
@@ -531,12 +686,11 @@ export default function DealDetailsPage() {
                   </p>
                 </div>
               </div>
-
             </div>
 
           </div>
 
-          {/* Colonne Droite : Bouton PDF et Coordonnées Vendeur */}
+          {/* Colonne Droite : Téléchargement PDF & Coordonnées Vendeur */}
           <div className="space-y-6">
             
             {/* Box Téléchargement PDF */}
