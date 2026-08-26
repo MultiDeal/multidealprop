@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 
 interface Deal {
@@ -10,13 +10,16 @@ interface Deal {
   city: string;
   state: string;
   zip: string;
+  priceNumeric: number;
   price: string;
+  capRateNumeric: number;
   capRate: string;
   monthlyRent: string;
   grossYield: string;
   units: number;
   image: string;
   wholesaler: string;
+  isCommercial?: boolean;
 }
 
 const SAMPLE_DEALS: Deal[] = [
@@ -27,7 +30,9 @@ const SAMPLE_DEALS: Deal[] = [
     city: 'Cleveland',
     state: 'OH',
     zip: '44120',
+    priceNumeric: 89500,
     price: '$89,500',
+    capRateNumeric: 12.04,
     capRate: '12.04%',
     monthlyRent: '$1,250',
     grossYield: '16.76%',
@@ -42,7 +47,9 @@ const SAMPLE_DEALS: Deal[] = [
     city: 'Akron',
     state: 'OH',
     zip: '44306',
+    priceNumeric: 118000,
     price: '$118,000',
+    capRateNumeric: 11.40,
     capRate: '11.40%',
     monthlyRent: '$1,650',
     grossYield: '21.20%',
@@ -57,7 +64,9 @@ const SAMPLE_DEALS: Deal[] = [
     city: 'Memphis',
     state: 'TN',
     zip: '38114',
+    priceNumeric: 145000,
     price: '$145,000',
+    capRateNumeric: 12.20,
     capRate: '12.20%',
     monthlyRent: '$2,100',
     grossYield: '24.10%',
@@ -72,7 +81,9 @@ const SAMPLE_DEALS: Deal[] = [
     city: 'Detroit',
     state: 'MI',
     zip: '48227',
+    priceNumeric: 165000,
     price: '$165,000',
+    capRateNumeric: 13.50,
     capRate: '13.50%',
     monthlyRent: '$2,800',
     grossYield: '20.40%',
@@ -87,7 +98,9 @@ const SAMPLE_DEALS: Deal[] = [
     city: 'Baltimore',
     state: 'MD',
     zip: '21215',
+    priceNumeric: 139000,
     price: '$139,000',
+    capRateNumeric: 11.10,
     capRate: '11.10%',
     monthlyRent: '$1,900',
     grossYield: '16.40%',
@@ -102,7 +115,9 @@ const SAMPLE_DEALS: Deal[] = [
     city: 'Indianapolis',
     state: 'IN',
     zip: '46201',
+    priceNumeric: 175000,
     price: '$175,000',
+    capRateNumeric: 10.50,
     capRate: '10.50%',
     monthlyRent: '$2,250',
     grossYield: '15.40%',
@@ -117,7 +132,9 @@ const SAMPLE_DEALS: Deal[] = [
     city: 'Philadelphia',
     state: 'PA',
     zip: '19134',
+    priceNumeric: 129000,
     price: '$129,000',
+    capRateNumeric: 11.80,
     capRate: '11.80%',
     monthlyRent: '$1,750',
     grossYield: '16.30%',
@@ -132,7 +149,9 @@ const SAMPLE_DEALS: Deal[] = [
     city: 'Kansas City',
     state: 'MO',
     zip: '64130',
+    priceNumeric: 189000,
     price: '$189,000',
+    capRateNumeric: 12.80,
     capRate: '12.80%',
     monthlyRent: '$3,100',
     grossYield: '19.70%',
@@ -141,24 +160,34 @@ const SAMPLE_DEALS: Deal[] = [
     wholesaler: 'Midwest Metro Wholesale',
   },
   {
-    id: 'st-louis-duplex-turnkey',
-    title: 'Turnkey 2-Unit Residential Income Property',
-    tag: 'Cashflow Asset',
-    city: 'St. Louis',
-    state: 'MO',
-    zip: '63118',
-    price: '$105,000',
-    capRate: '12.00%',
-    monthlyRent: '$1,500',
-    grossYield: '17.10%',
-    units: 2,
-    image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Gateway Deal Network',
+    id: 'cleveland-commercial-6plex',
+    title: '6-Unit Commercial Multi-Family Apartment Building',
+    tag: 'VIP Commercial Exclusive',
+    city: 'Cleveland',
+    state: 'OH',
+    zip: '44108',
+    priceNumeric: 279000,
+    price: '$279,000',
+    capRateNumeric: 14.20,
+    capRate: '14.20%',
+    monthlyRent: '$4,800',
+    grossYield: '20.64%',
+    units: 6,
+    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Great Lakes Commercial Hub',
+    isCommercial: true,
   },
 ];
 
 function DealsFeed() {
   const [userTier, setUserTier] = useState<string | null>(null);
+
+  // Filtres d'état
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCity, setSelectedCity] = useState('ALL');
+  const [selectedUnits, setSelectedUnits] = useState('ALL');
+  const [minCapRate, setMinCapRate] = useState<number>(0);
+  const [sortBy, setSortBy] = useState('highest_cap');
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -169,6 +198,46 @@ function DealsFeed() {
   }, []);
 
   const isUnlocked = userTier !== null;
+  const isElite = userTier === 'vip';
+
+  // Liste unique des villes
+  const cities = useMemo(() => {
+    const set = new Set(SAMPLE_DEALS.map((d) => d.city));
+    return ['ALL', ...Array.from(set)];
+  }, []);
+
+  // Filtrage et Tri combinés
+  const filteredDeals = useMemo(() => {
+    return SAMPLE_DEALS.filter((deal) => {
+      // Recherche textuelle
+      const matchesSearch =
+        deal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        deal.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        deal.zip.includes(searchTerm) ||
+        deal.state.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Filtre Ville
+      const matchesCity = selectedCity === 'ALL' || deal.city === selectedCity;
+
+      // Filtre Type / Unités
+      let matchesUnits = true;
+      if (selectedUnits === '1') matchesUnits = deal.units === 1;
+      else if (selectedUnits === '2') matchesUnits = deal.units === 2;
+      else if (selectedUnits === '3') matchesUnits = deal.units === 3;
+      else if (selectedUnits === '4') matchesUnits = deal.units === 4;
+      else if (selectedUnits === '5plus') matchesUnits = deal.units >= 5;
+
+      // Filtre Cap Rate
+      const matchesCap = deal.capRateNumeric >= minCapRate;
+
+      return matchesSearch && matchesCity && matchesUnits && matchesCap;
+    }).sort((a, b) => {
+      if (sortBy === 'highest_cap') return b.capRateNumeric - a.capRateNumeric;
+      if (sortBy === 'lowest_price') return a.priceNumeric - b.priceNumeric;
+      if (sortBy === 'highest_price') return b.priceNumeric - a.priceNumeric;
+      return 0; // Default
+    });
+  }, [searchTerm, selectedCity, selectedUnits, minCapRate, sortBy]);
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
@@ -178,10 +247,12 @@ function DealsFeed() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
           <div>
             <span className="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
-              Live Verified Opportunities ({SAMPLE_DEALS.length} Available)
+              Live Verified Opportunities ({filteredDeals.length} Available)
             </span>
             <h1 className="text-3xl font-black mt-2 tracking-tight">Multi-Family Deals Feed</h1>
-            <p className="text-sm text-slate-400">Underwritten properties with live cashflow metrics and direct assignment contracts.</p>
+            <p className="text-sm text-slate-400">
+              Underwritten properties with live cashflow metrics and direct wholesaler assignment desks.
+            </p>
           </div>
 
           <div className="flex items-center gap-3">
@@ -192,7 +263,6 @@ function DealsFeed() {
               📍 Scan Target City ($4.99)
             </Link>
 
-            {/* Badge adaptatif selon le forfait exact */}
             {!isUnlocked ? (
               <Link
                 href="/vip"
@@ -212,80 +282,225 @@ function DealsFeed() {
           </div>
         </div>
 
-        {/* Grille des 9 Deals */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {SAMPLE_DEALS.map((deal) => (
-            <div
-              key={deal.id}
-              className="bg-[#0d1527] border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden shadow-2xl transition flex flex-col justify-between"
-            >
-              <div>
-                {/* Image */}
-                <div className="relative h-48 w-full overflow-hidden bg-slate-900">
-                  <img
-                    src={deal.image}
-                    alt={deal.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <span className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur border border-slate-700/50 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full">
-                    {deal.tag}
-                  </span>
-                  <span className="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur text-white text-xs font-bold px-2.5 py-1 rounded-lg">
-                    {deal.units} {deal.units > 1 ? 'Units' : 'Unit'}
-                  </span>
-                </div>
+        {/* BARRE DE FILTRES ET DE RECHERCHE DYNAMIQUE */}
+        <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            
+            {/* Barre de recherche */}
+            <div className="lg:col-span-2">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                🔍 Search Property / Zip / City
+              </label>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Ex: Cleveland, Duplex, 44120..."
+                className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
+              />
+            </div>
 
-                {/* Contenu */}
-                <div className="p-6 space-y-4">
+            {/* Filtre Marché / Ville */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                📍 Target Market
+              </label>
+              <select
+                value={selectedCity}
+                onChange={(e) => setSelectedCity(e.target.value)}
+                className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition"
+              >
+                {cities.map((c) => (
+                  <option key={c} value={c}>
+                    {c === 'ALL' ? 'All Markets (USA)' : c}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filtre Type d'immeuble */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                🏢 Building Type
+              </label>
+              <select
+                value={selectedUnits}
+                onChange={(e) => setSelectedUnits(e.target.value)}
+                className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition"
+              >
+                <option value="ALL">All Types</option>
+                <option value="1">1 Unit (Single Family)</option>
+                <option value="2">2 Units (Duplex)</option>
+                <option value="3">3 Units (Triplex)</option>
+                <option value="4">4 Units (Fourplex)</option>
+                <option value="5plus">5+ Commercial (VIP Only)</option>
+              </select>
+            </div>
+
+            {/* Tri des résultats */}
+            <div>
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+                ⚡ Sort Deals
+              </label>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition"
+              >
+                <option value="highest_cap">Highest Cap Rate</option>
+                <option value="lowest_price">Price: Low to High</option>
+                <option value="highest_price">Price: High to Low</option>
+              </select>
+            </div>
+
+          </div>
+
+          {/* Filtre Cap Rate Minimum & Raccourcis Rapides */}
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80 text-xs">
+            <div className="flex items-center gap-2">
+              <span className="text-slate-400 font-bold uppercase text-[11px]">Min Cap Rate:</span>
+              {[0, 11, 12, 13].map((rate) => (
+                <button
+                  key={rate}
+                  onClick={() => setMinCapRate(rate)}
+                  className={`px-3 py-1 rounded-lg font-bold transition ${
+                    minCapRate === rate
+                      ? 'bg-emerald-500 text-slate-950 shadow'
+                      : 'bg-[#131d36] text-slate-300 hover:text-white border border-slate-700'
+                  }`}
+                >
+                  {rate === 0 ? 'Any' : `>${rate}%`}
+                </button>
+              ))}
+            </div>
+
+            {(searchTerm || selectedCity !== 'ALL' || selectedUnits !== 'ALL' || minCapRate > 0) && (
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setSelectedCity('ALL');
+                  setSelectedUnits('ALL');
+                  setMinCapRate(0);
+                }}
+                className="text-rose-400 hover:underline font-semibold text-xs"
+              >
+                Reset All Filters ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Grille des Opportunités Filtrées */}
+        {filteredDeals.length === 0 ? (
+          <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-12 text-center space-y-3">
+            <p className="text-4xl">🔍</p>
+            <h3 className="text-lg font-bold text-white">No Properties Found Matching Your Criteria</h3>
+            <p className="text-slate-400 text-xs max-w-md mx-auto">
+              Try adjusting your Cap Rate threshold or clearing the search query to see all available deals.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredDeals.map((deal) => {
+              const isCommercialLocked = deal.isCommercial && !isElite;
+              const hasAccess = isUnlocked && !isCommercialLocked;
+
+              return (
+                <div
+                  key={deal.id}
+                  className={`bg-[#0d1527] border ${
+                    deal.isCommercial ? 'border-amber-500/50' : 'border-slate-800'
+                  } hover:border-slate-700 rounded-3xl overflow-hidden shadow-2xl transition flex flex-col justify-between`}
+                >
                   <div>
-                    <h3 className="font-bold text-lg text-white leading-snug line-clamp-1">
-                      {deal.title}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                      📍 {isUnlocked ? `${deal.city}, ${deal.state} ${deal.zip}` : `${deal.city}, ${deal.state} (Exact St Locked 🔒)`}
-                    </p>
+                    {/* Image Header */}
+                    <div className="relative h-48 w-full overflow-hidden bg-slate-900">
+                      <img
+                        src={deal.image}
+                        alt={deal.title}
+                        className={`w-full h-full object-cover ${isCommercialLocked ? 'filter blur-[3px]' : ''}`}
+                      />
+                      <span
+                        className={`absolute top-3 left-3 bg-slate-950/80 backdrop-blur border text-xs font-bold px-3 py-1 rounded-full ${
+                          deal.isCommercial
+                            ? 'border-amber-500/40 text-amber-400'
+                            : 'border-slate-700/50 text-emerald-400'
+                        }`}
+                      >
+                        {deal.tag}
+                      </span>
+                      <span className="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur text-white text-xs font-bold px-2.5 py-1 rounded-lg">
+                        {deal.units} {deal.units > 1 ? 'Units' : 'Unit'}
+                      </span>
+                    </div>
+
+                    {/* Contenu */}
+                    <div className="p-6 space-y-4">
+                      <div>
+                        <h3 className="font-bold text-lg text-white leading-snug line-clamp-1">
+                          {deal.title}
+                        </h3>
+                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                          📍{' '}
+                          {hasAccess
+                            ? `${deal.city}, ${deal.state} ${deal.zip}`
+                            : isCommercialLocked
+                            ? `${deal.city}, ${deal.state} (5+ Units VIP Elite Only 🔒)`
+                            : `${deal.city}, ${deal.state} (Exact St Locked 🔒)`}
+                        </p>
+                      </div>
+
+                      {/* Métriques */}
+                      <div className="grid grid-cols-3 gap-2 bg-[#131d36] p-3 rounded-2xl text-center">
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Price</p>
+                          <p className="text-sm font-black text-white">{deal.price}</p>
+                        </div>
+                        <div className="border-x border-slate-800">
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Cap Rate</p>
+                          <p className="text-sm font-black text-emerald-400">{deal.capRate}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] uppercase font-bold text-slate-400">Rent</p>
+                          <p className="text-sm font-black text-sky-400">{deal.monthlyRent}</p>
+                        </div>
+                      </div>
+
+                      {/* Contact vendeur */}
+                      <div className="text-xs text-slate-400 pt-1">
+                        <span className="text-slate-500 block text-[11px]">Direct Wholesaler Entity:</span>
+                        {hasAccess ? (
+                          <span className="text-emerald-400 font-semibold">{deal.wholesaler}</span>
+                        ) : (
+                          <span className="blur-sm select-none text-slate-500">{deal.wholesaler}</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
-                  {/* Bandeau de chiffres clés */}
-                  <div className="grid grid-cols-3 gap-2 bg-[#131d36] p-3 rounded-2xl text-center">
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-400">Price</p>
-                      <p className="text-sm font-black text-white">{deal.price}</p>
-                    </div>
-                    <div className="border-x border-slate-800">
-                      <p className="text-[10px] uppercase font-bold text-slate-400">Cap Rate</p>
-                      <p className="text-sm font-black text-emerald-400">{deal.capRate}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-400">Rent</p>
-                      <p className="text-sm font-black text-sky-400">{deal.monthlyRent}</p>
-                    </div>
-                  </div>
-
-                  {/* Contact vendeur */}
-                  <div className="text-xs text-slate-400 pt-1">
-                    <span className="text-slate-500 block text-[11px]">Direct Seller Entity:</span>
-                    {isUnlocked ? (
-                      <span className="text-emerald-400 font-semibold">{deal.wholesaler}</span>
+                  {/* Bouton d'action */}
+                  <div className="p-6 pt-0">
+                    {isCommercialLocked ? (
+                      <Link
+                        href="/vip"
+                        className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black py-3 px-4 rounded-xl transition shadow-lg text-xs uppercase tracking-wider text-center"
+                      >
+                        🔒 Upgrade to VIP Elite (Commercial 5+)
+                      </Link>
                     ) : (
-                      <span className="blur-sm select-none text-slate-500">{deal.wholesaler}</span>
+                      <Link
+                        href={`/deals/${deal.id}`}
+                        className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold py-3 px-4 rounded-xl transition shadow-lg text-sm text-center"
+                      >
+                        ⚡ View Deal & Underwriting
+                      </Link>
                     )}
                   </div>
                 </div>
-              </div>
-
-              {/* Bouton d'accès */}
-              <div className="p-6 pt-0">
-                <Link
-                  href={`/deals/${deal.id}`}
-                  className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold py-3 px-4 rounded-xl transition shadow-lg text-sm text-center"
-                >
-                  ⚡ View Deal & Underwriting
-                </Link>
-              </div>
-            </div>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
       </div>
     </div>
@@ -294,7 +509,13 @@ function DealsFeed() {
 
 export default function DealsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#070b14] text-slate-400 flex items-center justify-center">Loading Deals Feed...</div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#070b14] text-slate-400 flex items-center justify-center">
+          Loading Live Deals Feed...
+        </div>
+      }
+    >
       <DealsFeed />
     </Suspense>
   );
