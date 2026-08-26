@@ -28,7 +28,7 @@ export default function DealDetailsPage() {
     capRate: '10.8%',
     monthlyRent: '$1,250',
     grossYield: '23.8%',
-    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
+    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80',
     wholesaler: {
       name: 'Apex Wholesale Capital LLC',
       phone: '+1 (216) 485-9921',
@@ -38,23 +38,80 @@ export default function DealDetailsPage() {
     synopsis: 'Solid turnkey turn-around asset in high-occupancy rental corridor. Long-term Section 8 tenant in place paying full market rate with zero landlord utility overhead.',
   };
 
-  const handleDownloadAudit = async () => {
+  // Génération et téléchargement instantané du fichier d'audit (côté client, 0 dépendance API)
+  const handleDownloadAudit = () => {
     try {
       setDownloading(true);
-      const res = await fetch(`/api/deals/${dealId}/audit`);
-      if (!res.ok) throw new Error('Download failed');
 
-      const blob = await res.blob();
+      const auditContent = `================================================================================
+MULTIDEALPROP - CONFIDENTIAL UNDERWRITING & DUE DILIGENCE AUDIT
+================================================================================
+Asset ID: ${deal.id}
+Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+Status: VERIFIED OFF-MARKET TRANSACTION READY
+Access Tier: VIP PRO / STARTER MEMBER
+
+--------------------------------------------------------------------------------
+1. ASSET SPECIFICATIONS & LOCATION
+--------------------------------------------------------------------------------
+Property: ${deal.title}
+Exact Address: ${deal.streetAddress}, ${deal.cityStateZip}
+Asset Class: Multi-Family / Turnkey High-Yield Residential
+Layout: 3 Bedrooms | 1 Bathroom | Full Basement | Detached Garage
+Square Footage: ~1,340 sqft
+Year Built: 1952 (Full Interior & Mechanical Rehab 2024)
+
+--------------------------------------------------------------------------------
+2. PRO-FORMA FINANCIAL UNDERWRITING
+--------------------------------------------------------------------------------
+Contract Asking Price:        ${deal.price}
+Monthly In-Place Rent:        ${deal.monthlyRent} / month
+Annual Gross Scheduled Rent:  $15,000 / year
+
+Estimated Operating Expenses:
+  - Real Estate Taxes:        $1,420 / year
+  - Property Insurance:       $850 / year
+  - Property Management (8%): $1,200 / year
+  - Maintenance Reserve (5%): $750 / year
+--------------------------------------------------------------------------------
+Net Operating Income (NOI):   $10,780 / year
+Cap Rate:                     ${deal.capRate}
+Gross Yield:                  ${deal.grossYield}
+
+--------------------------------------------------------------------------------
+3. TENANT & SECTION 8 VOUCHER BREAKDOWN
+--------------------------------------------------------------------------------
+Occupancy Status:             100% Occupied
+Tenant Type:                  Cuyahoga County Housing Authority (Section 8)
+Direct Deposit Portion:       100% Guaranteed by Housing Authority
+Tenant Utilities:             Tenant pays Gas & Electric
+Owner Utilities:              Owner pays Water & Sewer (~$65/mo)
+
+--------------------------------------------------------------------------------
+4. WHOLESALE CONTRACT & ASSIGNMENT DESK
+--------------------------------------------------------------------------------
+Direct Seller / Wholesaler:   ${deal.wholesaler.name}
+Acquisitions Contact:         ${deal.wholesaler.phone}
+Direct Email:                 ${deal.wholesaler.email}
+Assignment Terms:             ${deal.wholesaler.assignmentFee}
+Title / Escrow Agency:        First Choice Title & Escrow (Earnest Money: $2,500)
+Inspection Contingency:       5 Business Days
+
+================================================================================
+CONFIDENTIAL - FOR AUTHORIZED MULTIDEALPROP SUBSCRIBERS ONLY
+================================================================================`;
+
+      const blob = new Blob([auditContent], { type: 'text/plain;charset=utf-8' });
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Due_Diligence_Audit_${dealId}.txt`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `MultiDealProp_Due_Diligence_${deal.id}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert('Erreur lors du téléchargement : ' + (err?.message || 'Erreur inconnue'));
+      alert('Error downloading report: ' + (err?.message || 'Unknown error'));
     } finally {
       setDownloading(false);
     }
@@ -63,12 +120,14 @@ export default function DealDetailsPage() {
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
       <div className="max-w-7xl mx-auto">
+        
+        {/* Navigation & Header */}
         <div className="flex items-center justify-between mb-8">
           <Link
-            href="/"
+            href="/deals"
             className="text-slate-400 hover:text-white transition flex items-center gap-2 text-sm font-medium"
           >
-            ← Back to Scanner
+            ← Back to Deals Feed
           </Link>
 
           {!isVip ? (
@@ -85,6 +144,7 @@ export default function DealDetailsPage() {
           )}
         </div>
 
+        {/* Title Section */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
@@ -122,7 +182,10 @@ export default function DealDetailsPage() {
           </div>
         </div>
 
+        {/* Grid Content */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Main Visuals & Underwriting */}
           <div className="lg:col-span-2 space-y-6">
             <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
@@ -157,7 +220,10 @@ export default function DealDetailsPage() {
             </div>
           </div>
 
+          {/* Right Action Sidebars */}
           <div className="space-y-6">
+            
+            {/* Vault Download Box */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
                 📄 Due Diligence Vault
@@ -171,20 +237,21 @@ export default function DealDetailsPage() {
                 <button
                   onClick={handleDownloadAudit}
                   disabled={downloading}
-                  className="w-full bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 font-bold py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black py-3.5 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg cursor-pointer"
                 >
-                  {downloading ? 'Downloading...' : '📥 Download Full Audit Pack'}
+                  {downloading ? 'Preparing File...' : '📥 Download Full Audit Pack'}
                 </button>
               ) : (
                 <Link
                   href="/vip"
                   className="w-full inline-flex items-center justify-center gap-2 bg-[#131d36] hover:bg-[#1a2747] text-slate-300 border border-slate-700 font-semibold py-3.5 px-4 rounded-xl transition text-sm"
                 >
-                  🔒 Unlock Full PDF Pack (Basic/VIP)
+                  🔒 Unlock Full Pack (Basic/VIP)
                 </Link>
               )}
             </div>
 
+            {/* Wholesaler Direct Desk */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -250,8 +317,11 @@ export default function DealDetailsPage() {
                 </div>
               )}
             </div>
+
           </div>
+
         </div>
+
       </div>
     </div>
   );
