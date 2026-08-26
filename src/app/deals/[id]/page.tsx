@@ -37,6 +37,7 @@ export default function DealDetailsPage() {
     capRate: '12.04%',
     cashOnCash: '18.60%',
     monthlyRent: '$1,250',
+    grossAnnualRent: '$15,000',
     grossYield: '16.76%',
     noi: '$10,780',
     image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80',
@@ -44,32 +45,43 @@ export default function DealDetailsPage() {
       name: 'Apex Wholesale Capital LLC',
       phone: '+1 (216) 485-9921',
       email: 'acquisitions@apexwholesaledesk.com',
-      assignmentFee: '$5,000 included in price',
-      titleCompany: 'First Choice Title & Escrow ($2,500 EMD)',
+      assignmentFee: '$5,000 (included in purchase price)',
+      titleCompany: 'First Choice Title & Escrow (EMD: $2,500)',
     },
     proforma: {
-      gross: '$15,000',
-      vacancy: '-$750 (5%)',
-      egi: '$14,250',
-      taxes: '-$1,420',
-      insurance: '-$850',
-      mgmt: '-$1,200 (8%)',
-      capex: '-$750 (5%)',
-      water: '-$780',
-      noi: '$10,780 / yr',
-      netCash: '+$4,940 / yr (+$411/mo)',
+      grossIncome: 15000,
+      vacancy: 750,
+      effectiveGrossIncome: 14250,
+      taxes: 1420,
+      insurance: 850,
+      management: 1200,
+      maintenance: 750,
+      waterSewer: 780,
+      noi: 10780,
+      debtService: 5840,
+      netCashFlow: 4940,
     },
+    specs: {
+      yearBuilt: 1952,
+      rehabYear: 2024,
+      sqft: '1,340 sqft',
+      lotSize: '4,800 sqft',
+      roof: 'Architectural Shingles (Installed 2021)',
+      electrical: '100A Breaker Panel (City Code Certified)',
+      plumbing: 'Full PEX Supply & PVC Waste Stacks',
+      hvac: 'High-Efficiency Forced Air Gas (2022)',
+      waterHeater: '40-Gallon Gas (Late 2023)',
+      tenantTenure: '2.5+ Years (Cuyahoga County PHA Voucher - Zero Default)',
+    }
   };
 
-  // GÉNÉRATEUR DE VRAI FICHIER PDF GRAPHIQUE
+  // GÉNÉRATEUR DE FICHIER PDF GRAPHIQUE PROFESSIONNEL
   const handleDownloadPdf = async () => {
     try {
       setDownloading(true);
-
-      // Vérifier que jsPDF est chargé
       const { jsPDF } = (window as any).jspdf || {};
+
       if (!jsPDF) {
-        // Fallback rapide si le script externe met du temps
         window.open(`/deals/${dealId}/print`, '_blank');
         return;
       }
@@ -80,23 +92,23 @@ export default function DealDetailsPage() {
         format: 'a4',
       });
 
-      // 1. Fond d'écran sombre exécutif (#070B14)
+      // Fond sombre (#070B14)
       doc.setFillColor(7, 11, 20);
       doc.rect(0, 0, 210, 297, 'F');
 
-      // 2. Header Brand
+      // Header
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(16);
       doc.setTextColor(255, 255, 255);
       doc.text('Multi', 12, 16);
-      doc.setTextColor(16, 185, 129); // Emerald
+      doc.setTextColor(16, 185, 129);
       doc.text('Deal', 25, 16);
       doc.setTextColor(255, 255, 255);
       doc.text('Prop', 38, 16);
 
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(56, 189, 248); // Sky blue
+      doc.setTextColor(56, 189, 248);
       doc.text('| Real Estate Intelligence Desk', 52, 16);
 
       // Badge VIP
@@ -107,11 +119,10 @@ export default function DealDetailsPage() {
       doc.setTextColor(7, 11, 20);
       doc.text('✓ VIP AUDIT CERTIFIED', 151, 15.5);
 
-      // Ligne séparatrice
       doc.setDrawColor(30, 41, 59);
       doc.line(12, 22, 198, 22);
 
-      // 3. Hero Card (Boîte Titre & Prix)
+      // Hero Card
       doc.setFillColor(13, 21, 39);
       doc.setDrawColor(30, 41, 59);
       doc.roundedRect(12, 26, 186, 26, 3, 3, 'FD');
@@ -130,7 +141,6 @@ export default function DealDetailsPage() {
       doc.setTextColor(203, 213, 225);
       doc.text(`Exact Address: ${deal.streetAddress}, ${deal.cityStateZip}`, 16, 46);
 
-      // Box Prix à droite
       doc.setFontSize(7);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(148, 163, 184);
@@ -145,7 +155,7 @@ export default function DealDetailsPage() {
       doc.setTextColor(148, 163, 184);
       doc.text(`Est. ARV: $115,000`, 145, 46);
 
-      // 4. 4 KPI Metric Cards
+      // KPIs
       const kpis = [
         { lbl: 'CAP RATE', val: '12.04%', color: [16, 185, 129] },
         { lbl: 'CASH-ON-CASH', val: '18.60%', color: [245, 158, 11] },
@@ -168,7 +178,7 @@ export default function DealDetailsPage() {
         doc.text(kpi.val, x + 4, 68);
       });
 
-      // 5. Colonne Gauche: 12-Month Pro-Forma P&L
+      // P&L Statement (Gauche)
       doc.setFillColor(13, 21, 39);
       doc.roundedRect(12, 76, 90, 118, 3, 3, 'FD');
 
@@ -180,16 +190,16 @@ export default function DealDetailsPage() {
       doc.line(16, 85, 98, 85);
 
       const pnlRows = [
-        ['Gross Rent ($1,250 x 12)', deal.proforma.gross, [255, 255, 255]],
-        ['(-) Vacancy Loss (5%)', deal.proforma.vacancy, [248, 113, 113]],
-        ['(=) Effective Gross Income', deal.proforma.egi, [56, 189, 248]],
-        ['• Property Taxes', deal.proforma.taxes, [203, 213, 225]],
-        ['• Insurance (Hazard)', deal.proforma.insurance, [203, 213, 225]],
-        ['• Management Fee (8%)', deal.proforma.mgmt, [203, 213, 225]],
-        ['• CapEx / Maintenance', deal.proforma.capex, [203, 213, 225]],
-        ['• Owner Water Escrow', deal.proforma.water, [203, 213, 225]],
-        ['(=) NET OPERATING INCOME', deal.proforma.noi, [16, 185, 129]],
-        ['Leveraged Cashflow (80% LTV)', deal.proforma.netCash, [245, 158, 11]],
+        ['Gross Rent ($1,250 x 12)', '$15,000', [255, 255, 255]],
+        ['(-) Vacancy Loss (5%)', '-$750', [248, 113, 113]],
+        ['(=) Effective Gross Income', '$14,250', [56, 189, 248]],
+        ['• Property Taxes', '-$1,420', [203, 213, 225]],
+        ['• Insurance (Hazard)', '-$850', [203, 213, 225]],
+        ['• Management Fee (8%)', '-$1,200', [203, 213, 225]],
+        ['• CapEx / Maintenance', '-$750', [203, 213, 225]],
+        ['• Owner Water Escrow', '-$780', [203, 213, 225]],
+        ['(=) NET OPERATING INCOME', '$10,780 / yr', [16, 185, 129]],
+        ['Leveraged Cashflow (80% LTV)', '+$4,940 / yr', [245, 158, 11]],
       ];
 
       let yPnl = 92;
@@ -206,7 +216,6 @@ export default function DealDetailsPage() {
         yPnl += 7.5;
       });
 
-      // Encadré Section 8 en bas de P&L
       doc.setFillColor(11, 25, 46);
       doc.roundedRect(16, 168, 82, 20, 2, 2, 'F');
       doc.setFontSize(6.5);
@@ -218,7 +227,7 @@ export default function DealDetailsPage() {
       doc.text('100% of $1,250/mo direct deposited by Cuyahoga PHA.', 19, 178);
       doc.text('Tenant tenure: 2.5 yrs with 0 default history.', 19, 183);
 
-      // 6. Colonne Droite: Physical Specs & Wholesaler Desk
+      // Specs & Wholesaler (Droite)
       doc.setFillColor(13, 21, 39);
       doc.roundedRect(108, 76, 90, 118, 3, 3, 'FD');
 
@@ -251,7 +260,6 @@ export default function DealDetailsPage() {
         ySpec += 7.5;
       });
 
-      // Wholesaler Desk Box
       doc.setFillColor(16, 185, 129, 0.1);
       doc.setDrawColor(16, 185, 129);
       doc.roundedRect(112, 146, 82, 42, 2, 2, 'FD');
@@ -272,25 +280,15 @@ export default function DealDetailsPage() {
       doc.text('Fee: $5,000 (Included in $89,500)', 116, 176);
       doc.text('Title: First Choice Title ($2,500 EMD)', 116, 182);
 
-      // 7. Footer Disclaimer
+      // Disclaimer
       doc.setFontSize(6);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 116, 139);
-      doc.text(
-        'CONFIDENTIALITY NOTICE: Proprietary underwriting compiled exclusively for MultiDealProp active members.',
-        12,
-        202
-      );
-      doc.text(
-        'All Cap Rates, cashflows, and estimates must be independently verified during the 5-day inspection period.',
-        12,
-        206
-      );
+      doc.text('CONFIDENTIALITY NOTICE: Proprietary underwriting compiled exclusively for MultiDealProp active members.', 12, 202);
+      doc.text('All Cap Rates, cashflows, and estimates must be independently verified during the 5-day inspection period.', 12, 206);
 
-      // Téléchargement direct du fichier .PDF
       doc.save(`MultiDealProp_Underwriting_${dealId}.pdf`);
     } catch (err: any) {
-      // Si une erreur survient, ouvre la page d'impression PDF
       window.open(`/deals/${dealId}/print`, '_blank');
     } finally {
       setDownloading(false);
@@ -301,7 +299,7 @@ export default function DealDetailsPage() {
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Navigation & Header */}
+        {/* Navigation & Status Header */}
         <div className="flex items-center justify-between">
           <Link
             href="/deals"
@@ -363,11 +361,13 @@ export default function DealDetailsPage() {
           </div>
         </div>
 
-        {/* Grid Content */}
+        {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Main Visuals & Underwriting */}
+          {/* Left Column: Visuals & Complete Institutional Synopsis */}
           <div className="lg:col-span-2 space-y-6">
+            
+            {/* Hero Image */}
             <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
                 src={deal.image}
@@ -376,6 +376,7 @@ export default function DealDetailsPage() {
               />
             </div>
 
+            {/* Quick KPI Bar */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-center">
               <div>
                 <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
@@ -394,6 +395,126 @@ export default function DealDetailsPage() {
                 <p className="text-2xl font-black text-white">{deal.noi}</p>
               </div>
             </div>
+
+            {/* LA SECTION INVESTMENT SYNOPSIS COMPLÈTE & DÉTAILLÉE */}
+            <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-8 shadow-xl">
+              
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
+                    📊 Comprehensive Investment Synopsis & Pro-Forma
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Conservative 12-month expense audit, physical mechanicals, and government rent roll.
+                  </p>
+                </div>
+                <span className="text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase">
+                  Institutional Grade
+                </span>
+              </div>
+
+              {/* 1. Pro-Forma Statement */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <span>💰</span> 12-Month Pro-Forma Cash Flow Breakdown
+                </h3>
+                
+                <div className="bg-[#131d36]/80 rounded-2xl p-5 border border-slate-800 space-y-3 font-mono text-sm">
+                  <div className="flex justify-between text-slate-300 pb-2 border-b border-slate-800/80">
+                    <span>(+) Gross Scheduled Annual Rent (12 x $1,250)</span>
+                    <span className="font-bold text-white">${deal.proforma.grossIncome.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-rose-300 pb-2 border-b border-slate-800/80">
+                    <span>(-) Economic Vacancy Reserve (5.0%)</span>
+                    <span>-${deal.proforma.vacancy.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sky-300 font-bold pb-2 border-b border-slate-800/80">
+                    <span>(=) Effective Gross Income (EGI)</span>
+                    <span>${deal.proforma.effectiveGrossIncome.toLocaleString()}</span>
+                  </div>
+
+                  <div className="text-xs text-slate-400 font-sans uppercase font-bold pt-2">Operating Expenses:</div>
+                  <div className="flex justify-between text-slate-400 text-xs pl-4">
+                    <span>• Real Estate Property Taxes (Cuyahoga County)</span>
+                    <span className="text-slate-300">-${deal.proforma.taxes.toLocaleString()} / yr</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400 text-xs pl-4">
+                    <span>• Hazard & Liability Property Insurance</span>
+                    <span className="text-slate-300">-${deal.proforma.insurance.toLocaleString()} / yr</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400 text-xs pl-4">
+                    <span>• Professional Property Management Fee (8%)</span>
+                    <span className="text-slate-300">-${deal.proforma.management.toLocaleString()} / yr</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400 text-xs pl-4">
+                    <span>• Maintenance & Structural CapEx Reserve (5%)</span>
+                    <span className="text-slate-300">-${deal.proforma.maintenance.toLocaleString()} / yr</span>
+                  </div>
+                  <div className="flex justify-between text-slate-400 text-xs pl-4 pb-2 border-b border-slate-800/80">
+                    <span>• Owner Water/Sewer Escrow Contribution ($65/mo)</span>
+                    <span className="text-slate-300">-${deal.proforma.waterSewer.toLocaleString()} / yr</span>
+                  </div>
+
+                  <div className="flex justify-between text-emerald-400 font-bold text-base pt-1 pb-2 border-b border-slate-800">
+                    <span className="font-sans">(=) Net Operating Income (NOI)</span>
+                    <span>${deal.proforma.noi.toLocaleString()} / yr</span>
+                  </div>
+
+                  <div className="flex justify-between text-slate-400 text-xs pl-4">
+                    <span>(-) Estimated Debt Service (80% LTV @ 7.5% Interest)</span>
+                    <span className="text-rose-400">-${deal.proforma.debtService.toLocaleString()} / yr</span>
+                  </div>
+                  <div className="flex justify-between text-amber-400 font-bold text-sm pt-1">
+                    <span className="font-sans">(=) Net Leveraged Cash Flow</span>
+                    <span>+${deal.proforma.netCashFlow.toLocaleString()} / yr (+$411/mo)</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. Asset Condition Grid */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <span>🔨</span> Asset Condition & Mechanicals Audit
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                  <div className="bg-[#131d36]/60 border border-slate-800 p-4 rounded-xl space-y-1">
+                    <span className="text-slate-500 font-bold uppercase">Roof System</span>
+                    <p className="text-white font-medium">{deal.specs.roof}</p>
+                  </div>
+                  <div className="bg-[#131d36]/60 border border-slate-800 p-4 rounded-xl space-y-1">
+                    <span className="text-slate-500 font-bold uppercase">Electrical Panel</span>
+                    <p className="text-white font-medium">{deal.specs.electrical}</p>
+                  </div>
+                  <div className="bg-[#131d36]/60 border border-slate-800 p-4 rounded-xl space-y-1">
+                    <span className="text-slate-500 font-bold uppercase">Plumbing Lines</span>
+                    <p className="text-white font-medium">{deal.specs.plumbing}</p>
+                  </div>
+                  <div className="bg-[#131d36]/60 border border-slate-800 p-4 rounded-xl space-y-1">
+                    <span className="text-slate-500 font-bold uppercase">HVAC & Heating</span>
+                    <p className="text-white font-medium">{deal.specs.hvac}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Section 8 Tenant Guarantee */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                  <span>🏛️</span> Tenant Profile & Government Subsidy Status
+                </h3>
+
+                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-5 text-xs text-slate-300 space-y-2">
+                  <p className="leading-relaxed">
+                    <strong className="text-white">Subsidy Direct Deposit:</strong> 100% of the $1,250 monthly rent is deposited directly by the <strong>Cuyahoga County Public Housing Authority (PHA)</strong> on the 1st of each month.
+                  </p>
+                  <p className="leading-relaxed">
+                    <strong className="text-white">Tenant Longevity:</strong> Current tenant has resided in the property for <strong>{deal.specs.tenantTenure}</strong>.
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
           </div>
 
           {/* Right Action Sidebars */}
