@@ -54,7 +54,7 @@ export default function DealDetailsPage() {
       a.remove();
       window.URL.revokeObjectURL(url);
     } catch (err: any) {
-      alert('Erreur lors du téléchargement : ' + err.message);
+      alert('Erreur lors du téléchargement : ' + (err?.message || 'Erreur inconnue'));
     } finally {
       setDownloading(false);
     }
@@ -63,8 +63,6 @@ export default function DealDetailsPage() {
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
       <div className="max-w-7xl mx-auto">
-        
-        {/* Navigation bar */}
         <div className="flex items-center justify-between mb-8">
           <Link
             href="/"
@@ -87,7 +85,6 @@ export default function DealDetailsPage() {
           )}
         </div>
 
-        {/* Header Header Info */}
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
           <div>
             <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
@@ -125,10 +122,7 @@ export default function DealDetailsPage() {
           </div>
         </div>
 
-        {/* Layout Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Main Visuals & Financials */}
           <div className="lg:col-span-2 space-y-6">
             <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
               <img
@@ -163,10 +157,7 @@ export default function DealDetailsPage() {
             </div>
           </div>
 
-          {/* Action Boxes */}
           <div className="space-y-6">
-            
-            {/* Vault Box */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
                 📄 Due Diligence Vault
@@ -194,7 +185,6 @@ export default function DealDetailsPage() {
               )}
             </div>
 
-            {/* Wholesaler Box */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
@@ -260,11 +250,8 @@ export default function DealDetailsPage() {
                 </div>
               )}
             </div>
-
           </div>
-
         </div>
-
       </div>
     </div>
   );
