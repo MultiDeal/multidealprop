@@ -501,7 +501,17 @@ function DealsFeed() {
             })}
           </div>
         )}
-
+{/* FOOTER LÉGAL & PROTECTION */}
+        <footer className="border-t border-slate-800 pt-8 pb-12 mt-12 text-center text-xs text-slate-500 space-y-3">
+          <p className="max-w-3xl mx-auto leading-relaxed">
+            <strong>MultiDealProp Intelligence Desk:</strong> Real estate data and underwritten models are provided strictly for informational purposes. MultiDealProp is not a licensed broker or legal advisor. All investors must conduct independent inspections and title exams.
+          </p>
+          <div className="flex justify-center items-center gap-4 text-slate-400">
+            <Link href="/terms" className="hover:text-white transition underline">Terms of Service & Disclaimers</Link>
+            <span>•</span>
+            <Link href="/vip" className="hover:text-white transition underline">Subscription Plans</Link>
+          </div>
+        </footer>
       </div>
     </div>
   );
