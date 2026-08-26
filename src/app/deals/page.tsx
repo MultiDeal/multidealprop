@@ -1,273 +1,203 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Printer, ArrowLeft, Download, ShieldCheck } from 'lucide-react';
+import React, { useEffect, useState, Suspense } from 'react';
+import Link from 'next/link';
 
-export default function DealPrintPdfPage() {
-  const params = useParams();
-  const router = useRouter();
-  const id = params?.id as string;
-  const [deal, setDeal] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+interface Deal {
+  id: string;
+  title: string;
+  tag: string;
+  city: string;
+  state: string;
+  zip: string;
+  price: string;
+  capRate: string;
+  monthlyRent: string;
+  grossYield: string;
+  units: number;
+  image: string;
+  wholesaler: string;
+}
+
+const SAMPLE_DEALS: Deal[] = [
+  {
+    id: 'cleveland-brick-3bed',
+    title: 'Renovated 3-Bed Brick Home - Section 8 Ready',
+    tag: 'High-Cap Underwritten Asset',
+    city: 'Cleveland',
+    state: 'OH',
+    zip: '44120',
+    price: '$89,500',
+    capRate: '10.8%',
+    monthlyRent: '$1,250',
+    grossYield: '23.8%',
+    units: 1,
+    image: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Apex Wholesale Capital LLC',
+  },
+  {
+    id: 'akron-duplex-cashflow',
+    title: 'Turnkey Multi-Family Duplex (2 x 2-Bed Units)',
+    tag: 'Turnkey Cashflow',
+    city: 'Akron',
+    state: 'OH',
+    zip: '44306',
+    price: '$118,000',
+    capRate: '11.4%',
+    monthlyRent: '$1,650',
+    grossYield: '21.2%',
+    units: 2,
+    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Midwest Off-Market Direct',
+  },
+  {
+    id: 'memphis-triplex-portfolio',
+    title: 'Stabilized 3-Unit Value-Add Multi-Family',
+    tag: 'Value-Add Opportunity',
+    city: 'Memphis',
+    state: 'TN',
+    zip: '38114',
+    price: '$145,000',
+    capRate: '12.2%',
+    monthlyRent: '$2,100',
+    grossYield: '24.1%',
+    units: 3,
+    image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
+    wholesaler: 'Delta Acquisition Group',
+  },
+];
+
+function DealsFeed() {
+  const [isVip, setIsVip] = useState<boolean>(false);
 
   useEffect(() => {
-    async function loadDeal() {
-      if (!id) return;
-      
-      // Récupération depuis Supabase ou Deal de démonstration
-      const { data, error } = await supabase
-        .from('deals')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (data) {
-        setDeal(data);
-      } else {
-        // Données d'audit par défaut si test
-        setDeal({
-          id,
-          title: 'Turnkey Multi-Family Duplex - Value Add Opportunity',
-          city: 'Cleveland',
-          state: 'OH',
-          zip_code: '44105',
-          price: 98000,
-          cap_rate: 13.4,
-          monthly_rent_estimate: 1950,
-          gross_yield: 23.8,
-          units_count: 2,
-          square_feet: 2150,
-          year_built: 1948,
-          seller_name: 'Apex Wholesale Capital LLC',
-          seller_phone: '+1 (216) 884-2190',
-          seller_email: 'acquisitions@apexreicapital.com',
-          property_taxes_annual: 1850,
-          insurance_annual: 1100,
-          noi_annual: 13130,
-        });
-      }
-      setLoading(false);
+    if (typeof window !== 'undefined') {
+      const vipStatus = localStorage.getItem('multideal_vip') === 'true';
+      setIsVip(vipStatus);
     }
-    loadDeal();
-  }, [id]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#070A10] flex items-center justify-center text-white">
-        <p className="text-sm font-bold animate-pulse">Generating Due Diligence Audit PDF...</p>
-      </div>
-    );
-  }
-
-  const price = Number(deal.price || 0);
-  const rent = Number(deal.monthly_rent_estimate || 1800);
-  const taxes = Number(deal.property_taxes_annual || 1800);
-  const insurance = Number(deal.insurance_annual || 1200);
-  const noi = Number(deal.noi_annual || (rent * 12 * 0.7 - taxes));
-  const capRate = deal.cap_rate || ((noi / (price || 1)) * 100).toFixed(1);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-900 print:bg-white print:p-0 py-8 px-4 font-sans antialiased">
-      
-      {/* Barre d'action (masquée à l'impression) */}
-      <div className="max-w-4xl mx-auto mb-6 flex items-center justify-between print:hidden bg-slate-900 text-white p-4 rounded-2xl shadow-xl">
-        <button
-          onClick={() => router.back()}
-          className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4" /> Back to Deal
-        </button>
-
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-emerald-400 font-semibold flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4" /> Verified Due Diligence Audit Pack
-          </span>
-          <button
-            onClick={() => window.print()}
-            className="bg-emerald-500 hover:bg-emerald-400 text-black font-black text-xs px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
-          >
-            <Printer className="w-4 h-4" /> Print / Save as PDF
-          </button>
-        </div>
-      </div>
-
-      {/* DOCUMENT PDF (Format standard Lettre / A4) */}
-      <div className="max-w-4xl mx-auto bg-white border border-slate-300 print:border-none p-10 rounded-2xl shadow-2xl print:shadow-none print:max-w-full">
+    <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
+      <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* Header Document */}
-        <div className="flex items-center justify-between border-b-2 border-emerald-600 pb-6 mb-8">
+        {/* Navigation & Status Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <div className="bg-emerald-600 text-white font-black text-xl w-8 h-8 rounded flex items-center justify-center">
-                M
-              </div>
-              <h1 className="text-2xl font-black tracking-tight text-slate-900">
-                MultiDeal<span className="text-emerald-600">Prop</span>
-              </h1>
-            </div>
-            <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
-              Institutional Due Diligence &amp; Underwriting Audit Pack
-            </p>
+            <span className="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
+              Live Verified Opportunities
+            </span>
+            <h1 className="text-3xl font-black mt-2 tracking-tight">Multi-Family Deals Feed</h1>
+            <p className="text-sm text-slate-400">Underwritten properties with live cashflow metrics.</p>
           </div>
 
-          <div className="text-right">
-            <div className="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full uppercase inline-block mb-1">
-              VIP Pro Certified
-            </div>
-            <div className="text-[11px] text-slate-500 font-mono">
-              Report Date: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
-            </div>
-            <div className="text-[10px] text-slate-400 font-mono">
-              ID: {id?.slice(0, 16)}...
-            </div>
-          </div>
-        </div>
+          <div className="flex items-center gap-3">
+            <Link
+              href="/request-city"
+              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 px-4 rounded-xl border border-slate-700 transition"
+            >
+              📍 Scan Target City ($4.99)
+            </Link>
 
-        {/* Title & Location */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-extrabold text-slate-900 mb-1">{deal.title}</h2>
-          <p className="text-sm font-semibold text-slate-600">
-            📍 {deal.city || 'Market'}, {deal.state || ''} {deal.zip_code || ''} • USA Multi-Family Market
-          </p>
-        </div>
-
-        {/* Core Financial Metrics Grid */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-            <div className="text-[11px] uppercase font-bold text-slate-500">List Price</div>
-            <div className="text-xl font-black text-slate-900 mt-1 font-mono">${price.toLocaleString()}</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Off-Market Baseline</div>
-          </div>
-
-          <div className="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
-            <div className="text-[11px] uppercase font-bold text-emerald-800">Cap Rate</div>
-            <div className="text-xl font-black text-emerald-700 mt-1 font-mono">{capRate}%</div>
-            <div className="text-[10px] text-emerald-600 font-semibold mt-0.5">High-Yield Tier</div>
-          </div>
-
-          <div className="bg-cyan-50 border border-cyan-200 p-4 rounded-xl">
-            <div className="text-[11px] uppercase font-bold text-cyan-800">Gross Rent / Mo</div>
-            <div className="text-xl font-black text-cyan-700 mt-1 font-mono">${rent.toLocaleString()}</div>
-            <div className="text-[10px] text-cyan-600 font-semibold mt-0.5">${(rent * 12).toLocaleString()} / year</div>
-          </div>
-
-          <div className="bg-slate-50 border border-slate-200 p-4 rounded-xl">
-            <div className="text-[11px] uppercase font-bold text-slate-500">Net Op. Income (NOI)</div>
-            <div className="text-xl font-black text-slate-900 mt-1 font-mono">${Math.round(noi).toLocaleString()}</div>
-            <div className="text-[10px] text-slate-500 mt-0.5">Annualized projection</div>
+            {!isVip ? (
+              <Link
+                href="/vip"
+                className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 text-slate-950 text-xs font-extrabold uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-lg transition"
+              >
+                ⚡ Upgrade VIP ($29)
+              </Link>
+            ) : (
+              <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider py-2 px-3 rounded-xl flex items-center gap-1">
+                ✓ VIP Unlocked
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Section 1: Rent Roll & Unit Schedule */}
-        <div className="mb-8">
-          <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">
-            1. Audited Rent Roll &amp; Unit Breakdown
-          </h3>
+        {/* Deals Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {SAMPLE_DEALS.map((deal) => (
+            <div
+              key={deal.id}
+              className="bg-[#0d1527] border border-slate-800 hover:border-slate-700 rounded-3xl overflow-hidden shadow-2xl transition flex flex-col justify-between"
+            >
+              <div>
+                {/* Image */}
+                <div className="relative h-48 w-full overflow-hidden bg-slate-900">
+                  <img
+                    src={deal.image}
+                    alt={deal.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <span className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur border border-slate-700/50 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full">
+                    {deal.tag}
+                  </span>
+                  <span className="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur text-white text-xs font-bold px-2.5 py-1 rounded-lg">
+                    {deal.units} {deal.units > 1 ? 'Units' : 'Unit'}
+                  </span>
+                </div>
 
-          <table className="w-full text-xs text-left border border-slate-200 rounded-lg overflow-hidden">
-            <thead className="bg-slate-100 font-bold text-slate-700 uppercase text-[10px]">
-              <tr>
-                <th className="p-3">Unit Name</th>
-                <th className="p-3">Configuration</th>
-                <th className="p-3">Occupancy Status</th>
-                <th className="p-3 text-right">Current / Est. Rent</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200">
-              <tr>
-                <td className="p-3 font-semibold text-slate-900">Unit A (Ground Level)</td>
-                <td className="p-3 text-slate-600">2 Bed / 1 Bath (950 sqft)</td>
-                <td className="p-3"><span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Occupied (Lease in place)</span></td>
-                <td className="p-3 text-right font-mono font-bold text-slate-900">${Math.round(rent * 0.52).toLocaleString()} / mo</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-semibold text-slate-900">Unit B (Upper Level)</td>
-                <td className="p-3 text-slate-600">2 Bed / 1 Bath (920 sqft)</td>
-                <td className="p-3"><span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-bold">Occupied (Lease in place)</span></td>
-                <td className="p-3 text-right font-mono font-bold text-slate-900">${Math.round(rent * 0.48).toLocaleString()} / mo</td>
-              </tr>
-            </tbody>
-            <tfoot className="bg-slate-50 font-bold text-slate-900">
-              <tr>
-                <td colSpan={3} className="p-3 text-right">Total Scheduled Monthly Rent :</td>
-                <td className="p-3 text-right font-mono text-emerald-700 font-black">${rent.toLocaleString()} / mo</td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
+                {/* Content */}
+                <div className="p-6 space-y-4">
+                  <div>
+                    <h3 className="font-bold text-lg text-white leading-snug line-clamp-1">
+                      {deal.title}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+                      📍 {isVip ? `${deal.city}, ${deal.state} ${deal.zip}` : `${deal.city}, ${deal.state} (Exact St Locked 🔒)`}
+                    </p>
+                  </div>
 
-        {/* Section 2: Expense Underwriting */}
-        <div className="mb-8">
-          <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wider mb-3 flex items-center gap-2 border-b border-slate-200 pb-2">
-            2. Annualized Expense Underwriting
-          </h3>
+                  {/* Financial Metrics Strip */}
+                  <div className="grid grid-cols-3 gap-2 bg-[#131d36] p-3 rounded-2xl text-center">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Price</p>
+                      <p className="text-sm font-black text-white">{deal.price}</p>
+                    </div>
+                    <div className="border-x border-slate-800">
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Cap Rate</p>
+                      <p className="text-sm font-black text-emerald-400">{deal.capRate}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-400">Rent</p>
+                      <p className="text-sm font-black text-sky-400">{deal.monthlyRent}</p>
+                    </div>
+                  </div>
 
-          <div className="grid grid-cols-2 gap-6 text-xs">
-            <div className="space-y-2">
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-600">Property Taxes (County Assessor) :</span>
-                <span className="font-mono font-semibold">${taxes.toLocaleString()} / yr</span>
+                  {/* Contact Summary */}
+                  <div className="text-xs text-slate-400 pt-1">
+                    <span className="text-slate-500 block text-[11px]">Direct Seller Entity:</span>
+                    {isVip ? (
+                      <span className="text-emerald-400 font-semibold">{deal.wholesaler}</span>
+                    ) : (
+                      <span className="blur-sm select-none text-slate-500">Apex Wholesale Capital LLC</span>
+                    )}
+                  </div>
+                </div>
               </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-600">Landlord Hazard Insurance :</span>
-                <span className="font-mono font-semibold">${insurance.toLocaleString()} / yr</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-600">Maintenance &amp; Repairs (7%) :</span>
-                <span className="font-mono font-semibold">${Math.round(rent * 12 * 0.07).toLocaleString()} / yr</span>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-600">Property Management Reserve (8%) :</span>
-                <span className="font-mono font-semibold">${Math.round(rent * 12 * 0.08).toLocaleString()} / yr</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100">
-                <span className="text-slate-600">Vacancy Reserve (5%) :</span>
-                <span className="font-mono font-semibold">${Math.round(rent * 12 * 0.05).toLocaleString()} / yr</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-slate-100 font-bold text-slate-900 bg-slate-50 px-2 rounded">
-                <span>Net Projected Annual Cash-Flow :</span>
-                <span className="font-mono text-emerald-700 font-black">${Math.round(noi).toLocaleString()} / yr</span>
+              {/* Action Button */}
+              <div className="p-6 pt-0">
+                <Link
+                  href={`/deals/${deal.id}`}
+                  className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold py-3 px-4 rounded-xl transition shadow-lg text-sm text-center"
+                >
+                  ⚡ View Deal & Underwriting
+                </Link>
               </div>
             </div>
-          </div>
-        </div>
-
-        {/* Section 3: Unredacted Wholesaler / Assignment Contact */}
-        <div className="bg-slate-900 text-white p-6 rounded-2xl mb-8">
-          <div className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-1">
-            VIP Unlocked Acquisition Desk
-          </div>
-          <h4 className="text-base font-black mb-3">Direct Seller &amp; Assignment Contact</h4>
-
-          <div className="grid grid-cols-3 gap-4 text-xs font-mono">
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase">Entity / Wholesaler</div>
-              <div className="font-bold text-slate-100 mt-0.5">{deal.seller_name || 'Apex Wholesale Capital LLC'}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase">Direct Phone Desk</div>
-              <div className="font-bold text-emerald-400 mt-0.5">{deal.seller_phone || '+1 (216) 884-2190'}</div>
-            </div>
-            <div>
-              <div className="text-[10px] text-slate-400 uppercase">Assignment Email</div>
-              <div className="font-bold text-cyan-300 mt-0.5">{deal.seller_email || 'acquisitions@dealflow-direct.com'}</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Disclaimer Footer */}
-        <div className="border-t border-slate-200 pt-4 text-[10px] text-slate-400 leading-relaxed">
-          <p>
-            <strong>Disclaimer :</strong> This due diligence pack is generated by the MultiDealProp algorithmic engine for informational underwriting purposes. Real estate cash flow estimates, rent rolls, and Cap Rates are based on municipal market data and comparables. Investors must conduct independent physical inspections and legal title verifications prior to contract execution.
-          </p>
+          ))}
         </div>
 
       </div>
     </div>
+  );
+}
+
+export default function DealsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#070b14] text-slate-400 flex items-center justify-center">Loading Deals...</div>}>
+      <DealsFeed />
+    </Suspense>
   );
 }
