@@ -28,9 +28,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'OH',
     zip: '44120',
     price: '$89,500',
-    capRate: '10.8%',
+    capRate: '12.04%',
     monthlyRent: '$1,250',
-    grossYield: '23.8%',
+    grossYield: '16.76%',
     units: 1,
     image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Apex Wholesale Capital LLC',
@@ -43,9 +43,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'OH',
     zip: '44306',
     price: '$118,000',
-    capRate: '11.4%',
+    capRate: '11.40%',
     monthlyRent: '$1,650',
-    grossYield: '21.2%',
+    grossYield: '21.20%',
     units: 2,
     image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Midwest Off-Market Direct',
@@ -58,9 +58,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'TN',
     zip: '38114',
     price: '$145,000',
-    capRate: '12.2%',
+    capRate: '12.20%',
     monthlyRent: '$2,100',
-    grossYield: '24.1%',
+    grossYield: '24.10%',
     units: 3,
     image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Delta Acquisition Group',
@@ -73,9 +73,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'MI',
     zip: '48227',
     price: '$165,000',
-    capRate: '13.5%',
+    capRate: '13.50%',
     monthlyRent: '$2,800',
-    grossYield: '20.4%',
+    grossYield: '20.40%',
     units: 4,
     image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'MotorCity Deal Hub',
@@ -88,9 +88,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'MD',
     zip: '21215',
     price: '$139,000',
-    capRate: '11.1%',
+    capRate: '11.10%',
     monthlyRent: '$1,900',
-    grossYield: '16.4%',
+    grossYield: '16.40%',
     units: 2,
     image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Chesapeake Property Wholesalers',
@@ -103,9 +103,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'IN',
     zip: '46201',
     price: '$175,000',
-    capRate: '10.5%',
+    capRate: '10.50%',
     monthlyRent: '$2,250',
-    grossYield: '15.4%',
+    grossYield: '15.40%',
     units: 3,
     image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Crossroads Acquisition Desk',
@@ -118,9 +118,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'PA',
     zip: '19134',
     price: '$129,000',
-    capRate: '11.8%',
+    capRate: '11.80%',
     monthlyRent: '$1,750',
-    grossYield: '16.3%',
+    grossYield: '16.30%',
     units: 2,
     image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Keystone Off-Market Exchange',
@@ -133,9 +133,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'MO',
     zip: '64130',
     price: '$189,000',
-    capRate: '12.8%',
+    capRate: '12.80%',
     monthlyRent: '$3,100',
-    grossYield: '19.7%',
+    grossYield: '19.70%',
     units: 4,
     image: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Midwest Metro Wholesale',
@@ -148,9 +148,9 @@ const SAMPLE_DEALS: Deal[] = [
     state: 'MO',
     zip: '63118',
     price: '$105,000',
-    capRate: '12.0%',
+    capRate: '12.00%',
     monthlyRent: '$1,500',
-    grossYield: '17.1%',
+    grossYield: '17.10%',
     units: 2,
     image: 'https://images.unsplash.com/photo-1600585154526-990dced4db0d?auto=format&fit=crop&w=800&q=80',
     wholesaler: 'Gateway Deal Network',
@@ -158,14 +158,17 @@ const SAMPLE_DEALS: Deal[] = [
 ];
 
 function DealsFeed() {
-  const [isVip, setIsVip] = useState<boolean>(false);
+  const [userTier, setUserTier] = useState<string | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const vipStatus = localStorage.getItem('multideal_vip') === 'true';
-      setIsVip(vipStatus);
+      const isVip = localStorage.getItem('multideal_vip') === 'true';
+      const tier = localStorage.getItem('multideal_tier') || (isVip ? 'starter' : null);
+      setUserTier(tier);
     }
   }, []);
+
+  const isUnlocked = userTier !== null;
 
   return (
     <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
@@ -189,22 +192,27 @@ function DealsFeed() {
               📍 Scan Target City ($4.99)
             </Link>
 
-            {!isVip ? (
+            {/* Badge adaptatif selon le forfait exact */}
+            {!isUnlocked ? (
               <Link
                 href="/vip"
                 className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 text-slate-950 text-xs font-extrabold uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-lg transition"
               >
-                ⚡ Upgrade VIP ($29)
+                ⚡ Upgrade Plan ($29 - $49)
               </Link>
+            ) : userTier === 'starter' ? (
+              <span className="bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-bold uppercase tracking-wider py-2 px-3.5 rounded-xl flex items-center gap-1.5">
+                ✓ PRO STARTER UNLOCKED ($29/mo)
+              </span>
             ) : (
-              <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider py-2 px-3 rounded-xl flex items-center gap-1">
-                ✓ VIP UNLOCKED
+              <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider py-2 px-3.5 rounded-xl flex items-center gap-1.5">
+                ✓ VIP ELITE UNLOCKED ($49/mo)
               </span>
             )}
           </div>
         </div>
 
-        {/* Deals Cards Grid (3x3) */}
+        {/* Grille des 9 Deals */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {SAMPLE_DEALS.map((deal) => (
             <div
@@ -227,18 +235,18 @@ function DealsFeed() {
                   </span>
                 </div>
 
-                {/* Content */}
+                {/* Contenu */}
                 <div className="p-6 space-y-4">
                   <div>
                     <h3 className="font-bold text-lg text-white leading-snug line-clamp-1">
                       {deal.title}
                     </h3>
                     <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                      📍 {isVip ? `${deal.city}, ${deal.state} ${deal.zip}` : `${deal.city}, ${deal.state} (Exact St Locked 🔒)`}
+                      📍 {isUnlocked ? `${deal.city}, ${deal.state} ${deal.zip}` : `${deal.city}, ${deal.state} (Exact St Locked 🔒)`}
                     </p>
                   </div>
 
-                  {/* Financial Metrics Strip */}
+                  {/* Bandeau de chiffres clés */}
                   <div className="grid grid-cols-3 gap-2 bg-[#131d36] p-3 rounded-2xl text-center">
                     <div>
                       <p className="text-[10px] uppercase font-bold text-slate-400">Price</p>
@@ -254,10 +262,10 @@ function DealsFeed() {
                     </div>
                   </div>
 
-                  {/* Contact Summary */}
+                  {/* Contact vendeur */}
                   <div className="text-xs text-slate-400 pt-1">
                     <span className="text-slate-500 block text-[11px]">Direct Seller Entity:</span>
-                    {isVip ? (
+                    {isUnlocked ? (
                       <span className="text-emerald-400 font-semibold">{deal.wholesaler}</span>
                     ) : (
                       <span className="blur-sm select-none text-slate-500">{deal.wholesaler}</span>
@@ -266,7 +274,7 @@ function DealsFeed() {
                 </div>
               </div>
 
-              {/* Action Button */}
+              {/* Bouton d'accès */}
               <div className="p-6 pt-0">
                 <Link
                   href={`/deals/${deal.id}`}
@@ -286,7 +294,7 @@ function DealsFeed() {
 
 export default function DealsPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#070b14] text-slate-400 flex items-center justify-center">Loading Deals...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-[#070b14] text-slate-400 flex items-center justify-center">Loading Deals Feed...</div>}>
       <DealsFeed />
     </Suspense>
   );
