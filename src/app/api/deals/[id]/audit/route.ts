@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  request: Request,
+  context: any
 ) {
-  const dealId = params.id || 'deal-1';
+  const dealId = context?.params?.id || 'deal-1';
 
   const reportText = `===================================================
 MULTIDEALPROP - CONFIDENTIAL UNDERWRITING & DUE DILIGENCE AUDIT
