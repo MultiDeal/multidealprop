@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { 
   Building2, 
   TrendingUp, 
@@ -37,8 +37,71 @@ interface Deal {
   is_verified?: boolean;
 }
 
+const DEFAULT_DEALS: Deal[] = [
+  {
+    id: '1',
+    title: 'Turnkey Multi-Family Duplex - Fully Leased',
+    city: 'Cleveland',
+    state: 'OH',
+    zip_code: '44105',
+    price: 98000,
+    cap_rate: 13.4,
+    monthly_rent_estimate: 1950,
+    gross_yield: 23.8,
+    units_count: 2,
+    property_type: 'RESIDENTIAL_MF',
+    image_url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
+    is_verified: true
+  },
+  {
+    id: '2',
+    title: '12-Unit Commercial Multi-Family Complex',
+    city: 'Memphis',
+    state: 'TN',
+    zip_code: '38114',
+    price: 640000,
+    cap_rate: 11.2,
+    monthly_rent_estimate: 9600,
+    gross_yield: 18.0,
+    units_count: 12,
+    property_type: 'COMMERCIAL_MF',
+    image_url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
+    is_verified: true
+  },
+  {
+    id: '3',
+    title: 'Mixed-Use Commercial: Ground Retail + 4 Apts',
+    city: 'Detroit',
+    state: 'MI',
+    zip_code: '48206',
+    price: 295000,
+    cap_rate: 14.5,
+    monthly_rent_estimate: 4800,
+    gross_yield: 19.5,
+    units_count: 5,
+    property_type: 'MIXED_USE',
+    image_url: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=800&q=80',
+    is_verified: true
+  },
+  {
+    id: '4',
+    title: 'Cash-Flow 4-Plex Value-Add Opportunity',
+    city: 'Cleveland',
+    state: 'OH',
+    zip_code: '44108',
+    price: 135000,
+    cap_rate: 13.9,
+    monthly_rent_estimate: 2400,
+    gross_yield: 21.3,
+    units_count: 4,
+    property_type: 'RESIDENTIAL_MF',
+    image_url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
+    is_verified: true
+  }
+];
+
 export default function HomePage() {
-  const [deals, setDeals] = useState<Deal[]>([]);
+  const [deals, setDeals] = useState<Deal[]>(DEFAULT_DEALS);
   const [loading, setLoading] = useState(true);
   const [selectedAssetClass, setSelectedAssetClass] = useState<string>('ALL');
   const [selectedCity, setSelectedCity] = useState<string>('ALL');
@@ -48,78 +111,26 @@ export default function HomePage() {
 
   useEffect(() => {
     async function fetchDeals() {
-      const { data, error } = await supabase
-        .from('deals')
-        .select('*')
-        .order('created_at', { ascending: false });
+      try {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-      if (data && data.length > 0) {
-        setDeals(data);
-      } else {
-        setDeals([
-          {
-            id: '1',
-            title: 'Turnkey Multi-Family Duplex - Fully Leased',
-            city: 'Cleveland',
-            state: 'OH',
-            zip_code: '44105',
-            price: 98000,
-            cap_rate: 13.4,
-            monthly_rent_estimate: 1950,
-            gross_yield: 23.8,
-            units_count: 2,
-            property_type: 'RESIDENTIAL_MF',
-            image_url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=800&q=80',
-            is_verified: true
-          },
-          {
-            id: '2',
-            title: '12-Unit Commercial Multi-Family Complex',
-            city: 'Memphis',
-            state: 'TN',
-            zip_code: '38114',
-            price: 640000,
-            cap_rate: 11.2,
-            monthly_rent_estimate: 9600,
-            gross_yield: 18.0,
-            units_count: 12,
-            property_type: 'COMMERCIAL_MF',
-            image_url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
-            is_verified: true
-          },
-          {
-            id: '3',
-            title: 'Mixed-Use Commercial: Ground Retail + 4 Apts',
-            city: 'Detroit',
-            state: 'MI',
-            zip_code: '48206',
-            price: 295000,
-            cap_rate: 14.5,
-            monthly_rent_estimate: 4800,
-            gross_yield: 19.5,
-            units_count: 5,
-            property_type: 'MIXED_USE',
-            image_url: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=800&q=80',
-            is_verified: true
-          },
-          {
-            id: '4',
-            title: 'Cash-Flow 4-Plex Value-Add Opportunity',
-            city: 'Cleveland',
-            state: 'OH',
-            zip_code: '44108',
-            price: 135000,
-            cap_rate: 13.9,
-            monthly_rent_estimate: 2400,
-            gross_yield: 21.3,
-            units_count: 4,
-            property_type: 'RESIDENTIAL_MF',
-            image_url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-            is_verified: true
+        if (supabaseUrl && supabaseAnonKey) {
+          const supabase = createClient(supabaseUrl, supabaseAnonKey);
+          const { data, error } = await supabase
+            .from('deals')
+            .select('*')
+            .order('created_at', { ascending: false });
+
+          if (data && data.length > 0 && !error) {
+            setDeals(data);
           }
-        ]);
+        }
+      } catch (e) {
+        console.warn('Using default deals pipeline fallback:', e);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     }
 
     fetchDeals();
@@ -164,7 +175,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black pb-16 overflow-x-hidden">
       
-      {/* 1. Header Navigation Responsive avec Bouton Login */}
+      {/* 1. Header Navigation Responsive */}
       <header className="border-b border-slate-800 bg-[#06080F]/95 backdrop-blur sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
           
@@ -187,7 +198,6 @@ export default function HomePage() {
               <span className="sm:hidden">Submit</span>
             </Link>
 
-            {/* Bouton de Connexion / Sign In */}
             <Link 
               href="/login" 
               className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-200 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-700 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all"
@@ -196,7 +206,6 @@ export default function HomePage() {
               <span>Sign In</span>
             </Link>
 
-            {/* Bouton VIP */}
             <Link 
               href="/vip" 
               className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-black text-[11px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center gap-1 flex-shrink-0"
@@ -322,7 +331,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. Dynamic City Filter Grid & Request City Button */}
+      {/* 5. Dynamic City Filter Grid */}
       <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
           <div className="text-xs font-extrabold uppercase tracking-widest text-slate-300 flex items-center gap-1.5">
@@ -337,7 +346,7 @@ export default function HomePage() {
             <Compass className="w-3.5 h-3.5 text-cyan-400" />
             <span>+ Request City ($4.99)</span>
             <span className="bg-cyan-400/20 text-cyan-300 text-[10px] font-black px-2 py-0.5 rounded-md border border-cyan-400/30">
-              🔒 48h Lock
+              48h Lock
             </span>
           </Link>
         </div>
@@ -369,7 +378,7 @@ export default function HomePage() {
                   : 'bg-slate-900/60 border-slate-800/90 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
               }`}
             >
-              <div className="flex items-between justify-between">
+              <div className="flex items-center justify-between">
                 <span className="text-[9px] sm:text-[10px] font-mono font-black text-cyan-300 bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-800/60">
                   {cityCounts[city]}
                 </span>
@@ -520,7 +529,7 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* 8. Institutional Footer Responsive avec Lien Sign In */}
+      {/* 8. Institutional Footer Responsive */}
       <footer className="border-t border-slate-800 bg-[#04060A] py-8 sm:py-12 mt-16 text-slate-400 text-xs font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 text-center md:text-left">
