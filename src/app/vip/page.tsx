@@ -33,8 +33,8 @@ function VipContent() {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-slate-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto">
+    <div className="min-h-screen bg-[#070b14] text-slate-100 py-12 px-4 sm:px-6 lg:px-8 flex flex-col justify-between">
+      <div className="max-w-6xl mx-auto w-full">
         
         {/* Post-Purchase Success Alert Banner */}
         {isSuccess && (
@@ -267,12 +267,42 @@ function VipContent() {
           </div>
         </div>
 
-        {/* Footer info */}
-        <div className="mt-16 text-center text-xs text-slate-600 border-t border-slate-800/60 pt-8">
-          MultiDealProp Inc. • Institutional Real Estate Intelligence & Deal Flow Desk
+      </div>
+
+      {/* Identical Global Footer Section */}
+      <footer className="mt-24 border-t border-slate-800/60 pt-12 max-w-6xl mx-auto w-full">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+          <div>
+            <h4 className="text-sm font-bold text-white mb-2">MultiDealProp</h4>
+            <p className="text-xs text-slate-400 leading-relaxed max-w-md">
+              Plateforme d'analyse et de recherche d'opportunités immobilières aux États-Unis. Nos outils de calcul sont fournis à titre indicatif pour aider à la prise de décision.
+            </p>
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white mb-2">Contact</h4>
+            <p className="text-xs text-slate-400">
+              <a href="mailto:support@multidealprop.com" className="hover:text-emerald-400 transition">
+                support@multidealprop.com
+              </a>
+            </p>
+          </div>
         </div>
 
-      </div>
+        {/* Financial Disclaimer Box */}
+        <div className="p-5 bg-[#0d1527]/70 border border-slate-800/80 rounded-2xl mb-8">
+          <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest mb-2">
+            FINANCIAL DISCLAIMER
+          </p>
+          <p className="text-[11px] text-slate-400 leading-relaxed italic">
+            MultiDealProp is not a registered investment advisor, broker-dealer, or financial institution. All investment information provided is for educational and informational purposes only. Real estate investments involve significant risk, including loss of principal. Past performance is not indicative of future results. You should consult with a licensed real estate attorney, tax professional, or financial advisor before making any investment decisions. We do not guarantee the accuracy or completeness of any data provided.
+          </p>
+        </div>
+
+        <div className="border-t border-slate-800/40 pt-6 text-center text-xs text-slate-500">
+          © 2026 MultiDealProp. All rights reserved.
+        </div>
+      </footer>
+
     </div>
   );
 }
