@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
 
     let event: Stripe.Event;
 
-    // Signature verification
+    // Vérification de la signature Stripe
     if (webhookSecret && signature) {
       try {
         event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
@@ -27,16 +27,19 @@ export async function POST(req: NextRequest) {
       event = JSON.parse(rawBody) as Stripe.Event;
     }
 
-    // Handle Stripe Events
+    // Traitement des événements
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const customerEmail = session.customer_details?.email || session.customer_email;
-        const planTier = (session.metadata?.tier as 'starter' | 'vip') || 'starter';
 
-        console.log(`✅ Checkout completed for ${customerEmail} (Tier: ${planTier})`);
+        // Détection automatique : si le paiement est de 49$ ou marqué VIP, c'est le plan VIP Elite
+        const isVip = session.metadata?.tier === 'vip' || session.amount_total === 4900;
+        const planTier: 'starter' | 'vip' = isVip ? 'vip' : 'starter';
 
-        // Send transactional welcome email via Resend
+        console.log(`✅ Checkout completed for ${customerEmail} (Detected Tier: ${planTier})`);
+
+        // Envoi du courriel adapté (Starter ou VIP)
         if (customerEmail) {
           try {
             await sendWelcomeEmail({
