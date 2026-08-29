@@ -1,7 +1,5 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 const SENDER_EMAIL = 'MultiDealProp <deals@multidealprop.com>';
 
 export async function sendWelcomeEmail({
@@ -11,6 +9,14 @@ export async function sendWelcomeEmail({
   email: string;
   tier: 'starter' | 'vip';
 }) {
+  const apiKey = process.env.RESEND_API_KEY;
+
+  if (!apiKey) {
+    console.error('RESEND_API_KEY is missing. Email dispatch skipped.');
+    return;
+  }
+
+  const resend = new Resend(apiKey);
   const isVip = tier === 'vip';
   const planName = isVip ? 'VIP Elite Plan ($49/mo)' : 'Pro Starter Plan ($29/mo)';
   const badgeBg = isVip ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)';
