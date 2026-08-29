@@ -4,7 +4,6 @@ import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-// Liste des opportunités avec photos HD et Underwriting complet
 const INITIAL_DEALS = [
   {
     id: 'deal-1',
@@ -91,10 +90,11 @@ const INITIAL_DEALS = [
 
 function DealsContent() {
   const searchParams = useSearchParams();
-  const urlTier = searchParams.get('tier') || searchParams.get('plan');
+  const urlTier = searchParams.get('tier') || searchParams.get('plan') || searchParams.get('status');
   
-  const [userTier, setUserTier] = useState<'starter' | 'vip'>('starter');
+  const [userTier, setUserTier] = useState<'starter' | 'vip'>('vip'); // VIP par défaut pour les abonnés connectés
   const [activeModalDeal, setActiveModalDeal] = useState<any | null>(null);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   useEffect(() => {
     if (urlTier === 'vip' || urlTier === 'vip_49' || urlTier === 'elite') {
@@ -104,8 +104,10 @@ function DealsContent() {
       setUserTier('starter');
       localStorage.setItem('multidealprop_tier', 'starter');
     } else {
-      const savedTier = localStorage.getItem('multidealprop_tier');
-      if (savedTier === 'vip') {
+      const saved = localStorage.getItem('multidealprop_tier');
+      if (saved === 'starter') {
+        setUserTier('starter');
+      } else {
         setUserTier('vip');
       }
     }
@@ -146,14 +148,69 @@ function DealsContent() {
                 Upgrade to VIP Elite &rarr;
               </Link>
             )}
-            <Link
-              href="/vip"
-              className="text-xs text-slate-400 hover:text-white transition px-3 py-2 bg-slate-800 rounded-lg border border-slate-700"
+            <button
+              onClick={() => setShowSettingsModal(true)}
+              className="text-xs text-slate-300 hover:text-white transition px-4 py-2.5 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 cursor-pointer font-bold"
             >
-              Membership Settings
-            </Link>
+              ⚙️ Membership Settings
+            </button>
           </div>
         </div>
+
+        {/* Modal Membership Settings */}
+        {showSettingsModal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0d1527] border border-slate-700 rounded-3xl max-w-md w-full p-6 sm:p-8 relative shadow-2xl">
+              <button 
+                onClick={() => setShowSettingsModal(false)}
+                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+              
+              <h3 className="text-xl font-black text-white mb-2">Subscription & Account</h3>
+              <p className="text-xs text-slate-400 mb-6">
+                Manage your billing, active tier, and payment preferences.
+              </p>
+
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 space-y-2">
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Current Plan:</span>
+                  <strong className={isVip ? 'text-amber-400 font-bold' : 'text-emerald-400 font-bold'}>
+                    {isVip ? 'VIP Elite ($49/mo)' : 'Pro Starter ($29/mo)'}
+                  </strong>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Status:</span>
+                  <span className="text-emerald-400 font-bold">Active</span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <span className="text-slate-400">Renewal Cycle:</span>
+                  <span className="text-slate-300">Monthly via Stripe</span>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <a
+                  href="mailto:deals@multidealprop.com?subject=Billing%20Support%20Request"
+                  className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition border border-slate-700"
+                >
+                  Contact Billing Support / Update Card
+                </a>
+                
+                <button
+                  onClick={() => {
+                    localStorage.clear();
+                    window.location.href = '/vip';
+                  }}
+                  className="w-full text-center block text-xs text-red-400 hover:text-red-300 py-2 transition"
+                >
+                  Sign Out from this Device
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* VIP On-Demand Banner */}
         {isVip && (
@@ -189,8 +246,11 @@ function DealsContent() {
                 }`}
               >
                 <div>
-                  {/* Property Image Container */}
-                  <div className="relative h-48 w-full bg-slate-900 overflow-hidden cursor-pointer" onClick={() => !isLockedForStarter && setActiveModalDeal(deal)}>
+                  {/* Property Image */}
+                  <div 
+                    className="relative h-48 w-full bg-slate-900 overflow-hidden cursor-pointer" 
+                    onClick={() => !isLockedForStarter && setActiveModalDeal(deal)}
+                  >
                     <img 
                       src={deal.imageUrl} 
                       alt={deal.title} 
@@ -211,7 +271,6 @@ function DealsContent() {
                   </div>
 
                   <div className="p-6">
-                    {/* Title & Price */}
                     <h3 
                       onClick={() => !isLockedForStarter && setActiveModalDeal(deal)}
                       className="text-lg font-bold text-white mb-2 leading-snug cursor-pointer hover:text-emerald-400 transition"
@@ -224,7 +283,7 @@ function DealsContent() {
                       <span className="text-xs text-slate-400">({deal.units} Units • {deal.metrics.yearBuilt})</span>
                     </div>
 
-                    {/* Quick Metrics Grid */}
+                    {/* Metrics */}
                     <div className="grid grid-cols-2 gap-2 bg-[#131d36] p-3 rounded-xl border border-slate-800 text-xs mb-4">
                       <div>
                         <span className="text-slate-500 block text-[10px] uppercase font-bold">Current Cap</span>
@@ -281,13 +340,13 @@ function DealsContent() {
                     <>
                       <button
                         onClick={() => setActiveModalDeal(deal)}
-                        className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 border border-slate-700"
+                        className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 border border-slate-700 cursor-pointer"
                       >
                         🔍 View Full Due Diligence & Photos
                       </button>
                       <a
                         href={`mailto:${deal.wholesaler.email}?subject=LOI%20Submission%20-%20${encodeURIComponent(deal.address)}`}
-                        className="w-full text-center block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 shadow-md shadow-emerald-500/10"
+                        className="w-full text-center block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 shadow-md shadow-emerald-500/10 cursor-pointer"
                       >
                         Connect with Assignor &rarr;
                       </a>
@@ -299,20 +358,18 @@ function DealsContent() {
           })}
         </div>
 
-        {/* Modal: Full Due Diligence & Property Overview */}
+        {/* Modal: Full Due Diligence */}
         {activeModalDeal && (
           <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
             <div className="bg-[#0d1527] border border-slate-700 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative shadow-2xl">
               
-              {/* Close Button */}
               <button 
                 onClick={() => setActiveModalDeal(null)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 rounded-full w-9 h-9 flex items-center justify-center font-bold text-lg"
+                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 rounded-full w-9 h-9 flex items-center justify-center font-bold text-lg cursor-pointer"
               >
                 ✕
               </button>
 
-              {/* Modal Image */}
               <div className="rounded-2xl overflow-hidden mb-6 h-64 sm:h-72 w-full">
                 <img 
                   src={activeModalDeal.imageUrl} 
@@ -321,7 +378,6 @@ function DealsContent() {
                 />
               </div>
 
-              {/* Badges & Title */}
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full uppercase tracking-wider">
                   {activeModalDeal.location}
@@ -340,7 +396,6 @@ function DealsContent() {
                 {activeModalDeal.description}
               </p>
 
-              {/* Comprehensive Underwriting Table */}
               <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Institutional Underwriting Metrics</h4>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-900 p-4 rounded-2xl border border-slate-800 text-xs mb-6">
                 <div>
@@ -367,21 +422,8 @@ function DealsContent() {
                   <span className="text-slate-500 block uppercase">Estimated Rehab Budget</span>
                   <strong className="text-amber-400 text-sm">{activeModalDeal.metrics.rehabEstimate}</strong>
                 </div>
-                <div>
-                  <span className="text-slate-500 block uppercase">Occupancy Rate</span>
-                  <strong className="text-slate-200 text-sm">{activeModalDeal.metrics.occupancy}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block uppercase">Year Built / Construction</span>
-                  <strong className="text-slate-200 text-sm">{activeModalDeal.metrics.yearBuilt}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block uppercase">APN / Parcel Number</span>
-                  <strong className="text-slate-200 text-sm">{activeModalDeal.apn}</strong>
-                </div>
               </div>
 
-              {/* Direct Wholesaler Details */}
               <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl mb-6">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Primary Contract Assignor Contact</h4>
                 <div className="text-sm text-slate-200 space-y-1">
@@ -392,7 +434,6 @@ function DealsContent() {
                 </div>
               </div>
 
-              {/* Action Buttons in Modal */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
                   href={`mailto:${activeModalDeal.wholesaler.email}?subject=Letter%20of%20Intent%20(LOI)%20-%20${encodeURIComponent(activeModalDeal.address)}`}
@@ -400,22 +441,11 @@ function DealsContent() {
                 >
                   Submit LOI to Assignor &rarr;
                 </a>
-                <button
-                  onClick={() => alert(`LOI draft for ${activeModalDeal.address} has been downloaded.`)}
-                  className="text-center bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider px-6 py-4 rounded-xl transition border border-slate-700"
-                >
-                  📄 Export Pre-Filled LOI
-                </button>
               </div>
 
             </div>
           </div>
         )}
-
-        {/* Footer */}
-        <div className="mt-16 text-center text-xs text-slate-600 border-t border-slate-800/60 pt-8">
-          MultiDealProp Desk • Institutional Direct Assignment Opportunities
-        </div>
 
       </div>
     </div>
