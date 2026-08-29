@@ -17,7 +17,8 @@ import {
   Layers,
   Coins,
   Compass,
-  Briefcase
+  Briefcase,
+  LogIn
 } from 'lucide-react';
 
 interface Deal {
@@ -163,7 +164,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black pb-16 overflow-x-hidden">
       
-      {/* 1. Header Navigation Responsive */}
+      {/* 1. Header Navigation Responsive avec Bouton Login */}
       <header className="border-b border-slate-800 bg-[#06080F]/95 backdrop-blur sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
           
@@ -186,6 +187,16 @@ export default function HomePage() {
               <span className="sm:hidden">Submit</span>
             </Link>
 
+            {/* Bouton de Connexion / Sign In */}
+            <Link 
+              href="/login" 
+              className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-200 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-700 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all"
+            >
+              <LogIn className="w-3.5 h-3.5 text-slate-400" />
+              <span>Sign In</span>
+            </Link>
+
+            {/* Bouton VIP */}
             <Link 
               href="/vip" 
               className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-black text-[11px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center gap-1 flex-shrink-0"
@@ -213,7 +224,7 @@ export default function HomePage() {
         </p>
       </section>
 
-      {/* 3. Global KPI Statistics Bar (Optimisé Mobile 2x2) */}
+      {/* 3. Global KPI Statistics Bar */}
       <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-6">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
           
@@ -260,7 +271,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 4. Asset Class Tabs (Scroll Horizontal fluide sur Mobile) */}
+      {/* 4. Asset Class Tabs */}
       <section className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 mb-6">
         <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none border-b border-slate-800/80">
           <button
@@ -358,7 +369,7 @@ export default function HomePage() {
                   : 'bg-slate-900/60 border-slate-800/90 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
               }`}
             >
-              <div className="flex items-center justify-between">
+              <div className="flex items-between justify-between">
                 <span className="text-[9px] sm:text-[10px] font-mono font-black text-cyan-300 bg-cyan-950/80 px-1.5 py-0.5 rounded border border-cyan-800/60">
                   {cityCounts[city]}
                 </span>
@@ -509,7 +520,7 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* 8. Institutional Footer Responsive */}
+      {/* 8. Institutional Footer Responsive avec Lien Sign In */}
       <footer className="border-t border-slate-800 bg-[#04060A] py-8 sm:py-12 mt-16 text-slate-400 text-xs font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 text-center md:text-left">
@@ -519,6 +530,7 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
+              <Link href="/login" className="text-white hover:text-emerald-400 transition-colors font-bold">Sign In / Access</Link>
               <Link href="/submit-deal" className="text-emerald-400 hover:underline transition-colors font-bold">+ Submit Deal</Link>
               <Link href="/about" className="hover:text-emerald-400 transition-colors">About Us</Link>
               <Link href="/vip" className="hover:text-emerald-400 transition-colors">Pricing Plans</Link>
