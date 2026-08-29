@@ -1,517 +1,269 @@
 'use client';
 
-import React, { useEffect, useState, useMemo, Suspense } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
-interface Deal {
-  id: string;
-  title: string;
-  tag: string;
-  city: string;
-  state: string;
-  zip: string;
-  priceNumeric: number;
-  price: string;
-  capRateNumeric: number;
-  capRate: string;
-  monthlyRent: string;
-  grossYield: string;
-  units: number;
-  image: string;
-  wholesaler: string;
-  isCommercial?: boolean;
-}
-
-const SAMPLE_DEALS: Deal[] = [
+// Exemple de Deal Mock avec flags VIP
+const INITIAL_DEALS = [
   {
-    id: 'cleveland-brick-3bed',
-    title: 'Renovated 3-Bed Brick Home - Section 8 Ready',
-    tag: 'High-Cap Underwritten Asset',
-    city: 'Cleveland',
-    state: 'OH',
-    zip: '44120',
-    priceNumeric: 89500,
-    price: '$89,500',
-    capRateNumeric: 12.04,
-    capRate: '12.04%',
-    monthlyRent: '$1,250',
-    grossYield: '16.76%',
-    units: 1,
-    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Apex Wholesale Capital LLC',
+    id: 'deal-1',
+    title: '18-Unit Value-Add Multifamily Portfolio',
+    location: 'Cleveland, OH',
+    address: '1428-1436 E 120th St, Cleveland, OH 44106',
+    apn: '120-14-082',
+    price: '$895,000',
+    units: 18,
+    capRate: '8.4%',
+    proFormaCap: '12.1%',
+    isExclusive: true, // VIP 48h priority
+    wholesaler: {
+      name: 'Marcus Vance (Midwest Wholesale Desk)',
+      phone: '(216) 555-0194',
+      email: 'mvance@midwestacquisitions.com',
+    },
+    metrics: {
+      currentGross: '$14,200/mo',
+      proFormaGross: '$21,500/mo',
+      rehabEstimate: '$140,000',
+    },
   },
   {
-    id: 'akron-duplex-cashflow',
-    title: 'Turnkey Multi-Family Duplex (2 x 2-Bed Units)',
-    tag: 'Turnkey Cashflow',
-    city: 'Akron',
-    state: 'OH',
-    zip: '44306',
-    priceNumeric: 118000,
-    price: '$118,000',
-    capRateNumeric: 11.40,
-    capRate: '11.40%',
-    monthlyRent: '$1,650',
-    grossYield: '21.20%',
-    units: 2,
-    image: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Midwest Off-Market Direct',
+    id: 'deal-2',
+    title: '24-Unit Garden Style Apartment Complex',
+    location: 'Memphis, TN',
+    address: '3290 Jackson Ave, Memphis, TN 38112',
+    apn: '045-021-0012',
+    price: '$1,350,000',
+    units: 24,
+    capRate: '7.9%',
+    proFormaCap: '11.5%',
+    isExclusive: false,
+    wholesaler: {
+      name: 'Sarah Jenkins (Apex Direct Assets)',
+      phone: '(901) 555-0182',
+      email: 'sjenkins@apexassetsgroup.com',
+    },
+    metrics: {
+      currentGross: '$22,000/mo',
+      proFormaGross: '$31,000/mo',
+      rehabEstimate: '$210,000',
+    },
   },
   {
-    id: 'memphis-triplex-portfolio',
-    title: 'Stabilized 3-Unit Value-Add Multi-Family',
-    tag: 'Value-Add Opportunity',
-    city: 'Memphis',
-    state: 'TN',
-    zip: '38114',
-    priceNumeric: 145000,
-    price: '$145,000',
-    capRateNumeric: 12.20,
-    capRate: '12.20%',
-    monthlyRent: '$2,100',
-    grossYield: '24.10%',
-    units: 3,
-    image: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Delta Acquisition Group',
-  },
-  {
-    id: 'detroit-fourplex-high-yield',
-    title: 'High-Yield Fourplex (4 x 1-Bed Units)',
-    tag: 'Cash Cow Portfolio',
-    city: 'Detroit',
-    state: 'MI',
-    zip: '48227',
-    priceNumeric: 165000,
-    price: '$165,000',
-    capRateNumeric: 13.50,
-    capRate: '13.50%',
-    monthlyRent: '$2,800',
-    grossYield: '20.40%',
-    units: 4,
-    image: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'MotorCity Deal Hub',
-  },
-  {
-    id: 'baltimore-rowhome-duplex',
-    title: 'Historic Brick Duplex - Fully Leased',
-    tag: 'Section 8 Certified',
-    city: 'Baltimore',
-    state: 'MD',
-    zip: '21215',
-    priceNumeric: 139000,
-    price: '$139,000',
-    capRateNumeric: 11.10,
-    capRate: '11.10%',
-    monthlyRent: '$1,900',
-    grossYield: '16.40%',
-    units: 2,
-    image: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Chesapeake Property Wholesalers',
-  },
-  {
-    id: 'indianapolis-triplex-cashflow',
-    title: 'Fully Occupied Triplex Near University Corridor',
-    tag: 'Turnkey Asset',
-    city: 'Indianapolis',
-    state: 'IN',
-    zip: '46201',
-    priceNumeric: 175000,
-    price: '$175,000',
-    capRateNumeric: 10.50,
-    capRate: '10.50%',
-    monthlyRent: '$2,250',
-    grossYield: '15.40%',
-    units: 3,
-    image: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Crossroads Acquisition Desk',
-  },
-  {
-    id: 'philly-duplex-value-add',
-    title: 'Multi-Family Duplex - Separate Utilities',
-    tag: 'Value-Add Spread',
-    city: 'Philadelphia',
-    state: 'PA',
-    zip: '19134',
-    priceNumeric: 129000,
-    price: '$129,000',
-    capRateNumeric: 11.80,
-    capRate: '11.80%',
-    monthlyRent: '$1,750',
-    grossYield: '16.30%',
-    units: 2,
-    image: 'https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Keystone Off-Market Exchange',
-  },
-  {
-    id: 'kansas-city-fourplex-core',
-    title: 'Solid Brick 4-Plex - 100% In-Place Leases',
-    tag: 'High-Cap Underwritten',
-    city: 'Kansas City',
-    state: 'MO',
-    zip: '64130',
-    priceNumeric: 189000,
-    price: '$189,000',
-    capRateNumeric: 12.80,
-    capRate: '12.80%',
-    monthlyRent: '$3,100',
-    grossYield: '19.70%',
-    units: 4,
-    image: 'https://images.unsplash.com/photo-1600566753376-12c8ab7fb75b?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Midwest Metro Wholesale',
-  },
-  {
-    id: 'cleveland-commercial-6plex',
-    title: '6-Unit Commercial Multi-Family Apartment Building',
-    tag: 'VIP Commercial Exclusive',
-    city: 'Cleveland',
-    state: 'OH',
-    zip: '44108',
-    priceNumeric: 279000,
-    price: '$279,000',
-    capRateNumeric: 14.20,
-    capRate: '14.20%',
-    monthlyRent: '$4,800',
-    grossYield: '20.64%',
-    units: 6,
-    image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=800&q=80',
-    wholesaler: 'Great Lakes Commercial Hub',
-    isCommercial: true,
+    id: 'deal-3',
+    title: '12-Unit Fully Occupied Brick Quadplexes',
+    location: 'Indianapolis, IN',
+    address: '2840 N Meridian St, Indianapolis, IN 46208',
+    apn: '49-06-25-104-002',
+    price: '$720,000',
+    units: 12,
+    capRate: '8.8%',
+    proFormaCap: '10.9%',
+    isExclusive: true, // VIP 48h priority
+    wholesaler: {
+      name: 'David Keller (Circle City Holdings)',
+      phone: '(317) 555-0149',
+      email: 'dkeller@circlecityequity.com',
+    },
+    metrics: {
+      currentGross: '$11,800/mo',
+      proFormaGross: '$15,400/mo',
+      rehabEstimate: '$45,000',
+    },
   },
 ];
 
-function DealsFeed() {
-  const [userTier, setUserTier] = useState<string | null>(null);
+function DealsContent() {
+  const searchParams = useSearchParams();
+  const urlTier = searchParams.get('tier') || searchParams.get('plan');
+  
+  const [userTier, setUserTier] = useState<'starter' | 'vip'>('starter');
+  const [selectedDeal, setSelectedDeal] = useState<any | null>(null);
 
-  // Filtres d'état
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCity, setSelectedCity] = useState('ALL');
-  const [selectedUnits, setSelectedUnits] = useState('ALL');
-  const [minCapRate, setMinCapRate] = useState<number>(0);
-  const [sortBy, setSortBy] = useState('highest_cap');
-
+  // Synchronisation et mémorisation du statut dans le navigateur
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isVip = localStorage.getItem('multideal_vip') === 'true';
-      const tier = localStorage.getItem('multideal_tier') || (isVip ? 'starter' : null);
-      setUserTier(tier);
+    if (urlTier === 'vip' || urlTier === 'vip_49' || urlTier === 'elite') {
+      setUserTier('vip');
+      localStorage.setItem('multidealprop_tier', 'vip');
+    } else if (urlTier === 'starter' || urlTier === 'starter_29' || urlTier === 'pro') {
+      setUserTier('starter');
+      localStorage.setItem('multidealprop_tier', 'starter');
+    } else {
+      const savedTier = localStorage.getItem('multidealprop_tier');
+      if (savedTier === 'vip') {
+        setUserTier('vip');
+      }
     }
-  }, []);
+  }, [urlTier]);
 
-  const isUnlocked = userTier !== null;
-  const isElite = userTier === 'vip';
-
-  // Liste unique des villes
-  const cities = useMemo(() => {
-    const set = new Set(SAMPLE_DEALS.map((d) => d.city));
-    return ['ALL', ...Array.from(set)];
-  }, []);
-
-  // Filtrage et Tri combinés
-  const filteredDeals = useMemo(() => {
-    return SAMPLE_DEALS.filter((deal) => {
-      // Recherche textuelle
-      const matchesSearch =
-        deal.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        deal.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        deal.zip.includes(searchTerm) ||
-        deal.state.toLowerCase().includes(searchTerm.toLowerCase());
-
-      // Filtre Ville
-      const matchesCity = selectedCity === 'ALL' || deal.city === selectedCity;
-
-      // Filtre Type / Unités
-      let matchesUnits = true;
-      if (selectedUnits === '1') matchesUnits = deal.units === 1;
-      else if (selectedUnits === '2') matchesUnits = deal.units === 2;
-      else if (selectedUnits === '3') matchesUnits = deal.units === 3;
-      else if (selectedUnits === '4') matchesUnits = deal.units === 4;
-      else if (selectedUnits === '5plus') matchesUnits = deal.units >= 5;
-
-      // Filtre Cap Rate
-      const matchesCap = deal.capRateNumeric >= minCapRate;
-
-      return matchesSearch && matchesCity && matchesUnits && matchesCap;
-    }).sort((a, b) => {
-      if (sortBy === 'highest_cap') return b.capRateNumeric - a.capRateNumeric;
-      if (sortBy === 'lowest_price') return a.priceNumeric - b.priceNumeric;
-      if (sortBy === 'highest_price') return b.priceNumeric - a.priceNumeric;
-      return 0; // Default
-    });
-  }, [searchTerm, selectedCity, selectedUnits, minCapRate, sortBy]);
+  const isVip = userTier === 'vip';
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <div className="min-h-screen bg-[#070b14] text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
         
-        {/* Navigation & Status Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-6">
+        {/* Top Intelligence Header Bar */}
+        <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-6 mb-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
           <div>
-            <span className="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
-              Live Verified Opportunities ({filteredDeals.length} Available)
-            </span>
-            <h1 className="text-3xl font-black mt-2 tracking-tight">Multi-Family Deals Feed</h1>
-            <p className="text-sm text-slate-400">
-              Underwritten properties with live cashflow metrics and direct wholesaler assignment desks.
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-black text-white">Live Deal Flow Desk</h1>
+              <span className={`text-xs font-black uppercase tracking-wider px-3 py-1 rounded-full border ${
+                isVip 
+                  ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-lg shadow-amber-500/10' 
+                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+              }`}>
+                {isVip ? '★ VIP Elite Desk Active' : '✓ Pro Starter Active'}
+              </span>
+            </div>
+            <p className="text-slate-400 text-xs sm:text-sm mt-1">
+              {isVip 
+                ? 'All exclusive 48-hour windows, custom on-demand scans, and direct assignor lines unlocked.'
+                : 'Direct wholesaler lines and pro-forma underwriting vaults active.'}
             </p>
           </div>
 
           <div className="flex items-center gap-3">
-            <Link
-              href="/request-city"
-              className="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold py-2.5 px-4 rounded-xl border border-slate-700 transition"
-            >
-              📍 Scan Target City ($4.99)
-            </Link>
-
-            {!isUnlocked ? (
+            {!isVip && (
               <Link
                 href="/vip"
-                className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 text-slate-950 text-xs font-extrabold uppercase tracking-wider py-2.5 px-4 rounded-xl shadow-lg transition"
+                className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider px-4 py-2.5 rounded-xl transition shadow-lg shadow-amber-500/20"
               >
-                ⚡ Upgrade Plan ($29 - $49)
+                Upgrade to VIP Elite &rarr;
               </Link>
-            ) : userTier === 'starter' ? (
-              <span className="bg-sky-500/10 border border-sky-500/30 text-sky-400 text-xs font-bold uppercase tracking-wider py-2 px-3.5 rounded-xl flex items-center gap-1.5">
-                ✓ PRO STARTER UNLOCKED ($29/mo)
-              </span>
-            ) : (
-              <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold uppercase tracking-wider py-2 px-3.5 rounded-xl flex items-center gap-1.5">
-                ✓ VIP ELITE UNLOCKED ($49/mo)
-              </span>
             )}
+            <Link
+              href="/vip"
+              className="text-xs text-slate-400 hover:text-white transition px-3 py-2 bg-slate-800 rounded-lg border border-slate-700"
+            >
+              Subscription Settings
+            </Link>
           </div>
         </div>
 
-        {/* BARRE DE FILTRES ET DE RECHERCHE DYNAMIQUE */}
-        <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-5 space-y-4 shadow-xl">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            
-            {/* Barre de recherche */}
-            <div className="lg:col-span-2">
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                🔍 Search Property / Zip / City
-              </label>
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Ex: Cleveland, Duplex, 44120..."
-                className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition"
-              />
+        {/* VIP On-Demand Scan Banner (Only visible for VIPs) */}
+        {isVip && (
+          <div className="mb-8 p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">⚡</span>
+              <div>
+                <h3 className="text-amber-300 font-bold text-sm">VIP Privilege: 5 On-Demand City Scans Available</h3>
+                <p className="text-slate-400 text-xs">Need off-market multifamily in a specific county? Request a custom underwriting pull.</p>
+              </div>
             </div>
-
-            {/* Filtre Marché / Ville */}
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                📍 Target Market
-              </label>
-              <select
-                value={selectedCity}
-                onChange={(e) => setSelectedCity(e.target.value)}
-                className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition"
-              >
-                {cities.map((c) => (
-                  <option key={c} value={c}>
-                    {c === 'ALL' ? 'All Markets (USA)' : c}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Filtre Type d'immeuble */}
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                🏢 Building Type
-              </label>
-              <select
-                value={selectedUnits}
-                onChange={(e) => setSelectedUnits(e.target.value)}
-                className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition"
-              >
-                <option value="ALL">All Types</option>
-                <option value="1">1 Unit (Single Family)</option>
-                <option value="2">2 Units (Duplex)</option>
-                <option value="3">3 Units (Triplex)</option>
-                <option value="4">4 Units (Fourplex)</option>
-                <option value="5plus">5+ Commercial (VIP Only)</option>
-              </select>
-            </div>
-
-            {/* Tri des résultats */}
-            <div>
-              <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-1">
-                ⚡ Sort Deals
-              </label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition"
-              >
-                <option value="highest_cap">Highest Cap Rate</option>
-                <option value="lowest_price">Price: Low to High</option>
-                <option value="highest_price">Price: High to Low</option>
-              </select>
-            </div>
-
-          </div>
-
-          {/* Filtre Cap Rate Minimum & Raccourcis Rapides */}
-          <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-slate-800/80 text-xs">
-            <div className="flex items-center gap-2">
-              <span className="text-slate-400 font-bold uppercase text-[11px]">Min Cap Rate:</span>
-              {[0, 11, 12, 13].map((rate) => (
-                <button
-                  key={rate}
-                  onClick={() => setMinCapRate(rate)}
-                  className={`px-3 py-1 rounded-lg font-bold transition ${
-                    minCapRate === rate
-                      ? 'bg-emerald-500 text-slate-950 shadow'
-                      : 'bg-[#131d36] text-slate-300 hover:text-white border border-slate-700'
-                  }`}
-                >
-                  {rate === 0 ? 'Any' : `>${rate}%`}
-                </button>
-              ))}
-            </div>
-
-            {(searchTerm || selectedCity !== 'ALL' || selectedUnits !== 'ALL' || minCapRate > 0) && (
-              <button
-                onClick={() => {
-                  setSearchTerm('');
-                  setSelectedCity('ALL');
-                  setSelectedUnits('ALL');
-                  setMinCapRate(0);
-                }}
-                className="text-rose-400 hover:underline font-semibold text-xs"
-              >
-                Reset All Filters ✕
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Grille des Opportunités Filtrées */}
-        {filteredDeals.length === 0 ? (
-          <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-12 text-center space-y-3">
-            <p className="text-4xl">🔍</p>
-            <h3 className="text-lg font-bold text-white">No Properties Found Matching Your Criteria</h3>
-            <p className="text-slate-400 text-xs max-w-md mx-auto">
-              Try adjusting your Cap Rate threshold or clearing the search query to see all available deals.
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredDeals.map((deal) => {
-              const isCommercialLocked = deal.isCommercial && !isElite;
-              const hasAccess = isUnlocked && !isCommercialLocked;
-
-              return (
-                <div
-                  key={deal.id}
-                  className={`bg-[#0d1527] border ${
-                    deal.isCommercial ? 'border-amber-500/50' : 'border-slate-800'
-                  } hover:border-slate-700 rounded-3xl overflow-hidden shadow-2xl transition flex flex-col justify-between`}
-                >
-                  <div>
-                    {/* Image Header */}
-                    <div className="relative h-48 w-full overflow-hidden bg-slate-900">
-                      <img
-                        src={deal.image}
-                        alt={deal.title}
-                        className={`w-full h-full object-cover ${isCommercialLocked ? 'filter blur-[3px]' : ''}`}
-                      />
-                      <span
-                        className={`absolute top-3 left-3 bg-slate-950/80 backdrop-blur border text-xs font-bold px-3 py-1 rounded-full ${
-                          deal.isCommercial
-                            ? 'border-amber-500/40 text-amber-400'
-                            : 'border-slate-700/50 text-emerald-400'
-                        }`}
-                      >
-                        {deal.tag}
-                      </span>
-                      <span className="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur text-white text-xs font-bold px-2.5 py-1 rounded-lg">
-                        {deal.units} {deal.units > 1 ? 'Units' : 'Unit'}
-                      </span>
-                    </div>
-
-                    {/* Contenu */}
-                    <div className="p-6 space-y-4">
-                      <div>
-                        <h3 className="font-bold text-lg text-white leading-snug line-clamp-1">
-                          {deal.title}
-                        </h3>
-                        <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                          📍{' '}
-                          {hasAccess
-                            ? `${deal.city}, ${deal.state} ${deal.zip}`
-                            : isCommercialLocked
-                            ? `${deal.city}, ${deal.state} (5+ Units VIP Elite Only 🔒)`
-                            : `${deal.city}, ${deal.state} (Exact St Locked 🔒)`}
-                        </p>
-                      </div>
-
-                      {/* Métriques */}
-                      <div className="grid grid-cols-3 gap-2 bg-[#131d36] p-3 rounded-2xl text-center">
-                        <div>
-                          <p className="text-[10px] uppercase font-bold text-slate-400">Price</p>
-                          <p className="text-sm font-black text-white">{deal.price}</p>
-                        </div>
-                        <div className="border-x border-slate-800">
-                          <p className="text-[10px] uppercase font-bold text-slate-400">Cap Rate</p>
-                          <p className="text-sm font-black text-emerald-400">{deal.capRate}</p>
-                        </div>
-                        <div>
-                          <p className="text-[10px] uppercase font-bold text-slate-400">Rent</p>
-                          <p className="text-sm font-black text-sky-400">{deal.monthlyRent}</p>
-                        </div>
-                      </div>
-
-                      {/* Contact vendeur */}
-                      <div className="text-xs text-slate-400 pt-1">
-                        <span className="text-slate-500 block text-[11px]">Direct Wholesaler Entity:</span>
-                        {hasAccess ? (
-                          <span className="text-emerald-400 font-semibold">{deal.wholesaler}</span>
-                        ) : (
-                          <span className="blur-sm select-none text-slate-500">{deal.wholesaler}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Bouton d'action */}
-                  <div className="p-6 pt-0">
-                    {isCommercialLocked ? (
-                      <Link
-                        href="/vip"
-                        className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 text-slate-950 font-black py-3 px-4 rounded-xl transition shadow-lg text-xs uppercase tracking-wider text-center"
-                      >
-                        🔒 Upgrade to VIP Elite (Commercial 5+)
-                      </Link>
-                    ) : (
-                      <Link
-                        href={`/deals/${deal.id}`}
-                        className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold py-3 px-4 rounded-xl transition shadow-lg text-sm text-center"
-                      >
-                        ⚡ View Deal & Underwriting
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+            <a
+              href="mailto:deals@multidealprop.com?subject=VIP%20Custom%20Scan%20Request"
+              className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg transition shrink-0"
+            >
+              Request Custom Scan
+            </a>
           </div>
         )}
-{/* FOOTER LÉGAL & PROTECTION */}
-        <footer className="border-t border-slate-800 pt-8 pb-12 mt-12 text-center text-xs text-slate-500 space-y-3">
-          <p className="max-w-3xl mx-auto leading-relaxed">
-            <strong>MultiDealProp Intelligence Desk:</strong> Real estate data and underwritten models are provided strictly for informational purposes. MultiDealProp is not a licensed broker or legal advisor. All investors must conduct independent inspections and title exams.
-          </p>
-          <div className="flex justify-center items-center gap-4 text-slate-400">
-            <Link href="/terms" className="hover:text-white transition underline">Terms of Service & Disclaimers</Link>
-            <span>•</span>
-            <Link href="/vip" className="hover:text-white transition underline">Subscription Plans</Link>
-          </div>
-        </footer>
+
+        {/* Deals Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {INITIAL_DEALS.map((deal) => {
+            const isLockedForStarter = deal.isExclusive && !isVip;
+
+            return (
+              <div 
+                key={deal.id}
+                className={`bg-[#0d1527] border rounded-2xl p-6 flex flex-col justify-between transition duration-200 ${
+                  deal.isExclusive 
+                    ? 'border-amber-500/40 shadow-lg shadow-amber-950/20' 
+                    : 'border-slate-800 hover:border-slate-700'
+                }`}
+              >
+                <div>
+                  {/* Badge */}
+                  <div className="flex justify-between items-center mb-3">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider bg-slate-800 px-2.5 py-0.5 rounded">
+                      {deal.location}
+                    </span>
+                    {deal.isExclusive && (
+                      <span className="text-[10px] font-extrabold uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-0.5 rounded-full">
+                        VIP 48h Window
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Title & Price */}
+                  <h3 className="text-lg font-bold text-white mb-2 leading-snug">{deal.title}</h3>
+                  <div className="flex items-baseline gap-2 mb-4">
+                    <span className="text-2xl font-black text-emerald-400">{deal.price}</span>
+                    <span className="text-xs text-slate-400">({deal.units} Units)</span>
+                  </div>
+
+                  {/* Metrics Table */}
+                  <div className="grid grid-cols-2 gap-2 bg-[#131d36] p-3 rounded-xl border border-slate-800 text-xs mb-4">
+                    <div>
+                      <span className="text-slate-500 block text-[10px] uppercase">Current Cap</span>
+                      <span className="text-slate-200 font-bold">{deal.capRate}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] uppercase">Pro-Forma Cap</span>
+                      <span className="text-emerald-400 font-bold">{deal.proFormaCap}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] uppercase">Gross In</span>
+                      <span className="text-slate-300">{deal.metrics.currentGross}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] uppercase">Est. Rehab</span>
+                      <span className="text-slate-300">{deal.metrics.rehabEstimate}</span>
+                    </div>
+                  </div>
+
+                  {/* Unmasked Data Section */}
+                  {isLockedForStarter ? (
+                    <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl text-center my-3">
+                      <span className="text-xs text-amber-400 font-bold block mb-1">🔒 VIP Exclusive Window Active</span>
+                      <p className="text-[11px] text-slate-400 mb-3">Unlocks in 36 hours for Starter members.</p>
+                      <Link
+                        href="/vip"
+                        className="inline-block bg-amber-500 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg"
+                      >
+                        Unlock with VIP Elite
+                      </Link>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-slate-900 border border-slate-800/80 rounded-xl text-xs space-y-1.5 mb-4">
+                      <p className="text-slate-300">
+                        <strong className="text-slate-500">Address:</strong> {deal.address}
+                      </p>
+                      <p className="text-slate-300">
+                        <strong className="text-slate-500">APN / Parcel:</strong> {deal.apn}
+                      </p>
+                      <p className="text-slate-300">
+                        <strong className="text-slate-500">Assignor:</strong> {deal.wholesaler.name}
+                      </p>
+                      <p className="text-emerald-400 font-mono text-[11px]">
+                        📞 {deal.wholesaler.phone} | ✉️ {deal.wholesaler.email}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  {!isLockedForStarter && (
+                    <a
+                      href={`mailto:${deal.wholesaler.email}?subject=LOI%20Submission%20-%20${encodeURIComponent(deal.address)}`}
+                      className="w-full text-center block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 shadow-md"
+                    >
+                      Connect with Assignor &rarr;
+                    </a>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Desk Footnote */}
+        <div className="mt-16 text-center text-xs text-slate-600 border-t border-slate-800/60 pt-8">
+          MultiDealProp Desk • Direct Principal Real Estate Sourcing
+        </div>
+
       </div>
     </div>
   );
@@ -519,14 +271,8 @@ function DealsFeed() {
 
 export default function DealsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-[#070b14] text-slate-400 flex items-center justify-center">
-          Loading Live Deals Feed...
-        </div>
-      }
-    >
-      <DealsFeed />
+    <Suspense fallback={<div className="min-h-screen bg-[#070b14] text-white flex items-center justify-center">Loading Deals Portal...</div>}>
+      <DealsContent />
     </Suspense>
   );
 }
