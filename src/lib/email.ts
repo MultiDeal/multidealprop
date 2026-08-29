@@ -22,6 +22,11 @@ export async function sendWelcomeEmail({
   const badgeBg = isVip ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)';
   const badgeColor = isVip ? '#fbbf24' : '#34d399';
   const badgeBorder = isVip ? '#f59e0b' : '#10b981';
+  
+  // URL dynamique qui active le statut VIP sur le site
+  const accessUrl = isVip 
+    ? 'https://www.multidealprop.com/deals?tier=vip' 
+    : 'https://www.multidealprop.com/deals?tier=starter';
 
   const html = `
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
@@ -111,11 +116,11 @@ export async function sendWelcomeEmail({
                   <tr>
                     <td align="center" bgcolor="#10b981" style="border-radius: 10px;">
                       <!--[if mso]>
-                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="https://www.multidealprop.com/deals" target="_blank" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="20%" stroke="f" fillcolor="#10b981">
+                      <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${accessUrl}" target="_blank" style="height:50px;v-text-anchor:middle;width:280px;" arcsize="20%" stroke="f" fillcolor="#10b981">
                         <w:anchorlock/>
                         <center>
                       <![endif]-->
-                          <a href="https://www.multidealprop.com/deals" target="_blank" style="font-family: Arial, sans-serif; font-size: 14px; font-weight: 800; color: #070b14; text-decoration: none; padding: 16px 36px; border-radius: 10px; display: inline-block; letter-spacing: 0.5px; mso-padding-alt:0; -webkit-text-size-adjust:none;">
+                          <a href="${accessUrl}" target="_blank" style="font-family: Arial, sans-serif; font-size: 14px; font-weight: 800; color: #070b14; text-decoration: none; padding: 16px 36px; border-radius: 10px; display: inline-block; letter-spacing: 0.5px; mso-padding-alt:0; -webkit-text-size-adjust:none;">
                             ACCESS LIVE DEALS FEED &rarr;
                           </a>
                       <!--[if mso]>
@@ -132,8 +137,8 @@ export async function sendWelcomeEmail({
           <!-- Direct Link Fallback -->
           <p style="color: #64748b; font-size: 12px; text-align: center; margin: 0 0 28px 0; line-height: 1.5;">
             Direct platform access URL:<br/>
-            <a href="https://www.multidealprop.com/deals" target="_blank" style="color: #10b981; text-decoration: underline;">
-              https://www.multidealprop.com/deals
+            <a href="${accessUrl}" target="_blank" style="color: #10b981; text-decoration: underline;">
+              ${accessUrl}
             </a>
           </p>
 
