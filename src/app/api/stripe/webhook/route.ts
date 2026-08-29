@@ -1,41 +1,61 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
-export async function POST(req: Request) {
-  const secretKey = process.env.STRIPE_SECRET_KEY;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
+  apiVersion: '2023-10-16' as any,
+});
 
-  if (!secretKey || !webhookSecret) {
-    return NextResponse.json({ error: 'Clés Stripe manquantes' }, { status: 500 });
-  }
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-  const stripe = new Stripe(secretKey);
-  const sig = req.headers.get('stripe-signature') || '';
-
+export async function POST(req: NextRequest) {
   try {
     const rawBody = await req.text();
-    const event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
+    const signature = req.headers.get('stripe-signature');
 
-    if (event.type === 'checkout.session.completed') {
-      const session = event.data.object as Stripe.Checkout.Session;
-      const city = session.metadata?.city;
-      const state = session.metadata?.state;
+    let event: Stripe.Event;
 
-      // Si c'est un scan de ville payé
-      if (city && state) {
-        // Déclenche la route de récupération RentCast
-        const origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://multidealprop.com';
-        await fetch(`${origin}/api/scanner/fetch-city`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ city, state, secretTrigger: process.env.CRON_SECRET || 'sync_secret' })
-        });
+    // Vérification de la signature si le secret est configuré
+    if (webhookSecret && signature) {
+      try {
+        event = stripe.webhooks.constructEvent(rawBody, signature, webhookSecret);
+      } catch (err: any) {
+        console.error(`⚠️ Webhook signature verification failed: ${err.message}`);
+        return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
       }
+    } else {
+      // Mode fallback (sans signature)
+      event = JSON.parse(rawBody) as Stripe.Event;
     }
 
-    return NextResponse.json({ received: true });
-  } catch (err: any) {
-    console.error('Webhook error:', err.message);
-    return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });
+    // Gestion des événements Stripe
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        console.log('✅ Checkout session completed:', session.id);
+        break;
+      }
+
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as Stripe.Subscription;
+        console.log('✅ Subscription active/updated:', subscription.id);
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+        console.log('⚠️ Subscription canceled:', subscription.id);
+        break;
+      }
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+
+    // Réponse obligatoire 200 OK pour Stripe
+    return NextResponse.json({ received: true }, { status: 200 });
+  } catch (error: any) {
+    console.error('Webhook error:', error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
