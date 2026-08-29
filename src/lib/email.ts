@@ -4,9 +4,6 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 const SENDER_EMAIL = 'MultiDealProp <deals@multidealprop.com>';
 
-/**
- * 1. Email de bienvenue lors d'une nouvelle souscription Pro ou VIP
- */
 export async function sendWelcomeEmail({
   email,
   tier,
@@ -37,16 +34,16 @@ export async function sendWelcomeEmail({
     <div class="container">
       <span class="badge">✓ ${planName} Active</span>
       <h1>Welcome to MultiDealProp Intelligence Desk</h1>
-      <p>Your subscription is officially confirmed. You now have direct access to off-market wholesale contracts, complete 12-month pro-forma cashflows, and instant LOI contract generation.</p>
+      <p>Your monthly subscription is officially confirmed. You now have full access to verified off-market deals, financial audits, and direct wholesaler contacts.</p>
       
       <div class="box">
         <strong style="color: #ffffff; font-size: 13px;">Unlocked Member Privileges:</strong>
         <ul style="color: #cbd5e1; font-size: 13px; padding-left: 20px; margin-top: 8px;">
-          <li>Exact street addresses & direct wholesaler desk phone/email</li>
+          <li>Exact street addresses & direct wholesaler contact details</li>
           <li>Full institutional Due Diligence PDF audit vaults</li>
-          <li>Fast-track 1-click Letter of Intent (LOI) submission</li>
-          ${isVip ? '<li style="color: #fbbf24; font-weight: bold;">5 Free On-Demand Custom City/County Scans / Month</li>' : ''}
-          ${isVip ? '<li style="color: #fbbf24; font-weight: bold;">48-Hour Priority Window on newly sourced inventory</li>' : ''}
+          <li>Fast-track 1-click Letter of Intent (LOI) generator</li>
+          ${isVip ? '<li style="color: #fbbf24; font-weight: bold;">5 Free On-Demand Custom City Scans per month</li>' : ''}
+          ${isVip ? '<li style="color: #fbbf24; font-weight: bold;">48-Hour Priority Exclusive Access Window on new listings</li>' : ''}
         </ul>
       </div>
 
