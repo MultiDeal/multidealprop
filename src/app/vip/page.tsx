@@ -70,7 +70,7 @@ function VipContent() {
 
                 <div className="mt-5 flex flex-wrap gap-3">
                   <Link
-                    href="/deals"
+                    href="/deals?tier=vip"
                     className="inline-block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider px-6 py-3.5 rounded-xl transition duration-200 shadow-lg shadow-emerald-500/20"
                   >
                     Access Live Deals Feed &rarr;
