@@ -2,7 +2,7 @@ import { Resend } from 'resend';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const SENDER_EMAIL = 'MultiDealProp <onboarding@resend.dev>';
+const SENDER_EMAIL = 'MultiDealProp <deals@multidealprop.com>';
 
 /**
  * 1. Email de bienvenue lors d'une nouvelle souscription Pro ou VIP
