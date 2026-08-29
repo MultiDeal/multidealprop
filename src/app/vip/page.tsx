@@ -9,13 +9,13 @@ function VipContent() {
   const isSuccess = searchParams.get('success') === 'true';
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleCheckout = async (plan: 'starter' | 'vip') => {
+  const handleCheckout = async (plan: 'starter_29' | 'vip_49') => {
     try {
       setLoadingPlan(plan);
       const res = await fetch('/api/checkout/vip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan, tier: plan }),
+        body: JSON.stringify({ plan }),
       });
 
       const data = await res.json();
@@ -27,7 +27,7 @@ function VipContent() {
       }
     } catch (err) {
       console.error('Checkout error:', err);
-      alert('A network error occurred.');
+      alert('A network error occurred. Please check your connection.');
       setLoadingPlan(null);
     }
   };
@@ -138,11 +138,11 @@ function VipContent() {
 
             <div className="mt-8 pt-6 border-t border-slate-800">
               <button
-                onClick={() => handleCheckout('starter')}
-                disabled={loadingPlan === 'starter'}
+                onClick={() => handleCheckout('starter_29')}
+                disabled={loadingPlan === 'starter_29'}
                 className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm py-4 rounded-xl transition duration-200 border border-slate-700 disabled:opacity-50 cursor-pointer"
               >
-                {loadingPlan === 'starter' ? 'Connecting to Stripe...' : 'Activate Pro Starter Plan ($29/mo)'}
+                {loadingPlan === 'starter_29' ? 'Connecting to Stripe...' : 'Activate Pro Starter Plan ($29/mo)'}
               </button>
             </div>
           </div>
@@ -194,11 +194,11 @@ function VipContent() {
 
             <div className="mt-8 pt-6 border-t border-slate-800">
               <button
-                onClick={() => handleCheckout('vip')}
-                disabled={loadingPlan === 'vip'}
+                onClick={() => handleCheckout('vip_49')}
+                disabled={loadingPlan === 'vip_49'}
                 className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider py-4 rounded-xl transition duration-200 shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
               >
-                {loadingPlan === 'vip' ? 'Connecting to Stripe...' : 'Activate VIP Elite Plan ($49/mo)'}
+                {loadingPlan === 'vip_49' ? 'Connecting to Stripe...' : 'Activate VIP Elite Plan ($49/mo)'}
               </button>
             </div>
           </div>
