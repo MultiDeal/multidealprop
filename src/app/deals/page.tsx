@@ -92,9 +92,11 @@ function DealsContent() {
   const searchParams = useSearchParams();
   const urlTier = searchParams.get('tier') || searchParams.get('plan') || searchParams.get('status');
   
-  const [userTier, setUserTier] = useState<'starter' | 'vip'>('vip'); // VIP par défaut pour les abonnés connectés
+  const [userTier, setUserTier] = useState<'starter' | 'vip'>('vip');
   const [activeModalDeal, setActiveModalDeal] = useState<any | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [contactModalDeal, setContactModalDeal] = useState<any | null>(null);
+  const [copiedText, setCopiedText] = useState<string | null>(null);
 
   useEffect(() => {
     if (urlTier === 'vip' || urlTier === 'vip_49' || urlTier === 'elite') {
@@ -114,6 +116,16 @@ function DealsContent() {
   }, [urlTier]);
 
   const isVip = userTier === 'vip';
+
+  const handleCopy = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedText(label);
+    setTimeout(() => setCopiedText(null), 2500);
+  };
+
+  const getGmailUrl = (email: string, subject: string, body: string) => {
+    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
 
   return (
     <div className="min-h-screen bg-[#070b14] text-slate-100 py-10 px-4 sm:px-6 lg:px-8">
@@ -191,21 +203,102 @@ function DealsContent() {
               </div>
 
               <div className="space-y-3">
-                <a
-                  href="mailto:deals@multidealprop.com?subject=Billing%20Support%20Request"
-                  className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition border border-slate-700"
+                <button
+                  onClick={() => handleCopy('deals@multidealprop.com', 'support_email')}
+                  className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition border border-slate-700 cursor-pointer"
                 >
-                  Contact Billing Support / Update Card
-                </a>
+                  {copiedText === 'support_email' ? '✓ Support Email Copied!' : 'Copy Support Email: deals@multidealprop.com'}
+                </button>
                 
                 <button
                   onClick={() => {
                     localStorage.clear();
                     window.location.href = '/vip';
                   }}
-                  className="w-full text-center block text-xs text-red-400 hover:text-red-300 py-2 transition"
+                  className="w-full text-center block text-xs text-red-400 hover:text-red-300 py-2 transition cursor-pointer"
                 >
                   Sign Out from this Device
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Direct Wholesaler Contact / LOI (No Outlook popup!) */}
+        {contactModalDeal && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-[#0d1527] border border-slate-700 rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl">
+              <button 
+                onClick={() => setContactModalDeal(null)}
+                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold"
+              >
+                ✕
+              </button>
+              
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full uppercase">
+                  Direct Assignor Contact
+                </span>
+              </div>
+
+              <h3 className="text-xl font-black text-white mb-1">{contactModalDeal.title}</h3>
+              <p className="text-xs text-slate-400 mb-6">{contactModalDeal.address}</p>
+
+              {/* Contact Card */}
+              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 space-y-3 text-xs">
+                <div>
+                  <span className="text-slate-500 block uppercase font-bold text-[10px]">Assignor Name:</span>
+                  <span className="text-white font-semibold text-sm">{contactModalDeal.wholesaler.name}</span>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+                  <div>
+                    <span className="text-slate-500 block uppercase font-bold text-[10px]">Direct Phone:</span>
+                    <span className="text-emerald-400 font-mono text-sm">{contactModalDeal.wholesaler.phone}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(contactModalDeal.wholesaler.phone, 'phone')}
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700"
+                  >
+                    {copiedText === 'phone' ? '✓ Copied' : 'Copy Phone'}
+                  </button>
+                </div>
+                <div className="flex justify-between items-center pt-2 border-t border-slate-800">
+                  <div>
+                    <span className="text-slate-500 block uppercase font-bold text-[10px]">Direct Email:</span>
+                    <span className="text-emerald-400 font-mono text-xs">{contactModalDeal.wholesaler.email}</span>
+                  </div>
+                  <button
+                    onClick={() => handleCopy(contactModalDeal.wholesaler.email, 'email')}
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700"
+                  >
+                    {copiedText === 'email' ? '✓ Copied' : 'Copy Email'}
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons: Open in Webmail / Gmail or Copy */}
+              <div className="space-y-3">
+                <a
+                  href={getGmailUrl(
+                    contactModalDeal.wholesaler.email,
+                    `LOI Submission / Inquiry - ${contactModalDeal.address}`,
+                    `Hello ${contactModalDeal.wholesaler.name},\n\nI am writing to inquire about the assignment contract for ${contactModalDeal.address} (${contactModalDeal.price}). Please send over the complete diligence packet and current title status.\n\nBest regards.`
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full text-center block bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition shadow-lg shadow-red-900/30 cursor-pointer"
+                >
+                  ✉️ Open Compose in Gmail Web &rarr;
+                </a>
+
+                <button
+                  onClick={() => {
+                    const fullInfo = `Deal: ${contactModalDeal.title}\nAddress: ${contactModalDeal.address}\nPrice: ${contactModalDeal.price}\nAssignor: ${contactModalDeal.wholesaler.name}\nPhone: ${contactModalDeal.wholesaler.phone}\nEmail: ${contactModalDeal.wholesaler.email}`;
+                    handleCopy(fullInfo, 'full_deal');
+                  }}
+                  className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition border border-slate-700 cursor-pointer"
+                >
+                  {copiedText === 'full_deal' ? '✓ Complete Deal & Assignor Details Copied!' : '📋 Copy All Contact Info to Clipboard'}
                 </button>
               </div>
             </div>
@@ -222,12 +315,12 @@ function DealsContent() {
                 <p className="text-slate-400 text-xs">Need off-market multifamily in a specific county? Request a custom acquisition scan.</p>
               </div>
             </div>
-            <a
-              href="mailto:deals@multidealprop.com?subject=VIP%20Custom%20Scan%20Request"
-              className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg transition shrink-0"
+            <button
+              onClick={() => handleCopy('deals@multidealprop.com?subject=VIP%20Custom%20Scan%20Request', 'scan_email')}
+              className="bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold text-xs uppercase tracking-wider px-4 py-2 rounded-lg transition shrink-0 cursor-pointer"
             >
-              Request Custom Scan
-            </a>
+              {copiedText === 'scan_email' ? '✓ Request Link Copied!' : 'Request Custom Scan'}
+            </button>
           </div>
         )}
 
@@ -344,12 +437,12 @@ function DealsContent() {
                       >
                         🔍 View Full Due Diligence & Photos
                       </button>
-                      <a
-                        href={`mailto:${deal.wholesaler.email}?subject=LOI%20Submission%20-%20${encodeURIComponent(deal.address)}`}
+                      <button
+                        onClick={() => setContactModalDeal(deal)}
                         className="w-full text-center block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 shadow-md shadow-emerald-500/10 cursor-pointer"
                       >
                         Connect with Assignor &rarr;
-                      </a>
+                      </button>
                     </>
                   )}
                 </div>
@@ -435,12 +528,15 @@ function DealsContent() {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <a
-                  href={`mailto:${activeModalDeal.wholesaler.email}?subject=Letter%20of%20Intent%20(LOI)%20-%20${encodeURIComponent(activeModalDeal.address)}`}
-                  className="flex-1 text-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-4 rounded-xl transition shadow-lg shadow-emerald-500/20"
+                <button
+                  onClick={() => {
+                    setActiveModalDeal(null);
+                    setContactModalDeal(activeModalDeal);
+                  }}
+                  className="flex-1 text-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-4 rounded-xl transition shadow-lg shadow-emerald-500/20 cursor-pointer"
                 >
-                  Submit LOI to Assignor &rarr;
-                </a>
+                  Submit LOI / Connect Directly &rarr;
+                </button>
               </div>
 
             </div>
