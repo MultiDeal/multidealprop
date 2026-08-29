@@ -9,20 +9,20 @@ function VipContent() {
   const isSuccess = searchParams.get('success') === 'true';
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleCheckout = async (tier: 'starter' | 'vip') => {
+  const handleCheckout = async (plan: 'starter' | 'vip') => {
     try {
-      setLoadingPlan(tier);
-      const res = await fetch('/api/stripe/checkout', {
+      setLoadingPlan(plan);
+      const res = await fetch('/api/checkout/vip', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tier }),
+        body: JSON.stringify({ plan, tier: plan }),
       });
 
       const data = await res.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        alert('Unable to initiate checkout. Please try again.');
+        alert(data.error || 'Unable to initiate checkout. Please try again.');
         setLoadingPlan(null);
       }
     } catch (err) {
@@ -140,7 +140,7 @@ function VipContent() {
               <button
                 onClick={() => handleCheckout('starter')}
                 disabled={loadingPlan === 'starter'}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm py-4 rounded-xl transition duration-200 border border-slate-700 disabled:opacity-50"
+                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold text-sm py-4 rounded-xl transition duration-200 border border-slate-700 disabled:opacity-50 cursor-pointer"
               >
                 {loadingPlan === 'starter' ? 'Connecting to Stripe...' : 'Activate Pro Starter Plan ($29/mo)'}
               </button>
@@ -196,7 +196,7 @@ function VipContent() {
               <button
                 onClick={() => handleCheckout('vip')}
                 disabled={loadingPlan === 'vip'}
-                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider py-4 rounded-xl transition duration-200 shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                className="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-sm uppercase tracking-wider py-4 rounded-xl transition duration-200 shadow-lg shadow-emerald-500/20 disabled:opacity-50 cursor-pointer"
               >
                 {loadingPlan === 'vip' ? 'Connecting to Stripe...' : 'Activate VIP Elite Plan ($49/mo)'}
               </button>
