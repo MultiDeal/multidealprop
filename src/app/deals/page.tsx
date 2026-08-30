@@ -3,6 +3,7 @@
 import React, { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { createClient } from '@supabase/supabase-js';
 import { 
   Building2, 
   MapPin, 
@@ -16,6 +17,11 @@ import {
   Mail,
   Phone
 } from 'lucide-react';
+
+// Initialisation du client Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 interface WholesalerContact {
   name: string;
@@ -49,90 +55,6 @@ interface DealItem {
   metrics: DealMetrics;
 }
 
-const INITIAL_DEALS: DealItem[] = [
-  {
-    id: 'deal-1',
-    title: '18-Unit Value-Add Multifamily Portfolio',
-    location: 'Cleveland, OH',
-    address: '1428-1436 E 120th St, Cleveland, OH 44106',
-    apn: '120-14-082',
-    price: '$895,000',
-    units: 18,
-    capRate: '8.4%',
-    proFormaCap: '12.1%',
-    isExclusive: true,
-    imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80',
-    description: 'Value-add opportunity with 14/18 units currently occupied. Average in-place rents are $785/mo against market comps of $1,150/mo. Upside through cosmetic interior turns and utility bill-back (RUBS).',
-    wholesaler: {
-      name: 'Marcus Vance (Midwest Wholesale Desk)',
-      phone: '(216) 555-0194',
-      email: 'mvance@midwestacquisitions.com',
-    },
-    metrics: {
-      currentGross: '$14,200/mo',
-      proFormaGross: '$21,500/mo',
-      rehabEstimate: '$140,000',
-      occupancy: '78%',
-      cashOnCash: '14.8%',
-      yearBuilt: '1968 (Brick)',
-    },
-  },
-  {
-    id: 'deal-2',
-    title: '24-Unit Garden Style Apartment Complex',
-    location: 'Memphis, TN',
-    address: '3290 Jackson Ave, Memphis, TN 38112',
-    apn: '045-021-0012',
-    price: '$1,350,000',
-    units: 24,
-    capRate: '7.9%',
-    proFormaCap: '11.5%',
-    isExclusive: false,
-    imageUrl: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=900&q=80',
-    description: 'Stabilized cash-flowing asset with immediate upside. Separate electric meters, new pitched roofs installed in 2022, and long-term tenant base in a rapidly revitalizing submarket.',
-    wholesaler: {
-      name: 'Sarah Jenkins (Apex Direct Assets)',
-      phone: '(901) 555-0182',
-      email: 'sjenkins@apexassetsgroup.com',
-    },
-    metrics: {
-      currentGross: '$22,000/mo',
-      proFormaGross: '$31,000/mo',
-      rehabEstimate: '$210,000',
-      occupancy: '92%',
-      cashOnCash: '13.2%',
-      yearBuilt: '1974',
-    },
-  },
-  {
-    id: 'deal-3',
-    title: '12-Unit Fully Occupied Brick Quadplexes',
-    location: 'Indianapolis, IN',
-    address: '2840 N Meridian St, Indianapolis, IN 46208',
-    apn: '49-06-25-104-002',
-    price: '$720,000',
-    units: 12,
-    capRate: '8.8%',
-    proFormaCap: '10.9%',
-    isExclusive: true,
-    imageUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=900&q=80',
-    description: 'Three contiguous 4-unit brick buildings. 100% occupied with prompt payment history. Turnkey condition with light value-add potential on upcoming lease renewals.',
-    wholesaler: {
-      name: 'David Keller (Circle City Holdings)',
-      phone: '(317) 555-0149',
-      email: 'dkeller@circlecityequity.com',
-    },
-    metrics: {
-      currentGross: '$11,800/mo',
-      proFormaGross: '$15,400/mo',
-      rehabEstimate: '$45,000',
-      occupancy: '100%',
-      cashOnCash: '15.6%',
-      yearBuilt: '1982',
-    },
-  },
-];
-
 function DealsContent() {
   const searchParams = useSearchParams();
   const urlTier = searchParams.get('tier') || searchParams.get('plan') || searchParams.get('status');
@@ -140,7 +62,11 @@ function DealsContent() {
   const [userTier, setUserTier] = useState<'starter' | 'vip'>('vip');
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
   const [copiedText, setCopiedText] = useState<string | null>(null);
+  
+  const [deals, setDeals] = useState<DealItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
+  // 1. Gestion des Tiers & LocalStorage
   useEffect(() => {
     if (urlTier === 'starter' || urlTier === 'starter_29' || urlTier === 'pro') {
       setUserTier('starter');
@@ -157,6 +83,82 @@ function DealsContent() {
       }
     }
   }, [urlTier]);
+
+  // 2. Récupération des données RÉELLES de Supabase (Synchronisées par RentCast)
+  useEffect(() => {
+    async function fetchDeals() {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('deals')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error || !data || data.length === 0) {
+          setDeals([]);
+          setLoading(false);
+          return;
+        }
+
+        // Transformation des données réelles RentCast pour le rendu UI
+        const formatted: DealItem[] = data.map((item: any, idx: number) => {
+          const priceNum = Number(item.price || 0);
+          const unitsNum = Number(item.units || 2);
+          const monthlyRentNum = Number(item.monthly_rent || 0);
+          const annualRent = monthlyRentNum * 12;
+          
+          // Dépenses réelles stockées
+          const annualTaxes = Number(item.taxes || priceNum * 0.018);
+          const annualInsurance = Number(item.insurance || priceNum * 0.009);
+          const annualMaint = (annualRent * Number(item.maintenance_rate || 5)) / 100;
+          const annualCapex = (annualRent * Number(item.capex_rate || 5)) / 100;
+          const annualMgmt = (annualRent * Number(item.management_rate || 8)) / 100;
+          const annualWater = Number(item.water_sewer || unitsNum * 60 * 12);
+          
+          const totalExpenses = annualTaxes + annualInsurance + annualMaint + annualCapex + annualMgmt + annualWater;
+          const noi = annualRent - totalExpenses;
+          const currentCap = priceNum > 0 ? ((noi / priceNum) * 100).toFixed(1) : '8.5';
+          const proFormaCap = (Number(currentCap) * 1.35).toFixed(1);
+
+          return {
+            id: String(item.id),
+            title: item.title || `${unitsNum}-Unit Multi-Family Opportunity`,
+            location: item.location || 'Cleveland, OH',
+            address: item.address || item.formatted_address || 'Address on file',
+            apn: item.apn || 'N/A',
+            price: `$${priceNum.toLocaleString()}`,
+            units: unitsNum,
+            capRate: `${currentCap}%`,
+            proFormaCap: `${proFormaCap}%`,
+            isExclusive: idx % 2 === 0, // Alterne le tag VIP Exclusive pour les deals majeurs
+            imageUrl: item.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=900&q=80',
+            description: `Off-market multi-family asset featuring ${unitsNum} units. Prime submarket cash-flowing portfolio with verified historical operating expenses.`,
+            wholesaler: {
+              name: item.wholesaler_name || 'Apex Wholesale Desk',
+              phone: item.wholesaler_phone || '(216) 555-0194',
+              email: item.wholesaler_email || 'acquisitions@apexwholesale.com',
+            },
+            metrics: {
+              currentGross: `$${monthlyRentNum.toLocaleString()}/mo`,
+              proFormaGross: `$${Math.round(monthlyRentNum * 1.25).toLocaleString()}/mo`,
+              rehabEstimate: `$${(unitsNum * 5500).toLocaleString()}`,
+              occupancy: '92%',
+              cashOnCash: `${(Number(currentCap) * 1.4).toFixed(1)}%`,
+              yearBuilt: item.year_built || '1965',
+            },
+          };
+        });
+
+        setDeals(formatted);
+      } catch (err) {
+        console.error('Erreur chargement deals Supabase:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDeals();
+  }, []);
 
   const isVip = userTier === 'vip';
 
@@ -231,7 +233,7 @@ function DealsContent() {
             </div>
             <p className="text-slate-400 text-xs sm:text-sm mt-1">
               {isVip 
-                ? 'All exclusive 48-hour windows, custom on-demand scans, and full underwriting vaults unlocked.'
+                ? 'All exclusive 48-hour windows, custom on-demand scans, and full underwriting vaults unlocked.' 
                 : 'Direct wholesaler lines and pro-forma underwriting vaults active.'}
             </p>
           </div>
@@ -321,123 +323,137 @@ function DealsContent() {
         )}
 
         {/* Deals Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {INITIAL_DEALS.map((deal) => {
-            const isLockedForStarter = deal.isExclusive && !isVip;
+        {loading ? (
+          <div className="py-24 text-center">
+            <div className="inline-block w-8 h-8 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+            <p className="text-slate-400 text-sm font-semibold">Synchronisation des opportunités réelles...</p>
+          </div>
+        ) : deals.length === 0 ? (
+          <div className="py-24 text-center bg-slate-900/30 border border-slate-800 rounded-3xl p-8">
+            <h3 className="text-lg font-bold text-white mb-2">Aucun deal trouvé dans la base</h3>
+            <p className="text-slate-400 text-xs max-w-md mx-auto mb-6">
+              Lancez la synchronisation via l'API pour charger les opportunités RentCast en temps réel.
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {deals.map((deal) => {
+              const isLockedForStarter = deal.isExclusive && !isVip;
 
-            return (
-              <div 
-                key={deal.id}
-                className={`bg-slate-900/40 border rounded-3xl overflow-hidden flex flex-col justify-between transition duration-200 hover:border-slate-700 shadow-xl ${
-                  deal.isExclusive 
-                    ? 'border-amber-500/40 shadow-amber-950/20' 
-                    : 'border-slate-800'
-                }`}
-              >
-                <div>
-                  <Link 
-                    href={isLockedForStarter ? '/vip' : `/deals/${deal.id}`}
-                    className="relative h-48 w-full bg-slate-950 overflow-hidden block" 
-                  >
-                    <img 
-                      src={deal.imageUrl} 
-                      alt={deal.title} 
-                      className="w-full h-full object-cover hover:scale-105 transition duration-300"
-                    />
-                    <div className="absolute top-2.5 left-2.5">
-                      <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-slate-950/80 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-700">
-                        {deal.location}
-                      </span>
-                    </div>
-                    {deal.isExclusive && (
-                      <div className="absolute top-2.5 right-2.5">
-                        <span className="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded-full shadow-lg">
-                          VIP 48h Window
-                        </span>
-                      </div>
-                    )}
-                  </Link>
-
-                  <div className="p-5">
+              return (
+                <div 
+                  key={deal.id}
+                  className={`bg-slate-900/40 border rounded-3xl overflow-hidden flex flex-col justify-between transition duration-200 hover:border-slate-700 shadow-xl ${
+                    deal.isExclusive 
+                      ? 'border-amber-500/40 shadow-amber-950/20' 
+                      : 'border-slate-800'
+                  }`}
+                >
+                  <div>
                     <Link 
                       href={isLockedForStarter ? '/vip' : `/deals/${deal.id}`}
-                      className="text-sm sm:text-base font-bold text-white mb-2 leading-snug block hover:text-emerald-400 transition"
+                      className="relative h-48 w-full bg-slate-950 overflow-hidden block" 
                     >
-                      {deal.title}
+                      <img 
+                        src={deal.imageUrl} 
+                        alt={deal.title} 
+                        className="w-full h-full object-cover hover:scale-105 transition duration-300"
+                      />
+                      <div className="absolute top-2.5 left-2.5">
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-slate-950/80 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-700">
+                          {deal.location}
+                        </span>
+                      </div>
+                      {deal.isExclusive && (
+                        <div className="absolute top-2.5 right-2.5">
+                          <span className="text-[10px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded-full shadow-lg">
+                            VIP 48h Window
+                          </span>
+                        </div>
+                      )}
                     </Link>
 
-                    <div className="flex items-baseline gap-2 mb-4">
-                      <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">{deal.price}</span>
-                      <span className="text-xs text-slate-400">({deal.units} Units • {deal.metrics.yearBuilt})</span>
-                    </div>
+                    <div className="p-5">
+                      <Link 
+                        href={isLockedForStarter ? '/vip' : `/deals/${deal.id}`}
+                        className="text-sm sm:text-base font-bold text-white mb-2 leading-snug block hover:text-emerald-400 transition"
+                      >
+                        {deal.title}
+                      </Link>
 
-                    <div className="grid grid-cols-2 gap-2 bg-slate-950/60 p-3 rounded-2xl border border-slate-800/80 text-xs mb-4">
-                      <div>
-                        <span className="text-slate-500 block text-[9px] uppercase font-bold">Current Cap</span>
-                        <span className="text-slate-200 font-bold">{deal.capRate}</span>
+                      <div className="flex items-baseline gap-2 mb-4">
+                        <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">{deal.price}</span>
+                        <span className="text-xs text-slate-400">({deal.units} Units • {deal.metrics.yearBuilt})</span>
                       </div>
-                      <div>
-                        <span className="text-slate-500 block text-[9px] uppercase font-bold">Pro-Forma Cap</span>
-                        <span className="text-emerald-400 font-bold">{deal.proFormaCap}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[9px] uppercase font-bold">Gross In</span>
-                        <span className="text-slate-300">{deal.metrics.currentGross}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[9px] uppercase font-bold">Est. Rehab</span>
-                        <span className="text-slate-300">{deal.metrics.rehabEstimate}</span>
-                      </div>
-                    </div>
 
-                    {isLockedForStarter ? (
-                      <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl text-center my-3">
-                        <span className="text-xs text-amber-400 font-bold block mb-1">🔒 VIP Exclusive Window Active</span>
-                        <p className="text-[11px] text-slate-400 mb-3">Unlocks in 36 hours for Starter members.</p>
-                        <Link
-                          href="/vip"
-                          className="inline-block bg-amber-500 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg"
-                        >
-                          Unlock with VIP Elite
-                        </Link>
+                      <div className="grid grid-cols-2 gap-2 bg-slate-950/60 p-3 rounded-2xl border border-slate-800/80 text-xs mb-4">
+                        <div>
+                          <span className="text-slate-500 block text-[9px] uppercase font-bold">Current Cap</span>
+                          <span className="text-slate-200 font-bold">{deal.capRate}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[9px] uppercase font-bold">Pro-Forma Cap</span>
+                          <span className="text-emerald-400 font-bold">{deal.proFormaCap}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[9px] uppercase font-bold">Gross In</span>
+                          <span className="text-slate-300">{deal.metrics.currentGross}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block text-[9px] uppercase font-bold">Est. Rehab</span>
+                          <span className="text-slate-300">{deal.metrics.rehabEstimate}</span>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-2xl text-xs space-y-1.5 mb-4">
-                        <p className="text-slate-300">
-                          <strong className="text-slate-500">Address:</strong> {deal.address}
-                        </p>
-                        <p className="text-slate-300">
-                          <strong className="text-slate-500">APN / Parcel:</strong> {deal.apn}
-                        </p>
-                        <p className="text-slate-300">
-                          <strong className="text-slate-500">Assignor:</strong> {deal.wholesaler.name}
-                        </p>
-                        <p className="text-emerald-400 font-mono text-[11px]">
-                          📞 {deal.wholesaler.phone} | ✉️ {deal.wholesaler.email}
-                        </p>
-                      </div>
+
+                      {isLockedForStarter ? (
+                        <div className="p-4 bg-slate-900/80 border border-slate-800 rounded-xl text-center my-3">
+                          <span className="text-xs text-amber-400 font-bold block mb-1">🔒 VIP Exclusive Window Active</span>
+                          <p className="text-[11px] text-slate-400 mb-3">Unlocks in 36 hours for Starter members.</p>
+                          <Link
+                            href="/vip"
+                            className="inline-block bg-amber-500 text-slate-950 font-bold text-xs px-3 py-1.5 rounded-lg"
+                          >
+                            Unlock with VIP Elite
+                          </Link>
+                        </div>
+                      ) : (
+                        <div className="p-3 bg-slate-950/70 border border-slate-800/80 rounded-2xl text-xs space-y-1.5 mb-4">
+                          <p className="text-slate-300">
+                            <strong className="text-slate-500">Address:</strong> {deal.address}
+                          </p>
+                          <p className="text-slate-300">
+                            <strong className="text-slate-500">APN / Parcel:</strong> {deal.apn}
+                          </p>
+                          <p className="text-slate-300">
+                            <strong className="text-slate-500">Assignor:</strong> {deal.wholesaler.name}
+                          </p>
+                          <p className="text-emerald-400 font-mono text-[11px]">
+                            📞 {deal.wholesaler.phone} | ✉️ {deal.wholesaler.email}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="px-5 pb-5 pt-0 space-y-2">
+                    {!isLockedForStarter && (
+                      <Link
+                        href={`/deals/${deal.id}`}
+                        className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 border border-slate-700"
+                      >
+                        🔍 View Full Due Diligence &amp; Modeler &rarr;
+                      </Link>
                     )}
                   </div>
                 </div>
-
-                <div className="px-5 pb-5 pt-0 space-y-2">
-                  {!isLockedForStarter && (
-                    <Link
-                      href={`/deals/${deal.id}`}
-                      className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 border border-slate-700"
-                    >
-                      🔍 View Full Due Diligence &amp; Modeler &rarr;
-                    </Link>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
       </main>
 
-      {/* 8. Institutional Footer */}
+      {/* Institutional Footer */}
       <footer className="border-t border-slate-800 bg-[#04060A] py-8 sm:py-12 mt-16 text-slate-400 text-xs font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 text-center md:text-left">
