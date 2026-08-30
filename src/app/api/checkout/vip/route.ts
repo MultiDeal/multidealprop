@@ -1,57 +1,49 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+  apiVersion: '2023-10-16' as any,
+});
+
 export async function POST(req: Request) {
   try {
-    const secretKey = process.env.STRIPE_SECRET_KEY;
-    
-    if (!secretKey) {
-      return NextResponse.json(
-        { error: 'Clé secrète Stripe introuvable. Vérifiez STRIPE_SECRET_KEY dans Vercel.' },
-        { status: 500 }
-      );
-    }
+    const { plan } = await req.json();
 
-    const stripe = new Stripe(secretKey);
+    const isStarter = plan === 'starter_29';
+    const amount = isStarter ? 2900 : 4900;
+    const planName = isStarter ? 'MultiDealProp Pro Starter' : 'MultiDealProp VIP Elite';
+    const tierParam = isStarter ? 'starter' : 'vip';
 
-    const { plan, email } = await req.json();
-
-    let priceId = '';
-    if (plan === 'starter_29' || plan === 'pro') {
-      priceId = process.env.STRIPE_PRICE_ID_29 || '';
-    } else if (plan === 'vip_49' || plan === 'vip' || plan === 'elite') {
-      priceId = process.env.STRIPE_PRICE_ID_49 || '';
-    }
-
-    if (!priceId) {
-      return NextResponse.json(
-        { error: `ID de tarif manquant pour le forfait: ${plan}. Vérifiez STRIPE_PRICE_ID_29 ou STRIPE_PRICE_ID_49 dans Vercel.` },
-        { status: 400 }
-      );
-    }
-
-    const origin = req.headers.get('origin') || 'https://multidealprop.com';
+    const origin = req.headers.get('origin') || 'https://www.multidealprop.com';
 
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
         {
-          price: priceId,
+          price_data: {
+            currency: 'usd',
+            product_data: {
+              name: planName,
+              description: isStarter 
+                ? 'Direct Wholesaler Lines + Complete Pro-Forma Diligence' 
+                : '48h Exclusivity Window + 5 Custom Market Scans + Direct Contact Desk',
+            },
+            unit_amount: amount,
+            recurring: {
+              interval: 'month',
+            },
+          },
           quantity: 1,
         },
       ],
       mode: 'subscription',
-      customer_email: email || undefined,
-      metadata: {
-        plan: plan || 'starter_29',
-      },
-      success_url: `${origin}/vip?success=true&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${origin}/vip?success=true&tier=${tierParam}`,
       cancel_url: `${origin}/vip?canceled=true`,
     });
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error('Stripe VIP Checkout Error:', error);
+    console.error('Stripe error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
