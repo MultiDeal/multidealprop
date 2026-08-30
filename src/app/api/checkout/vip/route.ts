@@ -7,16 +7,16 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 export async function POST(req: Request) {
   try {
-    const { plan } = await req.json();
+    const { plan, email } = await req.json();
 
-    const isStarter = plan === 'starter_29';
+    const isStarter = plan === 'starter_29' || plan === 'starter';
     const amount = isStarter ? 2900 : 4900;
     const planName = isStarter ? 'MultiDealProp Pro Starter' : 'MultiDealProp VIP Elite';
     const tierParam = isStarter ? 'starter' : 'vip';
 
     const origin = req.headers.get('origin') || 'https://www.multidealprop.com';
 
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ['card'],
       line_items: [
         {
@@ -37,13 +37,27 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'subscription',
-      success_url: `${origin}/vip?success=true&tier=${tierParam}`,
+      metadata: {
+        plan_tier: tierParam,
+      },
+      subscription_data: {
+        metadata: {
+          plan_tier: tierParam,
+        },
+      },
+      success_url: `${origin}/deals?tier=${tierParam}&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/vip?canceled=true`,
-    });
+    };
+
+    if (email) {
+      sessionParams.customer_email = email.trim().toLowerCase();
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
-    console.error('Stripe error:', error);
+    console.error('Stripe Checkout error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
