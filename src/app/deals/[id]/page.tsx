@@ -22,10 +22,9 @@ import {
   CheckCircle2,
   Wrench,
   Compass,
-  Layers,
   BarChart3,
-  Calendar,
-  AlertCircle
+  FileText,
+  Share2
 } from 'lucide-react';
 
 interface UnitDetail {
@@ -342,16 +341,16 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
   const [userTier, setUserTier] = useState<string | null>(null);
 
-  // Stratégie d'Investissement
+  // 6. STRATÉGIE D'INVESTISSEMENT (EXIT STRATEGY TOGGLE)
   const [strategy, setStrategy] = useState<'BUY_HOLD' | 'BRRRR' | 'FLIP'>('BUY_HOLD');
 
-  // Paramètres de Calculatrice
+  // Paramètres de la Calculatrice
   const [purchasePrice, setPurchasePrice] = useState<number>(deal.price);
   const [downPercent, setDownPercent] = useState<number>(20);
   const [interestRate, setInterestRate] = useState<number>(7.25);
   const [loanTermYears, setLoanTermYears] = useState<number>(30);
   const [closingCostPercent, setClosingCostPercent] = useState<number>(2.5);
-  const [rehabBudget, setRehabBudget] = useState<number>(strategy === 'BRRRR' ? 35000 : 0);
+  const [rehabBudget, setRehabBudget] = useState<number>(0);
 
   // Revenus
   const [monthlyRent, setMonthlyRent] = useState<number>(deal.monthlyRent);
@@ -379,7 +378,15 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
     }
   }, []);
 
-  // --- MOTEUR DE CALCUL MATHEMATIQUE INSTITUTIONNEL ---
+  // Gestion du budget de rénovation selon la stratégie sélectionnée
+  const handleStrategyChange = (newStrategy: 'BUY_HOLD' | 'BRRRR' | 'FLIP') => {
+    setStrategy(newStrategy);
+    if (newStrategy === 'BUY_HOLD') setRehabBudget(0);
+    if (newStrategy === 'BRRRR') setRehabBudget(35000);
+    if (newStrategy === 'FLIP') setRehabBudget(45000);
+  };
+
+  // --- MOTEUR FINANCIER INSTITUTIONNEL ---
   const downPaymentAmount = (purchasePrice * downPercent) / 100;
   const loanAmount = Math.max(0, purchasePrice - downPaymentAmount);
   const closingCostsAmount = (loanAmount * closingCostPercent) / 100;
@@ -405,7 +412,6 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const monthlyOperatingExpenses = totalOperatingExpenses / 12;
 
   const annualNOI = effectiveGrossIncome - totalOperatingExpenses;
-  const monthlyNOI = annualNOI / 12;
   const capRate = purchasePrice > 0 ? ((annualNOI / purchasePrice) * 100).toFixed(2) : '0.00';
 
   const annualNetCashFlow = annualNOI - annualDebtService;
@@ -418,7 +424,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const dscr = annualDebtService > 0 ? (annualNOI / annualDebtService).toFixed(2) : 'N/A';
 
   // Projection 5 Ans
-  const propertyAppreciationRate = 0.03; // 3% / an
+  const propertyAppreciationRate = 0.03;
   const estimatedValueYear5 = Math.round(purchasePrice * Math.pow(1 + propertyAppreciationRate, 5));
   const estimatedEquityGain5Yrs = estimatedValueYear5 - purchasePrice;
   const totalCumulativeCashFlow5Yrs = Math.round(annualNetCashFlow * 5);
@@ -426,17 +432,18 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
     ? (((totalCumulativeCashFlow5Yrs + estimatedEquityGain5Yrs) / totalCashInvested) * 100 / 5).toFixed(1)
     : '0.0';
 
-  // Calculs Rent Roll Upside
+  // Rent Roll Upside
   const totalCurrentRent = deal.rentRoll.reduce((acc: number, u: UnitDetail) => acc + u.currentRent, 0);
   const totalMarketRent = deal.rentRoll.reduce((acc: number, u: UnitDetail) => acc + u.marketRent, 0);
   const monthlyRentUpside = totalMarketRent - totalCurrentRent;
 
-  // Calculs BRRRR / Refinance
+  // Calculs BRRRR
   const brrrrARV = deal.arv || purchasePrice * 1.35;
-  const brrrrRefinanceLoan = brrrrARV * 0.75; // 75% LTV Refinance
+  const brrrrRefinanceLoan = brrrrARV * 0.75;
   const brrrrCashLeftInDeal = Math.max(0, (purchasePrice + rehabBudget + closingCostsAmount) - brrrrRefinanceLoan);
 
-  const handlePrintDealMemo = () => {
+  // 5. FONCTION D'EXPORTATION DEAL MEMO PDF
+  const handleExportPDF = () => {
     window.print();
   };
 
@@ -456,15 +463,6 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
           </Link>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrintDealMemo}
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-200 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Export Deal Memo (PDF)</span>
-              <span className="sm:hidden">PDF</span>
-            </button>
-
             <Link 
               href={userTier ? '/deals' : '/'}
               className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition"
@@ -518,43 +516,69 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* STRATEGY TOGGLE BAR */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 scrollbar-none">
-          <button
-            onClick={() => { setStrategy('BUY_HOLD'); setRehabBudget(0); }}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer flex-shrink-0 ${
-              strategy === 'BUY_HOLD'
-                ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/20'
-                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            <span>1. Turnkey Cash-Flow (Buy &amp; Hold)</span>
-          </button>
+        {/* ========================================================================= */}
+        {/* SECTION 5 & 6 BIEN VISIBLES : STRATÉGIE (TOGGLE) + EXPORT PDF MEMO       */}
+        {/* ========================================================================= */}
+        <div className="bg-[#0b1120] border-2 border-emerald-500/40 rounded-3xl p-4 sm:p-5 mb-6 shadow-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          
+          {/* 6. SÉLECTEUR DE STRATÉGIE (EXIT STRATEGY TOGGLE) */}
+          <div className="space-y-1.5 flex-1">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block flex items-center gap-1.5">
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Select Acquisition &amp; Exit Strategy:
+            </span>
+            <div className="grid grid-cols-3 gap-2">
+              <button
+                onClick={() => handleStrategyChange('BUY_HOLD')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  strategy === 'BUY_HOLD'
+                    ? 'bg-emerald-500 text-black shadow-lg shadow-emerald-500/30'
+                    : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span className="truncate">Buy &amp; Hold</span>
+              </button>
 
-          <button
-            onClick={() => { setStrategy('BRRRR'); setRehabBudget(35000); }}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer flex-shrink-0 ${
-              strategy === 'BRRRR'
-                ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/20'
-                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
-            }`}
-          >
-            <Flame className="w-4 h-4" />
-            <span>2. Value-Add BRRRR Strategy</span>
-          </button>
+              <button
+                onClick={() => handleStrategyChange('BRRRR')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  strategy === 'BRRRR'
+                    ? 'bg-cyan-400 text-black shadow-lg shadow-cyan-400/30'
+                    : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                }`}
+              >
+                <Flame className="w-3.5 h-3.5" />
+                <span className="truncate">BRRRR Method</span>
+              </button>
 
-          <button
-            onClick={() => { setStrategy('FLIP'); setRehabBudget(45000); }}
-            className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer flex-shrink-0 ${
-              strategy === 'FLIP'
-                ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20'
-                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
-            }`}
-          >
-            <Coins className="w-4 h-4" />
-            <span>3. Fix &amp; Flip Arbitrage</span>
-          </button>
+              <button
+                onClick={() => handleStrategyChange('FLIP')}
+                className={`py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                  strategy === 'FLIP'
+                    ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/30'
+                    : 'bg-slate-900 text-slate-400 border border-slate-800 hover:text-white'
+                }`}
+              >
+                <Coins className="w-3.5 h-3.5" />
+                <span className="truncate">Fix &amp; Flip</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 5. BOUTON EXPORT EXECUTIVE DEAL MEMO (PDF) */}
+          <div className="md:border-l md:border-slate-800 md:pl-4 flex flex-col justify-center">
+            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
+              Lender Diligence Packet:
+            </span>
+            <button
+              onClick={handleExportPDF}
+              className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <FileText className="w-4 h-4" />
+              <span>Export Deal Memo (PDF)</span>
+            </button>
+          </div>
+
         </div>
 
         {/* 2-Column Institutional Grid */}
@@ -594,7 +618,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* BRRRR & FLIP SPECIFIC BOX */}
+            {/* BRRRR / FLIP SIMULATION CARD */}
             {strategy === 'BRRRR' && (
               <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-5 rounded-3xl shadow-xl">
                 <div className="flex items-center gap-2 mb-3">
