@@ -235,8 +235,8 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const dealId = resolvedParams.id || '1';
   const deal = DEALS_DATABASE[dealId] || DEALS_DATABASE['1'];
 
-  // Session & Tier
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
+  // Verrouillage par défaut pour tout utilisateur non connecté
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [userTier, setUserTier] = useState<string | null>(null);
 
   // Galerie photos
@@ -246,7 +246,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   // Stratégie d'Acquisition
   const [strategy, setStrategy] = useState<'BUY_HOLD' | 'BRRRR' | 'FLIP'>('BUY_HOLD');
 
-  // --- MEGA CALCULATRICE: FINANCEMENT ET CAPITAL STACK ---
+  // Paramètres de Financement
   const [purchasePrice, setPurchasePrice] = useState<number>(deal.price);
   const [downPercent, setDownPercent] = useState<number>(20);
   const [interestRate, setInterestRate] = useState<number>(7.25);
@@ -260,7 +260,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const [otherMonthlyIncome, setOtherMonthlyIncome] = useState<number>(deal.otherIncome || 0);
   const [vacancyRate, setVacancyRate] = useState<number>(deal.vacancyRate || 5);
 
-  // Dépenses Opérationnelles (Opex)
+  // Dépenses Opérationnelles
   const [annualTaxes, setAnnualTaxes] = useState<number>(deal.taxes);
   const [annualInsurance, setAnnualInsurance] = useState<number>(deal.insurance);
   const [managementRate, setManagementRate] = useState<number>(deal.managementRate || 8);
@@ -268,7 +268,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const [capexRate, setCapexRate] = useState<number>(deal.capexRate || 5);
   const [annualUtilities, setAnnualUtilities] = useState<number>(deal.waterSewer || 0);
 
-  // Modélisation de Sortie & Fiscalité
+  // Modélisation de Sortie
   const [holdingPeriodYears, setHoldingPeriodYears] = useState<number>(5);
   const [exitCapRate, setExitCapRate] = useState<number>(7.5);
   const [annualAppreciation, setAnnualAppreciation] = useState<number>(3.0);
@@ -279,6 +279,18 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const [loiSubmitted, setLoiSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
+    // Vérifier les paramètres d'URL en priorité (?tier=starter ou ?tier=vip)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tierParam = urlParams.get('tier');
+
+    if (tierParam === 'starter' || tierParam === 'vip') {
+      localStorage.setItem('multidealprop_tier', tierParam);
+      setIsUnlocked(true);
+      setUserTier(tierParam);
+      return;
+    }
+
+    // Sinon vérifier le stockage local
     const saved = localStorage.getItem('multidealprop_tier');
     if (saved === 'vip' || saved === 'starter') {
       setIsUnlocked(true);
@@ -296,7 +308,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
     if (newStrategy === 'FLIP') setRehabBudget(45000);
   };
 
-  // --- MOTEUR DE CALCUL MATHEMATIQUE INSTITUTIONNEL ---
+  // --- CALCULS FINANCIERS ---
   const downPaymentAmount = (purchasePrice * downPercent) / 100;
   const loanAmount = Math.max(0, purchasePrice - downPaymentAmount);
   const closingCostsAmount = (loanAmount * closingCostPercent) / 100;
@@ -305,7 +317,6 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const monthlyInterestRate = interestRate / 100 / 12;
   const numberOfPayments = loanTermYears * 12;
 
-  // Calcul P&I Hypothécaire Mensuel (Amorti vs Interest-Only)
   const isCurrentlyIO = interestOnlyYears > 0;
   const monthlyMortgage = (downPercent === 100 || loanAmount <= 0) 
     ? 0 
@@ -315,19 +326,16 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
         (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
   const annualDebtService = monthlyMortgage * 12;
 
-  // Revenus
   const grossScheduledAnnualRent = (monthlyRent + otherMonthlyIncome) * 12;
   const annualVacancyLoss = (grossScheduledAnnualRent * vacancyRate) / 100;
   const effectiveGrossIncome = grossScheduledAnnualRent - annualVacancyLoss;
 
-  // Opex
   const annualManagementFee = (effectiveGrossIncome * managementRate) / 100;
   const annualMaintenance = (effectiveGrossIncome * maintenanceRate) / 100;
   const annualCapex = (effectiveGrossIncome * capexRate) / 100;
   const totalOperatingExpenses = annualTaxes + annualInsurance + annualManagementFee + annualMaintenance + annualCapex + annualUtilities;
   const monthlyOperatingExpenses = totalOperatingExpenses / 12;
 
-  // Métriques Clés
   const annualNOI = effectiveGrossIncome - totalOperatingExpenses;
   const monthlyNOI = annualNOI / 12;
   const capRate = purchasePrice > 0 ? ((annualNOI / purchasePrice) * 100).toFixed(2) : '0.00';
@@ -341,24 +349,18 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
 
   const dscr = annualDebtService > 0 ? (annualNOI / annualDebtService).toFixed(2) : 'N/A';
 
-  // Stress Test & Break-Even Occupancy
   const totalFixedCostsAnnual = totalOperatingExpenses + annualDebtService;
   const breakEvenOccupancy = grossScheduledAnnualRent > 0 
     ? Math.min(100, Math.round((totalFixedCostsAnnual / grossScheduledAnnualRent) * 100))
     : 0;
 
-  // Ingénierie Fiscale (IRS 27.5 Years Straight-Line Depreciation)
-  const buildingBasis = (purchasePrice + rehabBudget) * 0.80; // 80% Bâtiment, 20% Terrain
+  const buildingBasis = (purchasePrice + rehabBudget) * 0.80;
   const annualDepreciation = buildingBasis / 27.5;
-  const taxableIncomeYear1 = Math.max(0, annualNOI - (loanAmount * (interestRate / 100)) - annualDepreciation);
   const annualTaxSaved = annualDepreciation * (marginalTaxRate / 100);
-  const taxShelteredCashFlow = Math.min(annualNetCashFlow, annualDepreciation);
 
-  // Modélisation Sortie & Amortissement Multi-Annuel
   const futureAnnualNOI = annualNOI * Math.pow(1 + (annualRentGrowth / 100), holdingPeriodYears);
   const projectedExitSalePrice = exitCapRate > 0 ? Math.round(futureAnnualNOI / (exitCapRate / 100)) : purchasePrice;
-  
-  // Tableau d'Amortissement Dynamique sur 30 Ans
+
   const amortizationSchedule: Array<{
     year: number;
     remainingBalance: number;
@@ -396,24 +398,20 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
     });
   }
 
-  // Calcul du TRI (IRR) & Multiple d'Équité à l'année sélectionnée
   const exitYearData = amortizationSchedule[Math.min(holdingPeriodYears - 1, amortizationSchedule.length - 1)] || amortizationSchedule[0];
   const netProceedsAtSale = projectedExitSalePrice - (projectedExitSalePrice * 0.06) - (exitYearData?.remainingBalance || 0);
   const totalCumulativeCashFlow = Math.round(annualNetCashFlow * holdingPeriodYears);
   const totalReturnDollars = netProceedsAtSale + totalCumulativeCashFlow;
   const equityMultiple = totalCashInvested > 0 ? (totalReturnDollars / totalCashInvested).toFixed(2) : '0.00';
   
-  // TRI / IRR approximé
   const estimatedIRR = totalCashInvested > 0 
     ? ((Math.pow(Math.max(0.1, totalReturnDollars / totalCashInvested), 1 / holdingPeriodYears) - 1) * 100).toFixed(1)
     : '0.0';
 
-  // Rent Roll Upside
   const totalCurrentRent = deal.rentRoll.reduce((acc: number, u: UnitDetail) => acc + u.currentRent, 0);
   const totalMarketRent = deal.rentRoll.reduce((acc: number, u: UnitDetail) => acc + u.marketRent, 0);
   const monthlyRentUpside = totalMarketRent - totalCurrentRent;
 
-  // Calculs BRRRR
   const brrrrARV = deal.arv || purchasePrice * 1.35;
   const brrrrRefinanceLoan = brrrrARV * 0.75;
   const brrrrCashLeftInDeal = Math.max(0, (purchasePrice + rehabBudget + closingCostsAmount) - brrrrRefinanceLoan);
@@ -496,7 +494,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* STRATÉGIE & EXPORT MEMO BAR */}
+        {/* Stratégie & Export */}
         <div className="bg-[#0b1120] border-2 border-emerald-500/40 rounded-3xl p-4 sm:p-5 mb-6 shadow-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           <div className="space-y-1.5 flex-1">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block flex items-center gap-1.5">
@@ -561,7 +559,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
           {/* Main Left Column (2/3) */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* GALERIE MULTI-PHOTOS INTERACTIVE */}
+            {/* Galerie Photos */}
             <div className="space-y-3">
               <div className="h-72 sm:h-96 rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl relative">
                 <img 
@@ -615,7 +613,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* BRRRR SPECIAL MATRIX */}
+            {/* BRRRR Simulation */}
             {strategy === 'BRRRR' && (
               <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-5 rounded-3xl shadow-xl">
                 <div className="flex items-center gap-2 mb-3">
@@ -643,7 +641,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
 
-            {/* RENT ROLL & UNIT MIX ANALYSIS */}
+            {/* Rent Roll */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
                 <div>
@@ -684,7 +682,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* MEGA CALCULATRICE HYPOTHÉCAIRE & SOUSCRIPTION COMPLETE */}
+            {/* Calculatrice & Souscription */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-6">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-800/80 pb-4">
                 <div>
@@ -699,7 +697,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
                 </span>
               </div>
 
-              {/* 1. Financement & Structure de Dette */}
+              {/* Financement */}
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-1.5">
                   <Coins className="w-3.5 h-3.5" />
@@ -794,7 +792,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
 
-              {/* 2. Opex & Charges Détaillées */}
+              {/* Opex */}
               <div>
                 <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-1.5">
                   <Sliders className="w-3.5 h-3.5" />
@@ -864,7 +862,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
 
-              {/* 3. Ingénierie Fiscale (IRS Tax Shelter) */}
+              {/* Fiscalité */}
               <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800">
                 <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center justify-between">
                   <span>🏛️ IRS 27.5-Year Depreciation &amp; Tax Shelter Analysis</span>
@@ -876,11 +874,11 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
                     <strong className="text-white font-mono text-sm block mt-0.5">${Math.round(buildingBasis).toLocaleString()}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Depreciation Write-off</span>
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Depreciation</span>
                     <strong className="text-cyan-300 font-mono text-sm block mt-0.5">${Math.round(annualDepreciation).toLocaleString()} / yr</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Tax Shelter Shield</span>
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Tax Savings</span>
                     <strong className="text-emerald-400 font-mono text-sm block mt-0.5">${Math.round(annualTaxSaved).toLocaleString()} / yr</strong>
                   </div>
                   <div>
@@ -890,13 +888,13 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
                 </div>
               </div>
 
-              {/* Stress Test & Break-Even Ratio */}
+              {/* Break-Even */}
               <div className="bg-amber-950/20 border border-amber-500/30 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
                   <div>
                     <strong className="text-white block font-bold">Break-Even Occupancy Threshold: {breakEvenOccupancy}%</strong>
-                    <span className="text-slate-400">La propriété reste à flux de trésorerie positif même avec jusqu'à {100 - breakEvenOccupancy}% d'inoccupation.</span>
+                    <span className="text-slate-400">La propriété reste à flux positif même avec jusqu'à {100 - breakEvenOccupancy}% d'inoccupation.</span>
                   </div>
                 </div>
                 <span className="text-xs font-mono font-black text-amber-300 bg-amber-900/60 px-3 py-1 rounded-xl border border-amber-500/40">
@@ -904,7 +902,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
                 </span>
               </div>
 
-              {/* TABLEAU D'AMORTISSEMENT DÉPLIABLE (30 ANS) */}
+              {/* Amortissement */}
               <div className="border border-slate-800 rounded-2xl overflow-hidden">
                 <button
                   onClick={() => setShowAmortizationTable(!showAmortizationTable)}
@@ -949,7 +947,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
 
             </div>
 
-            {/* EXIT & IRR WATERFALL PROJECTION */}
+            {/* Exit Waterfall */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
                 <div>
@@ -994,7 +992,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* PHYSICAL MECHANICS & INSPECTION AUDIT */}
+            {/* Fiche Mécanique */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-3">
                 <Wrench className="w-5 h-5 text-amber-400" />
@@ -1032,7 +1030,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* NEIGHBORHOOD MARKET COMPS */}
+            {/* Comparables */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-3">
                 <Compass className="w-5 h-5 text-cyan-400" />
@@ -1064,10 +1062,10 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
 
           </div>
 
-          {/* Right Column (1/3): Assignor Contacts & LOI Submission */}
+          {/* Right Column (1/3): Contacts & LOI */}
           <div className="space-y-6">
             
-            {/* Direct Wholesaler Desk Card */}
+            {/* CARTE CONTACTS WHOLESALER : FLOUTÉE SI NON ABONNÉ */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl sticky top-20">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">Direct Wholesaler Desk</h3>
@@ -1111,13 +1109,14 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               ) : (
                 <div>
                   <div className="relative p-5 bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden mb-4 select-none">
-                    <div className="filter blur-sm space-y-2 text-xs text-slate-400">
-                      <p className="font-bold text-white">Apex Wholesale Acquisitions Group</p>
-                      <p>+1 (216) 555-0194</p>
-                      <p>acquisitions@wholesale.com</p>
+                    <div className="filter blur-md space-y-2 text-xs text-slate-400 pointer-events-none">
+                      <p className="font-bold text-white">{deal.wholesaler.name}</p>
+                      <p className="font-mono text-emerald-400">{deal.wholesaler.phone}</p>
+                      <p className="font-mono text-xs">{deal.wholesaler.email}</p>
                     </div>
-                    <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
-                      <Lock className="w-6 h-6 text-amber-400" />
+                    <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-[2px] flex flex-col items-center justify-center p-3 text-center">
+                      <Lock className="w-7 h-7 text-amber-400 mb-1" />
+                      <span className="text-[11px] font-black uppercase tracking-wider text-white">Assignor Contact Locked</span>
                     </div>
                   </div>
 
@@ -1135,7 +1134,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               )}
             </div>
 
-            {/* Fast-Track LOI Generator */}
+            {/* LOI Generator */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-base">🚀</span>
@@ -1161,12 +1160,12 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
                       : 'bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed'
                   }`}
                 >
-                  {isUnlocked ? 'Generate & Submit LOI (PDF)' : '🔒 Unlock LOI Generator (Basic/VIP)'}
+                  {isUnlocked ? 'Generate & Submit LOI (PDF)' : '🔒 Unlock LOI Generator (Starter/VIP)'}
                 </button>
               )}
             </div>
 
-            {/* Satellite Area Map */}
+            {/* Radar Map */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-5 shadow-xl">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">Target Market Geospatial Radar</span>
               <div className="h-44 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 relative flex items-center justify-center">
