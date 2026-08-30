@@ -1,613 +1,354 @@
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { use, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { 
+  Building2, 
+  MapPin, 
+  PlusCircle, 
+  Settings, 
+  ShieldCheck, 
+  Zap, 
+  ArrowLeft,
+  Lock,
+  Unlock,
+  Calculator,
+  FileText
+} from 'lucide-react';
 
-export default function DealDetailsPage() {
-  const params = useParams();
-  const [userTier, setUserTier] = useState<string | null>(null);
-  const [downloading, setDownloading] = useState<boolean>(false);
+const DEALS_DATABASE: Record<string, any> = {
+  '1': {
+    id: '1',
+    title: 'Turnkey Multi-Family Duplex - Fully Leased',
+    location: 'Cleveland, OH',
+    address: '1428-1436 E 120th St, Cleveland, OH 44106',
+    apn: '120-14-082',
+    price: 98000,
+    units: 2,
+    monthlyRent: 1250,
+    grossAnnual: 15000,
+    vacancyRate: 0.05,
+    taxes: 1420,
+    insurance: 850,
+    managementRate: 0.08,
+    capexRate: 0.05,
+    waterSewer: 780,
+    imageUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
+    wholesaler: {
+      name: 'Apex Wholesaler Capital LLC (Marcus Vance)',
+      phone: '(216) 555-0194',
+      email: 'acquisitions@apexwholesale.com',
+    }
+  },
+  '2': {
+    id: '2',
+    title: '12-Unit Commercial Multi-Family Complex',
+    location: 'Memphis, TN',
+    address: '3290 Jackson Ave, Memphis, TN 38112',
+    apn: '045-021-0012',
+    price: 640000,
+    units: 12,
+    monthlyRent: 9600,
+    grossAnnual: 115200,
+    vacancyRate: 0.05,
+    taxes: 8400,
+    insurance: 4200,
+    managementRate: 0.08,
+    capexRate: 0.05,
+    waterSewer: 3600,
+    imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+    wholesaler: {
+      name: 'Mid-South Real Estate Assignors (Sarah Jenkins)',
+      phone: '(901) 555-0182',
+      email: 'deals@midsouthwholesalers.com',
+    }
+  },
+  '3': {
+    id: '3',
+    title: 'Mixed-Use Commercial: Ground Retail + 4 Apts',
+    location: 'Detroit, MI',
+    address: '8420 Grand River Ave, Detroit, MI 48206',
+    apn: '080-04-192',
+    price: 295000,
+    units: 5,
+    monthlyRent: 4800,
+    grossAnnual: 57600,
+    vacancyRate: 0.05,
+    taxes: 3800,
+    insurance: 2100,
+    managementRate: 0.08,
+    capexRate: 0.05,
+    waterSewer: 1600,
+    imageUrl: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=1200&q=80',
+    wholesaler: {
+      name: 'Motor City Contract Desk (David Keller)',
+      phone: '(313) 555-0149',
+      email: 'keller@motorcityassets.com',
+    }
+  },
+  '4': {
+    id: '4',
+    title: 'Cash-Flow 4-Plex Value-Add Opportunity',
+    location: 'Cleveland, OH',
+    address: '10408 St Clair Ave, Cleveland, OH 44108',
+    apn: '108-22-045',
+    price: 135000,
+    units: 4,
+    monthlyRent: 2400,
+    grossAnnual: 28800,
+    vacancyRate: 0.05,
+    taxes: 1950,
+    insurance: 1100,
+    managementRate: 0.08,
+    capexRate: 0.05,
+    waterSewer: 960,
+    imageUrl: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
+    wholesaler: {
+      name: 'Buckeye Equity Flow (Marcus Vance)',
+      phone: '(216) 555-0194',
+      email: 'acquisitions@apexwholesale.com',
+    }
+  },
+};
 
-  // Compte à rebours 48h (FOMO)
-  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number }>({
-    hours: 33,
-    minutes: 42,
-    seconds: 18,
-  });
+export default function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const dealId = resolvedParams.id || '1';
+  const deal = DEALS_DATABASE[dealId] || DEALS_DATABASE['1'];
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
-        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return prev;
-      });
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Calculateur interactif
-  const [downPaymentPct, setDownPaymentPct] = useState<number>(20);
+  // Statut Membre
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
+  
+  // Interactive Mortgage Calculator State
+  const [downPercent, setDownPercent] = useState<number>(20);
   const [interestRate, setInterestRate] = useState<number>(7.5);
   const [loanTermYears, setLoanTermYears] = useState<number>(30);
-
-  // Modal LOI
-  const [showLoiModal, setShowLoiModal] = useState<boolean>(false);
-  const [loiOfferPrice, setLoiOfferPrice] = useState<number>(89500);
-  const [loiEmd, setLoiEmd] = useState<number>(2500);
-  const [loiInspectionDays, setLoiInspectionDays] = useState<number>(5);
-  const [loiClosingDays, setLoiClosingDays] = useState<number>(14);
-  const [loiBuyerName, setLoiBuyerName] = useState<string>('Apex Capital Holdings LLC');
+  const [loiSubmitted, setLoiSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const isVip = localStorage.getItem('multideal_vip') === 'true';
-      const tier = localStorage.getItem('multideal_tier') || (isVip ? 'starter' : null);
-      setUserTier(tier);
-
-      if (!(window as any).jspdf) {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
-        script.async = true;
-        document.body.appendChild(script);
-      }
+    const saved = localStorage.getItem('multidealprop_tier');
+    if (saved === 'vip' || saved === 'starter') {
+      setIsUnlocked(true);
+    } else {
+      setIsUnlocked(false);
     }
   }, []);
 
-  const isUnlocked = userTier !== null;
-  const isElite = userTier === 'vip';
-  const dealId = (params?.id as string) || 'OH-CLE-44120-01';
+  // Calculs Financiers
+  const purchasePrice = deal.price;
+  const downPaymentAmount = (purchasePrice * downPercent) / 100;
+  const loanAmount = purchasePrice - downPaymentAmount;
 
-  const deal = {
-    id: dealId,
-    title: 'Renovated 3-Bed Brick Home - Section 8 Ready',
-    tag: 'High-Cap Underwritten Asset',
-    streetAddress: '12408 St Clair Ave',
-    cityStateZip: 'Cleveland, OH 44120',
-    priceNumeric: 89500,
-    price: '$89,500',
-    arv: '$115,000',
-    capRate: '12.04%',
-    monthlyRentNumeric: 1250,
-    monthlyRent: '$1,250',
-    grossAnnualRent: '$15,000',
-    grossYield: '16.76%',
-    noiNumeric: 10780,
-    noi: '$10,780',
-    image: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80',
-    wholesaler: {
-      name: 'Apex Wholesale Capital LLC',
-      phone: '+1 (216) 485-9921',
-      email: 'acquisitions@apexwholesaledesk.com',
-      assignmentFee: '$5,000 (included in purchase price)',
-      titleCompany: 'First Choice Title & Escrow (EMD: $2,500)',
-    },
-    proforma: {
-      grossIncome: 15000,
-      vacancy: 750,
-      effectiveGrossIncome: 14250,
-      taxes: 1420,
-      insurance: 850,
-      management: 1200,
-      maintenance: 750,
-      waterSewer: 780,
-      noi: 10780,
-    },
-    specs: {
-      yearBuilt: 1952,
-      rehabYear: 2024,
-      sqft: '1,340 sqft',
-      lotSize: '4,800 sqft',
-      roof: 'Architectural Shingles (Installed 2021)',
-      electrical: '100A Breaker Panel (City Code Certified)',
-      plumbing: 'Full PEX Supply & PVC Waste Stacks',
-      hvac: 'High-Efficiency Forced Air Gas (2022)',
-      waterHeater: '40-Gallon Gas (Late 2023)',
-      tenantTenure: '2.5+ Years (Cuyahoga County PHA Voucher - Zero Default)',
-    }
-  };
+  // Calcul Mensualité Hypothèque (P&I)
+  const monthlyInterestRate = interestRate / 100 / 12;
+  const numberOfPayments = loanTermYears * 12;
+  const monthlyMortgage = downPercent === 100 
+    ? 0 
+    : (loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments))) / 
+      (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
 
-  const calcResults = useMemo(() => {
-    const purchasePrice = deal.priceNumeric;
-    const downPaymentAmount = (purchasePrice * downPaymentPct) / 100;
-    const loanAmount = purchasePrice - downPaymentAmount;
-    const estimatedClosingCosts = purchasePrice * 0.03;
-    const totalCashInvested = downPaymentAmount + estimatedClosingCosts;
+  // Pro-Forma Breakdown annuel
+  const grossRentAnnual = deal.grossAnnual;
+  const vacancyAmount = grossRentAnnual * deal.vacancyRate;
+  const effectiveGrossIncome = grossRentAnnual - vacancyAmount;
+  
+  const managementAmount = effectiveGrossIncome * deal.managementRate;
+  const capexAmount = effectiveGrossIncome * deal.capexRate;
+  const totalOperatingExpenses = deal.taxes + deal.insurance + managementAmount + capexAmount + deal.waterSewer;
+  
+  const annualNOI = effectiveGrossIncome - totalOperatingExpenses;
+  const capRate = ((annualNOI / purchasePrice) * 100).toFixed(2);
 
-    let monthlyDebtService = 0;
-    let annualDebtService = 0;
-
-    if (loanAmount > 0 && interestRate > 0) {
-      const monthlyRate = interestRate / 100 / 12;
-      const totalPayments = loanTermYears * 12;
-      monthlyDebtService =
-        (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, totalPayments))) /
-        (Math.pow(1 + monthlyRate, totalPayments) - 1);
-      annualDebtService = monthlyDebtService * 12;
-    }
-
-    const netAnnualCashFlow = deal.noiNumeric - annualDebtService;
-    const netMonthlyCashFlow = netAnnualCashFlow / 12;
-    const cashOnCashReturn = totalCashInvested > 0 ? (netAnnualCashFlow / totalCashInvested) * 100 : 0;
-    const dscr = annualDebtService > 0 ? deal.noiNumeric / annualDebtService : 99.9;
-
-    return {
-      downPaymentAmount,
-      loanAmount,
-      totalCashInvested,
-      monthlyDebtService: Math.round(monthlyDebtService),
-      annualDebtService: Math.round(annualDebtService),
-      netAnnualCashFlow: Math.round(netAnnualCashFlow),
-      netMonthlyCashFlow: Math.round(netMonthlyCashFlow),
-      cashOnCashReturn: cashOnCashReturn.toFixed(2),
-      dscr: dscr.toFixed(2),
-    };
-  }, [deal.priceNumeric, deal.noiNumeric, downPaymentPct, interestRate, loanTermYears]);
-
-  const generateLoiText = () => {
-    return `================================================================================
-NON-BINDING LETTER OF INTENT (LOI) TO PURCHASE REAL ESTATE
-================================================================================
-Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-
-TO: ${deal.wholesaler.name} (${deal.wholesaler.email} | ${deal.wholesaler.phone})
-FROM: ${loiBuyerName || '[Buyer Entity / Individual Name]'}
-PROPERTY: ${deal.streetAddress}, ${deal.cityStateZip} (ID: ${deal.id})
-
-PROPOSED TERMS:
-1. Purchase Price: $${loiOfferPrice.toLocaleString()} USD
-2. Earnest Money Deposit: $${loiEmd.toLocaleString()} USD (Title: ${deal.wholesaler.titleCompany})
-3. Due Diligence: ${loiInspectionDays} Business Days
-4. Closing Timeline: ${loiClosingDays} Days from Inspection Expiration
-
-Submitted by: ${loiBuyerName || '[Buyer Name]'}
-================================================================================`;
-  };
-
-  const handleDownloadLoi = () => {
-    const text = generateLoiText();
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `LOI_${deal.id}_${loiOfferPrice}.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-  };
-
-  const handleEmailLoi = () => {
-    const subject = encodeURIComponent(`Letter of Intent (LOI) - ${deal.streetAddress} ($${loiOfferPrice.toLocaleString()})`);
-    const body = encodeURIComponent(generateLoiText());
-    window.location.href = `mailto:${deal.wholesaler.email}?subject=${subject}&body=${body}`;
-  };
-
-  const handleDownloadPdf = () => {
-    try {
-      setDownloading(true);
-      const { jsPDF } = (window as any).jspdf || {};
-
-      if (!jsPDF) {
-        window.open(`/deals/${dealId}/print`, '_blank');
-        return;
-      }
-
-      const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      doc.setFillColor(7, 11, 20);
-      doc.rect(0, 0, 210, 297, 'F');
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(16);
-      doc.setTextColor(255, 255, 255);
-      doc.text('Multi', 12, 16);
-      doc.setTextColor(16, 185, 129);
-      doc.text('Deal', 25, 16);
-      doc.setTextColor(255, 255, 255);
-      doc.text('Prop', 38, 16);
-
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(56, 189, 248);
-      doc.text('| Real Estate Intelligence Desk', 52, 16);
-
-      if (isElite) {
-        doc.setFillColor(16, 185, 129);
-        doc.roundedRect(138, 10, 60, 8, 2, 2, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(7, 11, 20);
-        doc.text('✓ VIP ELITE AUDIT CERTIFIED', 141, 15.5);
-      } else {
-        doc.setFillColor(56, 189, 248);
-        doc.roundedRect(144, 10, 54, 8, 2, 2, 'F');
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(7.5);
-        doc.setTextColor(7, 11, 20);
-        doc.text('✓ PRO STARTER AUDIT', 148, 15.5);
-      }
-
-      doc.setDrawColor(30, 41, 59);
-      doc.line(12, 22, 198, 22);
-
-      doc.setFillColor(13, 21, 39);
-      doc.setDrawColor(30, 41, 59);
-      doc.roundedRect(12, 26, 186, 26, 3, 3, 'FD');
-
-      doc.setFontSize(7.5);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(56, 189, 248);
-      doc.text('HIGH-CAP UNDERWRITTEN ASSET • SECTION 8 READY', 16, 33);
-
-      doc.setFontSize(12);
-      doc.setTextColor(255, 255, 255);
-      doc.text(deal.title, 16, 40);
-
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(203, 213, 225);
-      doc.text(`Exact Address: ${deal.streetAddress}, ${deal.cityStateZip}`, 16, 46);
-
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(148, 163, 184);
-      doc.text('OFF-MARKET ASKING PRICE', 145, 33);
-
-      doc.setFontSize(15);
-      doc.setTextColor(16, 185, 129);
-      doc.text(deal.price, 145, 41);
-
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(148, 163, 184);
-      doc.text(`Est. ARV: ${deal.arv}`, 145, 46);
-
-      const kpis = [
-        { lbl: 'CAP RATE', val: deal.capRate, color: [16, 185, 129] },
-        { lbl: 'CASH-ON-CASH', val: `${calcResults.cashOnCashReturn}%`, color: [245, 158, 11] },
-        { lbl: 'GROSS RENT', val: `${deal.monthlyRent} / mo`, color: [56, 189, 248] },
-        { lbl: 'ANNUAL NOI', val: `${deal.noi} / yr`, color: [255, 255, 255] },
-      ];
-
-      kpis.forEach((kpi, idx) => {
-        const x = 12 + idx * 47.5;
-        doc.setFillColor(13, 21, 39);
-        doc.roundedRect(x, 56, 43.5, 16, 2, 2, 'FD');
-        doc.setFontSize(6.5);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(148, 163, 184);
-        doc.text(kpi.lbl, x + 4, 62);
-        doc.setFontSize(10.5);
-        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
-        doc.text(kpi.val, x + 4, 68);
-      });
-
-      doc.setFillColor(13, 21, 39);
-      doc.roundedRect(12, 76, 90, 118, 3, 3, 'FD');
-      doc.setFontSize(8.5);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(255, 255, 255);
-      doc.text('12-MONTH PRO-FORMA P&L', 16, 83);
-      doc.setDrawColor(30, 41, 59);
-      doc.line(16, 85, 98, 85);
-
-      const pnlRows = [
-        ['Gross Rent ($1,250 x 12)', `$${deal.proforma.grossIncome.toLocaleString()}`, [255, 255, 255]],
-        ['(-) Vacancy Loss (5%)', `-$${deal.proforma.vacancy.toLocaleString()}`, [248, 113, 113]],
-        ['(=) Effective Gross Income', `$${deal.proforma.effectiveGrossIncome.toLocaleString()}`, [56, 189, 248]],
-        ['• Property Taxes', `-$${deal.proforma.taxes.toLocaleString()}`, [203, 213, 225]],
-        ['• Insurance (Hazard)', `-$${deal.proforma.insurance.toLocaleString()}`, [203, 213, 225]],
-        ['• Management Fee (8%)', `-$${deal.proforma.management.toLocaleString()}`, [203, 213, 225]],
-        ['• CapEx / Maintenance', `-$${deal.proforma.maintenance.toLocaleString()}`, [203, 213, 225]],
-        ['• Owner Water Escrow', `-$${deal.proforma.waterSewer.toLocaleString()}`, [203, 213, 225]],
-        ['(=) NET OPERATING INCOME', `$${deal.proforma.noi.toLocaleString()} / yr`, [16, 185, 129]],
-        [`Leveraged Cashflow (${downPaymentPct}% Down)`, `+$${calcResults.netAnnualCashFlow.toLocaleString()} / yr`, [245, 158, 11]],
-      ];
-
-      let yPnl = 92;
-      pnlRows.forEach((r) => {
-        doc.setFontSize(7.2);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(148, 163, 184);
-        doc.text(r[0] as string, 16, yPnl);
-        doc.setFont('helvetica', 'bold');
-        const c = r[2] as number[];
-        doc.setTextColor(c[0], c[1], c[2]);
-        doc.text(r[1] as string, 98, yPnl, { align: 'right' });
-        yPnl += 7.5;
-      });
-
-      doc.setFillColor(11, 25, 46);
-      doc.roundedRect(16, 168, 82, 20, 2, 2, 'F');
-      doc.setFontSize(6.5);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(56, 189, 248);
-      doc.text('SECTION 8 DIRECT DEPOSIT GUARANTEE', 19, 173);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(203, 213, 225);
-      doc.text('100% of $1,250/mo direct deposited by Cuyahoga PHA.', 19, 178);
-
-      doc.setFillColor(13, 21, 39);
-      doc.roundedRect(108, 76, 90, 118, 3, 3, 'FD');
-      doc.setFontSize(8.5);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(255, 255, 255);
-      doc.text('PHYSICAL ASSET & MECHANICALS', 112, 83);
-      doc.line(112, 85, 194, 85);
-
-      const specs = [
-        ['Year Built / Rehab:', `${deal.specs.yearBuilt} / Full Rehab ${deal.specs.rehabYear}`],
-        ['Layout / Sqft:', `3 Beds | 1 Bath | ${deal.specs.sqft}`],
-        ['Roof System:', deal.specs.roof],
-        ['Electrical Panel:', deal.specs.electrical],
-        ['Plumbing Lines:', deal.specs.plumbing],
-        ['Heating / HVAC:', deal.specs.hvac],
-        ['Hot Water Tank:', deal.specs.waterHeater],
-      ];
-
-      let ySpec = 92;
-      specs.forEach((s) => {
-        doc.setFontSize(7.2);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(148, 163, 184);
-        doc.text(s[0], 112, ySpec);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(255, 255, 255);
-        doc.text(s[1], 194, ySpec, { align: 'right' });
-        ySpec += 7.5;
-      });
-
-      doc.setFillColor(16, 185, 129, 0.1);
-      doc.setDrawColor(16, 185, 129);
-      doc.roundedRect(112, 146, 82, 42, 2, 2, 'FD');
-      doc.setFontSize(7);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(16, 185, 129);
-      doc.text('DIRECT WHOLESALER & ASSIGNMENT DESK', 116, 152);
-      doc.setFontSize(7);
-      doc.setTextColor(203, 213, 225);
-      doc.text(`Entity: ${deal.wholesaler.name}`, 116, 158);
-      doc.setTextColor(16, 185, 129);
-      doc.text(`Phone: ${deal.wholesaler.phone}`, 116, 164);
-      doc.setTextColor(56, 189, 248);
-      doc.text(`Email: ${deal.wholesaler.email}`, 116, 170);
-      doc.setTextColor(148, 163, 184);
-      doc.text(`Fee: ${deal.wholesaler.assignmentFee}`, 116, 176);
-      doc.text(`Title: ${deal.wholesaler.titleCompany}`, 116, 182);
-
-      doc.save(`MultiDealProp_Underwriting_${dealId}.pdf`);
-    } catch (err: any) {
-      window.open(`/deals/${dealId}/print`, '_blank');
-    } finally {
-      setDownloading(false);
-    }
-  };
+  // Cash-Flow & Cash-on-Cash Return
+  const annualDebtService = monthlyMortgage * 12;
+  const annualNetCashFlow = annualNOI - annualDebtService;
+  const monthlyNetCashFlow = Math.round(annualNetCashFlow / 12);
+  const cashOnCash = downPaymentAmount > 0 
+    ? ((annualNetCashFlow / (downPaymentAmount + 2500)) * 100).toFixed(2)
+    : '0.00';
 
   return (
-    <div className="min-h-screen bg-[#070b14] text-white p-6 sm:p-10 relative">
-      <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* En-tête */}
-        <div className="flex items-center justify-between">
-          <Link
-            href="/deals"
-            className="text-slate-400 hover:text-white transition flex items-center gap-2 text-sm font-medium"
-          >
-            ← Back to Deals Feed
+    <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black flex flex-col justify-between overflow-x-hidden">
+      
+      {/* 1. Header Navigation */}
+      <header className="border-b border-slate-800 bg-[#06080F]/95 backdrop-blur sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
+          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-emerald-500/20">
+              MP
+            </div>
+            <span className="font-black text-sm sm:text-lg tracking-wider text-white">
+              MULTIDEAL<span className="text-emerald-400">PROP</span>
+            </span>
           </Link>
 
-          {!isUnlocked ? (
-            <Link
-              href="/vip"
-              className="bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs uppercase tracking-wider py-2.5 px-5 rounded-full shadow-lg transition"
+          <div className="flex items-center gap-2">
+            <Link 
+              href="/"
+              className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition"
             >
-              ⚡ Upgrade Plan ($29 - $49)
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>Back to Feed</span>
             </Link>
-          ) : userTier === 'starter' ? (
-            <span className="bg-sky-500/10 border border-sky-500/30 text-sky-400 font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-full flex items-center gap-1.5">
-              ✓ Pro Starter Active ($29/mo)
-            </span>
-          ) : (
-            <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-bold text-xs uppercase tracking-wider py-2 px-4 rounded-full flex items-center gap-1.5">
-              ✓ VIP Elite Active ($49/mo)
-            </span>
-          )}
-        </div>
 
-        {/* Compte à rebours 48h */}
-        {isElite ? (
-          <div className="bg-gradient-to-r from-emerald-950/60 via-[#0d1527] to-emerald-950/60 border border-emerald-500/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl animate-pulse">🛡️</span>
-              <div>
-                <p className="text-sm font-black text-white">VIP 48H PRIORITY ACCESS ACTIVE</p>
-                <p className="text-xs text-emerald-400">You are viewing this off-market contract 48 hours before public release.</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 font-mono text-xs bg-emerald-500/10 border border-emerald-500/30 px-3 py-1.5 rounded-xl text-emerald-300 font-bold">
-              <span>Time Left:</span>
-              <span className="text-white bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
-                {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
+            <Link 
+              href="/vip" 
+              className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-black text-[11px] sm:text-xs px-3.5 py-1.5 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition flex items-center gap-1"
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>VIP Access</span>
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* Main Container */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-1">
+        
+        {/* Deal Title & Price Banner */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+          <div>
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
+                {deal.location}
+              </span>
+              <span className="text-[10px] font-bold text-slate-400">
+                {deal.units} Units • APN: {isUnlocked ? deal.apn : '••••••••'}
               </span>
             </div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white">{deal.title}</h1>
+            <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{isUnlocked ? deal.address : `${deal.location} (Exact Street Unlocked with Membership)`}</span>
+            </p>
           </div>
-        ) : (
-          <div className="bg-gradient-to-r from-amber-950/50 via-[#0d1527] to-amber-950/50 border border-amber-500/40 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xl">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl animate-bounce">⚡</span>
-              <div>
-                <p className="text-sm font-black text-amber-400">VIP EARLY ACCESS WINDOW ACTIVE</p>
-                <p className="text-xs text-slate-300">
-                  VIP Elite investors are locking contracts. Opens to Starter in:
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 font-mono text-sm font-black bg-amber-500/10 border border-amber-500/30 px-3 py-1 rounded-xl text-amber-400">
-                <span className="bg-slate-900 px-2 py-1 rounded border border-slate-800">{timeLeft.hours}h</span>
-                <span>:</span>
-                <span className="bg-slate-900 px-2 py-1 rounded border border-slate-800">{timeLeft.minutes}m</span>
-                <span>:</span>
-                <span className="bg-slate-900 px-2 py-1 rounded border border-slate-800">{timeLeft.seconds}s</span>
-              </div>
-              <Link
-                href="/vip"
-                className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-4 py-2 rounded-xl transition uppercase tracking-wider shadow-lg"
-              >
-                Skip Wait (VIP $49)
-              </Link>
-            </div>
-          </div>
-        )}
 
-        {/* Titre & Prix */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pt-2">
-          <div>
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 mb-3">
-              🛡️ {deal.tag}
+          <div className="text-left md:text-right">
+            <span className="text-xs uppercase font-bold text-slate-500 block">Contract Price</span>
+            <span className="text-3xl sm:text-4xl font-black text-emerald-400 font-mono">
+              ${deal.price.toLocaleString()}
             </span>
-            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-white mb-2">
-              {deal.title}
-            </h1>
-            
-            <div className="flex items-center gap-2 text-slate-400 text-sm sm:text-base">
-              <span className="text-emerald-400">📍</span>
-              {isUnlocked ? (
-                <span className="text-white font-semibold underline decoration-emerald-500/50">
-                  {deal.streetAddress}, {deal.cityStateZip}
-                </span>
-              ) : (
-                <span>
-                  <span className="blur-sm select-none text-slate-500">12408 St Clair Ave</span>{' '}
-                  {deal.cityStateZip}{' '}
-                  <span className="text-amber-400 font-medium text-xs bg-amber-400/10 px-2 py-0.5 rounded ml-1">
-                    (Exact Street Locked 🔒)
-                  </span>
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-right min-w-[240px]">
-            <p className="text-slate-400 text-xs font-semibold tracking-wider uppercase mb-1">
-              Off-Market Asking Price
-            </p>
-            <p className="text-3xl sm:text-4xl font-black text-emerald-400 tracking-tight">
-              {deal.price}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">Est. ARV: <span className="text-slate-300 font-semibold">{deal.arv}</span></p>
           </div>
         </div>
 
-        {/* Grille Principale */}
+        {/* 2-Column Institutional Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          
+          {/* Left Large Column: Image, KPIs, Modeler, Pro-Forma */}
           <div className="lg:col-span-2 space-y-6">
             
-            <div className="relative w-full h-80 sm:h-96 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
-              <img
-                src={deal.image}
-                alt={deal.title}
+            {/* Property Image Banner */}
+            <div className="h-72 sm:h-96 rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl relative">
+              <img 
+                src={deal.imageUrl} 
+                alt={deal.title} 
                 className="w-full h-full object-cover"
               />
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-[#0d1527] border border-slate-800 rounded-2xl p-5 text-center">
+            {/* 4 Core KPIs Bar */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0d1527] border border-slate-800 p-4 sm:p-5 rounded-2xl text-center shadow-xl">
               <div>
-                <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cap Rate</p>
-                <p className="text-2xl font-black text-emerald-400">{deal.capRate}</p>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">CAP RATE</span>
+                <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono mt-1 block">{capRate}%</span>
               </div>
-              <div className="border-l border-slate-800">
-                <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Cash-on-Cash</p>
-                <p className="text-2xl font-black text-amber-400">{calcResults.cashOnCashReturn}%</p>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">CASH-ON-CASH</span>
+                <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono mt-1 block">{cashOnCash}%</span>
               </div>
-              <div className="border-l border-slate-800">
-                <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Gross Rent</p>
-                <p className="text-2xl font-black text-sky-400">{deal.monthlyRent}</p>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">GROSS RENT</span>
+                <span className="text-xl sm:text-2xl font-black text-cyan-300 font-mono mt-1 block">${deal.monthlyRent.toLocaleString()}</span>
               </div>
-              <div className="border-l border-slate-800">
-                <p className="text-[11px] text-slate-400 uppercase font-semibold mb-1">Annual NOI</p>
-                <p className="text-2xl font-black text-white">{deal.noi}</p>
+              <div>
+                <span className="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">ANNUAL NOI</span>
+                <span className="text-xl sm:text-2xl font-black text-white font-mono mt-1 block">${Math.round(annualNOI).toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Calculateur */}
-            <div className="bg-[#0d1527] border border-emerald-500/30 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-4">
+            {/* Interactive Leveraged Cash-Flow & Mortgage Modeler */}
+            <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-6 shadow-xl">
+              <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h3 className="text-lg font-black text-white flex items-center gap-2">
-                    🧮 Interactive Leveraged Cash-Flow & Mortgage Modeler
+                  <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <span>🧮</span> Interactive Leveraged Cash-Flow &amp; Mortgage Modeler
                   </h3>
-                  <p className="text-xs text-slate-400">
-                    Adjust financing assumptions to dynamically model your exact return on equity.
-                  </p>
+                  <p className="text-xs text-slate-400 mt-0.5">Adjust financing assumptions to dynamically model your exact return on equity.</p>
                 </div>
-                <span className="text-[11px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase self-start sm:self-auto">
-                  Live Calculator
+                <span className="hidden sm:inline-block text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                  LIVE CALCULATOR
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 font-bold uppercase">Down Payment</span>
-                    <span className="text-emerald-400 font-bold">{downPaymentPct}% (${calcResults.downPaymentAmount.toLocaleString()})</span>
+              {/* Slider Inputs */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                {/* Down Payment */}
+                <div>
+                  <div className="flex justify-between text-xs font-bold mb-2">
+                    <span className="text-slate-400 uppercase tracking-wider">Down Payment</span>
+                    <span className="text-emerald-400 font-mono">{downPercent}% (${Math.round(downPaymentAmount).toLocaleString()})</span>
                   </div>
-                  <input
-                    type="range"
-                    min="10"
-                    max="100"
+                  <input 
+                    type="range" 
+                    min="10" 
+                    max="100" 
                     step="5"
-                    value={downPaymentPct}
-                    onChange={(e) => setDownPaymentPct(Number(e.target.value))}
-                    className="w-full accent-emerald-500 cursor-pointer"
+                    value={downPercent} 
+                    onChange={(e) => setDownPercent(Number(e.target.value))}
+                    className="w-full accent-emerald-400 bg-slate-950 rounded-lg cursor-pointer h-2"
                   />
-                  <div className="flex justify-between text-[10px] text-slate-500">
-                    <button onClick={() => setDownPaymentPct(20)} className="hover:text-emerald-400">20%</button>
-                    <button onClick={() => setDownPaymentPct(25)} className="hover:text-emerald-400">25%</button>
-                    <button onClick={() => setDownPaymentPct(100)} className="hover:text-emerald-400">100% Cash</button>
+                  <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                    <span>20%</span>
+                    <span>25%</span>
+                    <span>100% Cash</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 font-bold uppercase">Interest Rate</span>
-                    <span className="text-sky-400 font-bold">{interestRate}%</span>
+                {/* Interest Rate */}
+                <div>
+                  <div className="flex justify-between text-xs font-bold mb-2">
+                    <span className="text-slate-400 uppercase tracking-wider">Interest Rate</span>
+                    <span className="text-cyan-400 font-mono">{interestRate}%</span>
                   </div>
-                  <input
-                    type="range"
-                    min="4.5"
-                    max="11.5"
+                  <input 
+                    type="range" 
+                    min="4" 
+                    max="12" 
                     step="0.25"
-                    value={interestRate}
+                    value={interestRate} 
                     onChange={(e) => setInterestRate(Number(e.target.value))}
-                    className="w-full accent-sky-500 cursor-pointer"
+                    className="w-full accent-cyan-400 bg-slate-950 rounded-lg cursor-pointer h-2"
                   />
+                  <div className="flex justify-between text-[10px] text-slate-500 mt-1">
+                    <span>5.0%</span>
+                    <span>7.5%</span>
+                    <span>10.0%</span>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-slate-400 font-bold uppercase">Loan Term</span>
-                    <span className="text-amber-400 font-bold">{loanTermYears} Years</span>
+                {/* Loan Term Toggle */}
+                <div>
+                  <div className="flex justify-between text-xs font-bold mb-2">
+                    <span className="text-slate-400 uppercase tracking-wider">Loan Term</span>
+                    <span className="text-amber-400 font-mono">{loanTermYears} Years</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       onClick={() => setLoanTermYears(30)}
-                      className={`py-2 rounded-xl text-xs font-bold transition border ${
-                        loanTermYears === 30
-                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
-                          : 'bg-[#131d36] text-slate-400 border-slate-800 hover:text-white'
+                      className={`py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        loanTermYears === 30 
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300' 
+                          : 'bg-slate-900 border-slate-800 text-slate-400'
                       }`}
                     >
                       30 Years
                     </button>
                     <button
                       onClick={() => setLoanTermYears(15)}
-                      className={`py-2 rounded-xl text-xs font-bold transition border ${
-                        loanTermYears === 15
-                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/50'
-                          : 'bg-[#131d36] text-slate-400 border-slate-800 hover:text-white'
+                      className={`py-2 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                        loanTermYears === 15 
+                          ? 'bg-amber-500/20 border-amber-500 text-amber-300' 
+                          : 'bg-slate-900 border-slate-800 text-slate-400'
                       }`}
                     >
                       15 Years
@@ -616,263 +357,155 @@ Submitted by: ${loiBuyerName || '[Buyer Name]'}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#131d36] border border-slate-800 rounded-2xl p-4 text-center">
+              {/* Dynamic Modeler Output Bar */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/80 border border-slate-800 p-4 rounded-xl text-center">
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Total Cash In</p>
-                  <p className="text-base sm:text-lg font-black text-white">${calcResults.totalCashInvested.toLocaleString()}</p>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">TOTAL CASH IN</span>
+                  <span className="text-lg font-black text-white font-mono mt-0.5 block">${Math.round(downPaymentAmount + 2500).toLocaleString()}</span>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Mortgage P&I</p>
-                  <p className="text-base sm:text-lg font-black text-rose-400">${calcResults.monthlyDebtService}/mo</p>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">MORTGAGE P&amp;I</span>
+                  <span className="text-lg font-black text-red-400 font-mono mt-0.5 block">${Math.round(monthlyMortgage)}/mo</span>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Net Cash Flow</p>
-                  <p className="text-base sm:text-lg font-black text-emerald-400">+${calcResults.netMonthlyCashFlow}/mo</p>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">NET CASH FLOW</span>
+                  <span className="text-lg font-black text-emerald-400 font-mono mt-0.5 block">+{monthlyNetCashFlow}/mo</span>
                 </div>
                 <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-400">Cash-on-Cash</p>
-                  <p className="text-base sm:text-lg font-black text-amber-400">{calcResults.cashOnCashReturn}%</p>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block">CASH-ON-CASH</span>
+                  <span className="text-lg font-black text-amber-400 font-mono mt-0.5 block">{cashOnCash}%</span>
                 </div>
               </div>
             </div>
 
-            {/* Synopsis & Pro-Forma */}
-            <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-8 shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            {/* Comprehensive Investment Synopsis & Pro-Forma */}
+            <div className="bg-[#0d1527] border border-slate-800 rounded-2xl p-6 shadow-xl">
+              <div className="flex justify-between items-center mb-6">
                 <div>
-                  <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-                    📊 Comprehensive Investment Synopsis & Pro-Forma
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-1">
-                    Conservative 12-month expense audit, physical mechanicals, and government rent roll.
-                  </p>
+                  <h3 className="text-base sm:text-lg font-black text-white flex items-center gap-2">
+                    <span>📑</span> Comprehensive Investment Synopsis &amp; Pro-Forma
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Conservative 12-month expense audit, physical mechanics, and government rent roll.</p>
                 </div>
-                <span className="text-xs font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full uppercase">
-                  Institutional Grade
+                <span className="hidden sm:inline-block text-[10px] font-black uppercase tracking-wider text-cyan-300 bg-cyan-950 px-3 py-1 rounded-full border border-cyan-800">
+                  INSTITUTIONAL GRADE
                 </span>
               </div>
 
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                  <span>💰</span> 12-Month Pro-Forma Cash Flow Breakdown
-                </h3>
-                
-                <div className="bg-[#131d36]/80 rounded-2xl p-5 border border-slate-800 space-y-3 font-mono text-sm">
-                  <div className="flex justify-between text-slate-300 pb-2 border-b border-slate-800/80">
-                    <span>(+) Gross Scheduled Annual Rent (12 x $1,250)</span>
-                    <span className="font-bold text-white">${deal.proforma.grossIncome.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-rose-300 pb-2 border-b border-slate-800/80">
-                    <span>(-) Economic Vacancy Reserve (5.0%)</span>
-                    <span>-${deal.proforma.vacancy.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-sky-300 font-bold pb-2 border-b border-slate-800/80">
-                    <span>(=) Effective Gross Income (EGI)</span>
-                    <span>${deal.proforma.effectiveGrossIncome.toLocaleString()}</span>
-                  </div>
-
-                  <div className="text-xs text-slate-400 font-sans uppercase font-bold pt-2">Operating Expenses:</div>
-                  <div className="flex justify-between text-slate-400 text-xs pl-4">
-                    <span>• Real Estate Property Taxes (Cuyahoga County)</span>
-                    <span className="text-slate-300">-${deal.proforma.taxes.toLocaleString()} / yr</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400 text-xs pl-4">
-                    <span>• Hazard & Liability Property Insurance</span>
-                    <span className="text-slate-300">-${deal.proforma.insurance.toLocaleString()} / yr</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400 text-xs pl-4">
-                    <span>• Professional Property Management Fee (8%)</span>
-                    <span className="text-slate-300">-${deal.proforma.management.toLocaleString()} / yr</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400 text-xs pl-4">
-                    <span>• Maintenance & Structural CapEx Reserve (5%)</span>
-                    <span className="text-slate-300">-${deal.proforma.maintenance.toLocaleString()} / yr</span>
-                  </div>
-                  <div className="flex justify-between text-slate-400 text-xs pl-4 pb-2 border-b border-slate-800/80">
-                    <span>• Owner Water/Sewer Escrow Contribution ($65/mo)</span>
-                    <span className="text-slate-300">-${deal.proforma.waterSewer.toLocaleString()} / yr</span>
-                  </div>
-
-                  <div className="flex justify-between text-emerald-400 font-bold text-base pt-1 pb-2 border-b border-slate-800">
-                    <span className="font-sans">(=) Net Operating Income (NOI)</span>
-                    <span>${deal.proforma.noi.toLocaleString()} / yr</span>
-                  </div>
-
-                  <div className="flex justify-between text-slate-400 text-xs pl-4">
-                    <span>(-) Dynamic Debt Service ({downPaymentPct}% Down @ {interestRate}%)</span>
-                    <span className="text-rose-400">-${calcResults.annualDebtService.toLocaleString()} / yr</span>
-                  </div>
-                  <div className="flex justify-between text-amber-400 font-bold text-sm pt-1">
-                    <span className="font-sans">(=) Net Leveraged Cash Flow</span>
-                    <span>+${calcResults.netAnnualCashFlow.toLocaleString()} / yr (+${calcResults.netMonthlyCashFlow}/mo)</span>
-                  </div>
+              <div className="border-t border-slate-800/80 pt-4 space-y-3 text-xs">
+                <div className="text-xs font-black uppercase text-amber-400 tracking-wider mb-2">
+                  💰 12-Month Pro-Forma Cash Flow Breakdown
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                  <span>🔨</span> Asset Condition & Mechanicals Audit
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                  <div className="bg-[#131d36]/60 border border-slate-800 p-4 rounded-xl space-y-1">
-                    <span className="text-slate-500 font-bold uppercase">Roof System</span>
-                    <p className="text-white font-medium">{deal.specs.roof}</p>
-                  </div>
-                  <div className="bg-[#131d36]/60 border border-slate-800 p-4 rounded-xl space-y-1">
-                    <span className="text-slate-500 font-bold uppercase">Electrical Panel</span>
-                    <p className="text-white font-medium">{deal.specs.electrical}</p>
-                  </div>
-                  <div className="bg-[#131d36]/60 border border-slate-800 p-4 rounded-xl space-y-1">
-                    <span className="text-slate-500 font-bold uppercase">Plumbing Lines</span>
-                    <p className="text-white font-medium">{deal.specs.plumbing}</p>
-                  </div>
-                  <div className="bg-[#131d36]/60 border border-slate-800 p-4 rounded-xl space-y-1">
-                    <span className="text-slate-500 font-bold uppercase">HVAC & Heating</span>
-                    <p className="text-white font-medium">{deal.specs.hvac}</p>
-                  </div>
+                <div className="flex justify-between text-slate-200 py-1.5 border-b border-slate-800/40">
+                  <span>(+) Gross Scheduled Annual Rent ({deal.units} Units x ${deal.monthlyRent / deal.units}/mo)</span>
+                  <span className="font-mono font-bold">${deal.grossAnnual.toLocaleString()}</span>
                 </div>
-              </div>
 
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
-                  <span>🏛️</span> Tenant Profile & Government Subsidy Status
-                </h3>
+                <div className="flex justify-between text-red-400/90 py-1.5 border-b border-slate-800/40">
+                  <span>(-) Economic Vacancy Reserve (5.0%)</span>
+                  <span className="font-mono font-bold">-${Math.round(vacancyAmount).toLocaleString()}</span>
+                </div>
 
-                <div className="bg-emerald-950/20 border border-emerald-500/20 rounded-2xl p-5 text-xs text-slate-300 space-y-2">
-                  <p className="leading-relaxed">
-                    <strong className="text-white">Subsidy Direct Deposit:</strong> 100% of the $1,250 monthly rent is deposited directly by the <strong>Cuyahoga County Public Housing Authority (PHA)</strong> on the 1st of each month.
-                  </p>
-                  <p className="leading-relaxed">
-                    <strong className="text-white">Tenant Longevity:</strong> Current tenant has resided in the property for <strong>{deal.specs.tenantTenure}</strong>.
-                  </p>
+                <div className="flex justify-between text-cyan-400 font-bold py-2 border-b border-slate-800/60 bg-slate-900/40 px-2 rounded-lg">
+                  <span>(=) Effective Gross Income (EGI)</span>
+                  <span className="font-mono">${Math.round(effectiveGrossIncome).toLocaleString()}</span>
+                </div>
+
+                <div className="pt-2">
+                  <span className="text-[11px] font-bold text-slate-400 uppercase block mb-2">Operating Expenses:</span>
+                  <ul className="space-y-2 text-slate-400 pl-2">
+                    <li className="flex justify-between">
+                      <span>• Real Estate Property Taxes</span>
+                      <span className="font-mono text-slate-300">-${deal.taxes.toLocaleString()} / yr</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>• Hazard &amp; Liability Property Insurance</span>
+                      <span className="font-mono text-slate-300">-${deal.insurance.toLocaleString()} / yr</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>• Professional Property Management Fee (8%)</span>
+                      <span className="font-mono text-slate-300">-${Math.round(managementAmount).toLocaleString()} / yr</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>• Maintenance &amp; Structural CapEx Reserve (5%)</span>
+                      <span className="font-mono text-slate-300">-${Math.round(capexAmount).toLocaleString()} / yr</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span>• Owner Water/Sewer Escrow Contribution</span>
+                      <span className="font-mono text-slate-300">-${deal.waterSewer.toLocaleString()} / yr</span>
+                    </li>
+                  </ul>
                 </div>
               </div>
             </div>
 
           </div>
 
+          {/* Right Column: Wholesaler Contact Box & LOI Submission */}
           <div className="space-y-6">
             
-            {/* Box PDF */}
-            <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
-              <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-2">
-                📄 Institutional Due Diligence Vault
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Audit Report & Rent Roll</h3>
-              <p className="text-slate-400 text-xs mb-6 leading-relaxed">
-                Download verified institutional PDF pack with complete pro-forma, cap rates, and direct contract assignment.
-              </p>
-
-              {isUnlocked ? (
-                <button
-                  onClick={handleDownloadPdf}
-                  disabled={downloading}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black py-4 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-xl cursor-pointer"
-                >
-                  {downloading ? 'Generating Official PDF...' : `📥 Download ${isElite ? 'VIP Elite' : 'Pro Starter'} PDF Pack`}
-                </button>
-              ) : (
-                <Link
-                  href="/vip"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-[#131d36] hover:bg-[#1a2747] text-slate-300 border border-slate-700 font-semibold py-3.5 px-4 rounded-xl transition text-sm"
-                >
-                  🔒 Unlock Pro PDF Pack (Basic/VIP)
-                </Link>
-              )}
-            </div>
-
-            {/* LOI Button */}
-            <div className="bg-[#0d1527] border border-sky-500/40 rounded-3xl p-6 shadow-xl relative overflow-hidden">
-              <span className="absolute -top-3 right-6 bg-sky-500 text-slate-950 text-[10px] font-black uppercase tracking-wider py-1 px-3 rounded-full">
-                Contract Desk
-              </span>
-              <div className="flex items-center gap-2 text-sky-400 text-xs font-bold uppercase tracking-wider mb-2">
-                ✍️ Fast-Track Acquisition
-              </div>
-              <h3 className="text-xl font-bold text-white mb-2">Submit an Offer / LOI</h3>
-              <p className="text-slate-400 text-xs mb-6 leading-relaxed">
-                Generate and submit an official Letter of Intent directly to the wholesaler to lock this contract.
-              </p>
-
-              {isUnlocked ? (
-                <button
-                  onClick={() => setShowLoiModal(true)}
-                  className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black py-4 px-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-                >
-                  📝 Generate & Submit LOI
-                </button>
-              ) : (
-                <Link
-                  href="/vip"
-                  className="w-full inline-flex items-center justify-center gap-2 bg-[#131d36] hover:bg-[#1a2747] text-slate-300 border border-slate-700 font-semibold py-3.5 px-4 rounded-xl transition text-sm"
-                >
-                  🔒 Unlock LOI Generator (Basic/VIP)
-                </Link>
-              )}
-            </div>
-
-            {/* Wholesaler Box */}
+            {/* Direct Wholesaler Desk Card */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                  Direct Wholesaler Desk
-                </h3>
+                <h3 className="text-xs font-black uppercase tracking-wider text-slate-300">Direct Wholesaler Desk</h3>
                 {isUnlocked ? (
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded">
-                    UNLOCKED
+                  <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20 flex items-center gap-1">
+                    <Unlock className="w-3 h-3" /> UNLOCKED
                   </span>
                 ) : (
-                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded flex items-center gap-1">
-                    🔒 LOCKED
+                  <span className="text-[10px] font-black uppercase text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> LOCKED
                   </span>
                 )}
               </div>
 
               {isUnlocked ? (
-                <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-2xl p-5 space-y-3">
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase font-semibold">Wholesaler Entity</p>
-                    <p className="text-white font-bold text-base">{deal.wholesaler.name}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase font-semibold">Direct Phone</p>
-                    <a
-                      href={`tel:${deal.wholesaler.phone}`}
-                      className="text-emerald-400 font-extrabold hover:underline"
-                    >
-                      {deal.wholesaler.phone}
-                    </a>
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 uppercase font-semibold">Direct Email</p>
-                    <a
-                      href={`mailto:${deal.wholesaler.email}`}
-                      className="text-sky-400 hover:underline text-sm break-all"
-                    >
-                      {deal.wholesaler.email}
-                    </a>
-                  </div>
-                  <div className="pt-2 border-t border-slate-800/80 space-y-1">
-                    <p className="text-xs text-slate-400 font-medium">Terms: {deal.wholesaler.assignmentFee}</p>
-                    <p className="text-xs text-slate-400">Escrow: {deal.wholesaler.titleCompany}</p>
-                  </div>
-                </div>
-              ) : (
                 <div className="space-y-4">
-                  <div className="p-4 bg-[#131d36]/60 rounded-xl space-y-2 select-none filter blur-[4px]">
-                    <p className="text-slate-400 text-sm">👤 Apex Wholesaler Capital LLC</p>
-                    <p className="text-slate-400 text-sm">📞 +1 (216) 485-0000</p>
-                    <p className="text-slate-400 text-sm">✉️ acquisitions@dealdesk.com</p>
+                  <div className="p-4 bg-slate-900 border border-slate-800 rounded-2xl space-y-2 text-xs">
+                    <div>
+                      <span className="text-slate-500 block uppercase font-bold text-[9px]">Assigning Entity:</span>
+                      <span className="text-white font-bold text-sm">{deal.wholesaler.name}</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <span className="text-slate-500 block uppercase font-bold text-[9px]">Direct Phone:</span>
+                      <span className="text-emerald-400 font-mono text-sm font-bold">{deal.wholesaler.phone}</span>
+                    </div>
+                    <div className="pt-2 border-t border-slate-800/80">
+                      <span className="text-slate-500 block uppercase font-bold text-[9px]">Contract Desk Email:</span>
+                      <span className="text-emerald-400 font-mono text-xs">{deal.wholesaler.email}</span>
+                    </div>
                   </div>
 
-                  <p className="text-xs text-slate-400 text-center">
-                    Unlock exact address & seller assignment direct contact starting at $29/mo.
+                  <a
+                    href={`https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(deal.wholesaler.email)}&su=${encodeURIComponent(`LOI Submission - ${deal.address}`)}&body=${encodeURIComponent(`Hello ${deal.wholesaler.name},\n\nI am interested in acquiring the contract for ${deal.address} at $${deal.price.toLocaleString()}. Please provide title status and diligence files.\n\nBest regards.`)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full text-center block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-4 rounded-xl transition shadow-lg shadow-emerald-500/20 cursor-pointer"
+                  >
+                    ✉️ Connect with Assignor &rarr;
+                  </a>
+                </div>
+              ) : (
+                <div>
+                  <div className="relative p-5 bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden mb-4 select-none">
+                    <div className="filter blur-sm space-y-2 text-xs text-slate-400">
+                      <p className="font-bold text-white">Apex Wholesale Acquisitions Group</p>
+                      <p>+1 (216) 555-0194</p>
+                      <p>acquisitions@wholesale.com</p>
+                    </div>
+                    <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
+                      <Lock className="w-6 h-6 text-amber-400" />
+                    </div>
+                  </div>
+
+                  <p className="text-xs text-slate-400 leading-relaxed mb-4 text-center">
+                    Unlock exact street address, parcel numbers, and primary assignor direct lines starting at $29/mo.
                   </p>
 
                   <Link
                     href="/vip"
-                    className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-extrabold py-3.5 px-4 rounded-xl transition shadow-lg text-sm"
+                    className="w-full text-center block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-3.5 rounded-xl transition shadow-lg shadow-emerald-500/20"
                   >
                     ⚡ Unlock Contacts Now
                   </Link>
@@ -880,109 +513,73 @@ Submitted by: ${loiBuyerName || '[Buyer Name]'}
               )}
             </div>
 
-          </div>
-        </div>
-      </div>
-
-      {/* LOI MODAL */}
-      {showLoiModal && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#0d1527] border border-slate-800 rounded-3xl max-w-2xl w-full p-6 sm:p-8 space-y-6 shadow-2xl overflow-y-auto max-h-[90vh]">
-            
-            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <div>
-                <span className="text-xs font-bold uppercase tracking-wider text-sky-400 bg-sky-500/10 border border-sky-500/20 px-3 py-1 rounded-full">
-                  Letter of Intent (LOI) Generator
-                </span>
-                <h3 className="text-2xl font-black text-white mt-2">Submit Purchase Offer</h3>
-                <p className="text-xs text-slate-400">Target Asset: {deal.streetAddress}, {deal.cityStateZip}</p>
+            {/* Fast-Track LOI Generator Card */}
+            <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-base">🚀</span>
+                <span className="text-[11px] font-black uppercase text-amber-400 tracking-wider">Fast-Track Acquisition</span>
               </div>
-              <button
-                onClick={() => setShowLoiModal(false)}
-                className="text-slate-400 hover:text-white text-xl font-bold bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center transition"
-              >
-                ✕
-              </button>
-            </div>
+              <h3 className="text-base font-black text-white mb-2">Submit an Offer / LOI</h3>
+              <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                Generate and submit an official Letter of Intent directly to the wholesaler to lock this contract.
+              </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block text-slate-400 uppercase font-bold mb-1">
-                  Buyer Entity / Full Name
-                </label>
-                <input
-                  type="text"
-                  value={loiBuyerName}
-                  onChange={(e) => setLoiBuyerName(e.target.value)}
-                  className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-sky-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 uppercase font-bold mb-1">
-                  Proposed Purchase Price ($ USD)
-                </label>
-                <input
-                  type="number"
-                  value={loiOfferPrice}
-                  onChange={(e) => setLoiOfferPrice(Number(e.target.value))}
-                  className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white font-bold focus:outline-none focus:border-sky-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 uppercase font-bold mb-1">
-                  Earnest Money Deposit ($ EMD)
-                </label>
-                <input
-                  type="number"
-                  value={loiEmd}
-                  onChange={(e) => setLoiEmd(Number(e.target.value))}
-                  className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-sky-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-slate-400 uppercase font-bold mb-1">
-                  Inspection Period (Days)
-                </label>
-                <input
-                  type="number"
-                  value={loiInspectionDays}
-                  onChange={(e) => setLoiInspectionDays(Number(e.target.value))}
-                  className="w-full bg-[#131d36] border border-slate-700 rounded-xl px-3 py-2.5 text-white focus:outline-none focus:border-sky-500"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-[11px] text-slate-400 uppercase font-bold">
-                Generated Legal Preview
-              </label>
-              <pre className="w-full bg-[#070b14] border border-slate-800 rounded-2xl p-4 text-[10px] text-slate-300 font-mono overflow-x-auto max-h-48 leading-relaxed whitespace-pre-wrap">
-                {generateLoiText()}
-              </pre>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-              <button
-                onClick={handleDownloadLoi}
-                className="w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3.5 px-4 rounded-xl transition border border-slate-700 text-xs flex items-center justify-center gap-2 cursor-pointer"
-              >
-                📥 Download Legal LOI Document (.txt)
-              </button>
-
-              <button
-                onClick={handleEmailLoi}
-                className="w-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 text-white font-extrabold py-3.5 px-4 rounded-xl transition text-xs flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-              >
-                ✉️ Send LOI Directly to Wholesaler Desk
-              </button>
+              {loiSubmitted ? (
+                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center">
+                  <span className="text-emerald-400 font-bold text-xs">✓ LOI Successfully Dispatched!</span>
+                  <p className="text-[11px] text-slate-400 mt-1">The wholesaler has been notified via instant assignment webhook.</p>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setLoiSubmitted(true)}
+                  disabled={!isUnlocked}
+                  className={`w-full text-center block font-black text-xs uppercase tracking-wider py-3.5 rounded-xl transition cursor-pointer ${
+                    isUnlocked 
+                      ? 'bg-slate-800 hover:bg-slate-700 text-white border border-slate-700' 
+                      : 'bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed'
+                  }`}
+                >
+                  {isUnlocked ? 'Generate & Submit LOI (PDF)' : '🔒 Unlock LOI Generator (Basic/VIP)'}
+                </button>
+              )}
             </div>
 
           </div>
+
         </div>
-      )}
+
+      </main>
+
+      {/* Global Footer Identique */}
+      <footer className="border-t border-slate-800 bg-[#04060A] py-8 sm:py-12 mt-16 text-slate-400 text-xs font-sans">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 text-center md:text-left">
+            <div>
+              <span className="text-white font-black tracking-wider text-sm">MULTIDEAL<span className="text-emerald-400">PROP</span></span>
+              <p className="text-slate-500 text-xs mt-0.5">Institutional Off-Market Multi-Family &amp; Commercial Pipeline</p>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
+              <Link href="/login" className="text-white hover:text-emerald-400 transition font-bold">Sign In / Access</Link>
+              <Link href="/submit-deal" className="text-emerald-400 hover:underline transition font-bold">+ Submit Deal</Link>
+              <Link href="/about" className="hover:text-emerald-400 transition">About Us</Link>
+              <Link href="/vip" className="hover:text-emerald-400 transition">Pricing Plans</Link>
+              <Link href="/contact" className="hover:text-emerald-400 transition">Contact Desk</Link>
+              <Link href="/terms" className="hover:text-emerald-400 transition">Terms &amp; Disclaimer</Link>
+              <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy Policy</Link>
+            </div>
+          </div>
+
+          <div className="border-t border-slate-900 pt-4 sm:pt-6 flex flex-col md:flex-row items-center justify-between gap-3 text-[10px] sm:text-[11px] text-slate-600 text-center md:text-left">
+            <p>
+              Disclaimer: MultiDealProp is a data aggregation platform and does not provide real estate brokerage, lending, or legal services.
+            </p>
+            <p className="flex-shrink-0">
+              © 2026 MultiDealProp. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </footer>
 
     </div>
   );
