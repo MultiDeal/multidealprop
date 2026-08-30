@@ -24,8 +24,7 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  AlertTriangle,
-  EyeOff
+  AlertTriangle
 } from 'lucide-react';
 
 interface UnitDetail {
@@ -232,7 +231,7 @@ export default function DealDetailPage() {
   const dealId = (typeof routerParams?.id === 'string' ? routerParams.id : Array.isArray(routerParams?.id) ? routerParams.id[0] : '1');
   const deal = DEALS_DATABASE[dealId] || DEALS_DATABASE['1'];
 
-  // Statut Membre - Verrouillé par défaut pour les non-abonnés
+  // Statut Membre
   const [isUnlocked, setIsUnlocked] = useState<boolean>(false);
   const [userTier, setUserTier] = useState<string | null>(null);
 
@@ -276,7 +275,6 @@ export default function DealDetailPage() {
   const [loiSubmitted, setLoiSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
-    // Vérification prioritaire de l'URL (?tier=starter ou ?tier=vip)
     const urlParams = new URLSearchParams(window.location.search);
     const tierParam = urlParams.get('tier');
 
@@ -287,7 +285,6 @@ export default function DealDetailPage() {
       return;
     }
 
-    // Vérification du stockage local
     const saved = localStorage.getItem('multidealprop_tier');
     if (saved === 'vip' || saved === 'starter') {
       setIsUnlocked(true);
@@ -609,22 +606,25 @@ export default function DealDetailPage() {
               )}
             </div>
 
-            {/* HERO BAR : NET CASH FLOW (L'APPÂT VISUEL N°1) */}
-            <div className="bg-[#0d1527] border border-emerald-500/30 p-5 sm:p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* HERO BAR : NET CASH FLOW - 100% NET ET LISIBLE SANS AUCUN FLOU */}
+            <div className="bg-[#0b1120] border-2 border-emerald-500/50 p-5 sm:p-6 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-5">
               <div className="text-left">
-                <span className="text-[10px] uppercase font-black text-slate-400 block tracking-wider">
-                  Net Free Cash Flow (Monthly &amp; Annual)
-                </span>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Flux de tr&eacute;sorerie net apr&egrave;s d&eacute;duction du service de dette (P&amp;I) et de l&apos;ensemble des d&eacute;penses d&apos;exploitation.
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span className="text-xs uppercase font-black tracking-wider text-emerald-400">
+                    Net Free Cash Flow (Monthly &amp; Annual)
+                  </span>
+                </div>
+                <p className="text-xs text-slate-200 leading-relaxed max-w-xl font-medium">
+                  Flux de trésorerie net direct après déduction du prêt hypothécaire (P&amp;I), des taxes foncières, assurances, gestion et réserves d&apos;exploitation.
                 </p>
               </div>
 
-              <div className="text-center sm:text-right bg-slate-950/80 px-6 py-3 rounded-2xl border border-slate-800/80 min-w-[200px]">
-                <span className={`text-2xl sm:text-3xl font-black font-mono block ${monthlyNetCashFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <div className="text-center sm:text-right bg-slate-950 px-6 py-3.5 rounded-2xl border border-slate-700 min-w-[220px] shadow-xl">
+                <span className={`text-2xl sm:text-3xl font-black font-mono block tracking-tight ${monthlyNetCashFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {monthlyNetCashFlow >= 0 ? '+' : ''}${Math.round(monthlyNetCashFlow).toLocaleString()}/mo
                 </span>
-                <span className="text-xs font-mono text-slate-400 font-bold block mt-0.5">
+                <span className="text-xs font-mono text-emerald-300 font-bold block mt-1">
                   {annualNetCashFlow >= 0 ? '+' : ''}${Math.round(annualNetCashFlow).toLocaleString()} / year
                 </span>
               </div>
