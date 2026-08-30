@@ -17,14 +17,18 @@ import {
   Sliders,
   DollarSign,
   Printer,
-  Download,
   Flame,
   CheckCircle2,
   Wrench,
   Compass,
   BarChart3,
   FileText,
-  Share2
+  Percent,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  Activity,
+  AlertTriangle
 } from 'lucide-react';
 
 interface UnitDetail {
@@ -64,7 +68,12 @@ const DEALS_DATABASE: Record<string, any> = {
     maintenanceRate: 5,
     capexRate: 5,
     waterSewer: 780,
-    imageUrl: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=1200&q=80'
+    ],
     mechanics: {
       roof: 'Architectural Shingle (Replaced 2021)',
       hvac: '2x High-Efficiency Forced Air Furnaces (2020)',
@@ -106,7 +115,11 @@ const DEALS_DATABASE: Record<string, any> = {
     maintenanceRate: 5,
     capexRate: 5,
     waterSewer: 3600,
-    imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80'
+    ],
     mechanics: {
       roof: 'Pitched Metal Roof (Refurbished 2022)',
       hvac: 'Individual PTAC Units in each suite',
@@ -148,7 +161,10 @@ const DEALS_DATABASE: Record<string, any> = {
     maintenanceRate: 5,
     capexRate: 5,
     waterSewer: 1600,
-    imageUrl: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80'
+    ],
     mechanics: {
       roof: 'EPDM Commercial Membrane (2019)',
       hvac: 'Separate Rooftop Package Unit for Retail + Split A/C',
@@ -189,7 +205,10 @@ const DEALS_DATABASE: Record<string, any> = {
     maintenanceRate: 5,
     capexRate: 5,
     waterSewer: 960,
-    imageUrl: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
+    images: [
+      'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80'
+    ],
     mechanics: {
       roof: 'Asphalt Shingle (2018)',
       hvac: '4x Gas Wall Heaters + Window A/C',
@@ -208,127 +227,6 @@ const DEALS_DATABASE: Record<string, any> = {
       phone: '(216) 555-0194',
       email: 'acquisitions@apexwholesale.com',
     }
-  },
-  'deal-1': {
-    id: 'deal-1',
-    title: '18-Unit Value-Add Multifamily Portfolio',
-    location: 'Cleveland, OH',
-    address: '1428-1436 E 120th St, Cleveland, OH 44106',
-    apn: '120-14-082',
-    price: 895000,
-    arv: 1380000,
-    units: 18,
-    yearBuilt: '1968 (Brick)',
-    monthlyRent: 14200,
-    otherIncome: 450,
-    vacancyRate: 7,
-    taxes: 11200,
-    insurance: 6400,
-    managementRate: 8,
-    maintenanceRate: 6,
-    capexRate: 5,
-    waterSewer: 5200,
-    imageUrl: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
-    mechanics: {
-      roof: 'Flat Commercial Built-Up Roof (Inspected 2024)',
-      hvac: 'Central Boiler + Individual Baseboard Radiation',
-      electrical: '18 Sub-panels with Master Distribution',
-      plumbing: 'Cast Iron & Copper Water Mains',
-      foundation: 'Reinforced Concrete Foundation Walls'
-    },
-    rentRoll: [
-      { unitNumber: 'Bldg A (1-9)', type: '1 Bed / 1 Bath', currentRent: 7100, marketRent: 10350, leaseStatus: '8/9 Occupied', squareFeet: 6300 },
-      { unitNumber: 'Bldg B (10-18)', type: '2 Bed / 1 Bath', currentRent: 7100, marketRent: 11150, leaseStatus: '7/9 Occupied', squareFeet: 7200 }
-    ],
-    marketComps: [
-      { address: '1390 E 120th St', soldPrice: 1250000, units: 18, pricePerUnit: 69444, date: 'Jan 2026' }
-    ],
-    wholesaler: {
-      name: 'Marcus Vance (Midwest Wholesale Desk)',
-      phone: '(216) 555-0194',
-      email: 'mvance@midwestacquisitions.com',
-    }
-  },
-  'deal-2': {
-    id: 'deal-2',
-    title: '24-Unit Garden Style Apartment Complex',
-    location: 'Memphis, TN',
-    address: '3290 Jackson Ave, Memphis, TN 38112',
-    apn: '045-021-0012',
-    price: 1350000,
-    arv: 1950000,
-    units: 24,
-    yearBuilt: '1974',
-    monthlyRent: 22000,
-    otherIncome: 800,
-    vacancyRate: 6,
-    taxes: 18500,
-    insurance: 9200,
-    managementRate: 8,
-    maintenanceRate: 5,
-    capexRate: 5,
-    waterSewer: 7400,
-    imageUrl: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80',
-    mechanics: {
-      roof: 'Pitched Shingle Roofs (Installed 2022)',
-      hvac: 'Individual Central Air Split Systems',
-      electrical: '24 Separate Electric Meters',
-      plumbing: 'Copper Supply / CPVC Remodel',
-      foundation: 'Poured Concrete Slab'
-    },
-    rentRoll: [
-      { unitNumber: 'Phase 1 (1-12)', type: '2 Bed / 1.5 Bath', currentRent: 11000, marketRent: 15500, leaseStatus: '100% Leased', squareFeet: 10800 },
-      { unitNumber: 'Phase 2 (13-24)', type: '2 Bed / 1.5 Bath', currentRent: 11000, marketRent: 15500, leaseStatus: '11/12 Leased', squareFeet: 10800 }
-    ],
-    marketComps: [
-      { address: '3100 Jackson Ave', soldPrice: 1820000, units: 24, pricePerUnit: 75833, date: 'Apr 2026' }
-    ],
-    wholesaler: {
-      name: 'Sarah Jenkins (Apex Direct Assets)',
-      phone: '(901) 555-0182',
-      email: 'sjenkins@apexassetsgroup.com',
-    }
-  },
-  'deal-3': {
-    id: 'deal-3',
-    title: '12-Unit Fully Occupied Brick Quadplexes',
-    location: 'Indianapolis, IN',
-    address: '2840 N Meridian St, Indianapolis, IN 46208',
-    apn: '49-06-25-104-002',
-    price: 720000,
-    arv: 980000,
-    units: 12,
-    yearBuilt: '1982',
-    monthlyRent: 11800,
-    otherIncome: 300,
-    vacancyRate: 5,
-    taxes: 9600,
-    insurance: 4800,
-    managementRate: 8,
-    maintenanceRate: 5,
-    capexRate: 5,
-    waterSewer: 3900,
-    imageUrl: 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?auto=format&fit=crop&w=1200&q=80',
-    mechanics: {
-      roof: 'Architectural Shingles (2020)',
-      hvac: '12x Electric Heat Pumps with Digital Thermostats',
-      electrical: '12 Separate 100A Breaker Boxes',
-      plumbing: 'PEX Tubing with Central Manifold System',
-      foundation: 'Crawlspace Encapsulated with Sump Pump'
-    },
-    rentRoll: [
-      { unitNumber: 'Bldg 1 (1-4)', type: '2 Bed / 1 Bath', currentRent: 3933, marketRent: 5100, leaseStatus: '4/4 Leased', squareFeet: 3400 },
-      { unitNumber: 'Bldg 2 (5-8)', type: '2 Bed / 1 Bath', currentRent: 3933, marketRent: 5100, leaseStatus: '4/4 Leased', squareFeet: 3400 },
-      { unitNumber: 'Bldg 3 (9-12)', type: '2 Bed / 1 Bath', currentRent: 3934, marketRent: 5100, leaseStatus: '4/4 Leased', squareFeet: 3400 }
-    ],
-    marketComps: [
-      { address: '2910 N Meridian St', soldPrice: 940000, units: 12, pricePerUnit: 78333, date: 'Jun 2026' }
-    ],
-    wholesaler: {
-      name: 'David Keller (Circle City Holdings)',
-      phone: '(317) 555-0149',
-      email: 'dkeller@circlecityequity.com',
-    }
   }
 };
 
@@ -341,14 +239,19 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const [isUnlocked, setIsUnlocked] = useState<boolean>(true);
   const [userTier, setUserTier] = useState<string | null>(null);
 
-  // 6. STRATÉGIE D'INVESTISSEMENT (EXIT STRATEGY TOGGLE)
+  // Galerie photos
+  const dealImages = deal.images || [deal.imageUrl];
+  const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
+
+  // Stratégie d'Acquisition
   const [strategy, setStrategy] = useState<'BUY_HOLD' | 'BRRRR' | 'FLIP'>('BUY_HOLD');
 
-  // Paramètres de la Calculatrice
+  // --- MEGA CALCULATRICE: FINANCEMENT ET CAPITAL STACK ---
   const [purchasePrice, setPurchasePrice] = useState<number>(deal.price);
   const [downPercent, setDownPercent] = useState<number>(20);
   const [interestRate, setInterestRate] = useState<number>(7.25);
   const [loanTermYears, setLoanTermYears] = useState<number>(30);
+  const [interestOnlyYears, setInterestOnlyYears] = useState<number>(0);
   const [closingCostPercent, setClosingCostPercent] = useState<number>(2.5);
   const [rehabBudget, setRehabBudget] = useState<number>(0);
 
@@ -365,6 +268,14 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const [capexRate, setCapexRate] = useState<number>(deal.capexRate || 5);
   const [annualUtilities, setAnnualUtilities] = useState<number>(deal.waterSewer || 0);
 
+  // Modélisation de Sortie & Fiscalité
+  const [holdingPeriodYears, setHoldingPeriodYears] = useState<number>(5);
+  const [exitCapRate, setExitCapRate] = useState<number>(7.5);
+  const [annualAppreciation, setAnnualAppreciation] = useState<number>(3.0);
+  const [annualRentGrowth, setAnnualRentGrowth] = useState<number>(2.5);
+  const [marginalTaxRate, setMarginalTaxRate] = useState<number>(28);
+
+  const [showAmortizationTable, setShowAmortizationTable] = useState<boolean>(false);
   const [loiSubmitted, setLoiSubmitted] = useState<boolean>(false);
 
   useEffect(() => {
@@ -378,7 +289,6 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
     }
   }, []);
 
-  // Gestion du budget de rénovation selon la stratégie sélectionnée
   const handleStrategyChange = (newStrategy: 'BUY_HOLD' | 'BRRRR' | 'FLIP') => {
     setStrategy(newStrategy);
     if (newStrategy === 'BUY_HOLD') setRehabBudget(0);
@@ -386,7 +296,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
     if (newStrategy === 'FLIP') setRehabBudget(45000);
   };
 
-  // --- MOTEUR FINANCIER INSTITUTIONNEL ---
+  // --- MOTEUR DE CALCUL MATHEMATIQUE INSTITUTIONNEL ---
   const downPaymentAmount = (purchasePrice * downPercent) / 100;
   const loanAmount = Math.max(0, purchasePrice - downPaymentAmount);
   const closingCostsAmount = (loanAmount * closingCostPercent) / 100;
@@ -394,24 +304,32 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
 
   const monthlyInterestRate = interestRate / 100 / 12;
   const numberOfPayments = loanTermYears * 12;
+
+  // Calcul P&I Hypothécaire Mensuel (Amorti vs Interest-Only)
+  const isCurrentlyIO = interestOnlyYears > 0;
   const monthlyMortgage = (downPercent === 100 || loanAmount <= 0) 
     ? 0 
-    : (loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments))) / 
-      (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
+    : isCurrentlyIO
+      ? loanAmount * monthlyInterestRate
+      : (loanAmount * (monthlyInterestRate * Math.pow(1 + monthlyInterestRate, numberOfPayments))) / 
+        (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
   const annualDebtService = monthlyMortgage * 12;
 
+  // Revenus
   const grossScheduledAnnualRent = (monthlyRent + otherMonthlyIncome) * 12;
   const annualVacancyLoss = (grossScheduledAnnualRent * vacancyRate) / 100;
   const effectiveGrossIncome = grossScheduledAnnualRent - annualVacancyLoss;
 
+  // Opex
   const annualManagementFee = (effectiveGrossIncome * managementRate) / 100;
   const annualMaintenance = (effectiveGrossIncome * maintenanceRate) / 100;
   const annualCapex = (effectiveGrossIncome * capexRate) / 100;
-  
   const totalOperatingExpenses = annualTaxes + annualInsurance + annualManagementFee + annualMaintenance + annualCapex + annualUtilities;
   const monthlyOperatingExpenses = totalOperatingExpenses / 12;
 
+  // Métriques Clés
   const annualNOI = effectiveGrossIncome - totalOperatingExpenses;
+  const monthlyNOI = annualNOI / 12;
   const capRate = purchasePrice > 0 ? ((annualNOI / purchasePrice) * 100).toFixed(2) : '0.00';
 
   const annualNetCashFlow = annualNOI - annualDebtService;
@@ -423,13 +341,71 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
 
   const dscr = annualDebtService > 0 ? (annualNOI / annualDebtService).toFixed(2) : 'N/A';
 
-  // Projection 5 Ans
-  const propertyAppreciationRate = 0.03;
-  const estimatedValueYear5 = Math.round(purchasePrice * Math.pow(1 + propertyAppreciationRate, 5));
-  const estimatedEquityGain5Yrs = estimatedValueYear5 - purchasePrice;
-  const totalCumulativeCashFlow5Yrs = Math.round(annualNetCashFlow * 5);
-  const fiveYearTotalReturn = totalCashInvested > 0 
-    ? (((totalCumulativeCashFlow5Yrs + estimatedEquityGain5Yrs) / totalCashInvested) * 100 / 5).toFixed(1)
+  // Stress Test & Break-Even Occupancy
+  const totalFixedCostsAnnual = totalOperatingExpenses + annualDebtService;
+  const breakEvenOccupancy = grossScheduledAnnualRent > 0 
+    ? Math.min(100, Math.round((totalFixedCostsAnnual / grossScheduledAnnualRent) * 100))
+    : 0;
+
+  // Ingénierie Fiscale (IRS 27.5 Years Straight-Line Depreciation)
+  const buildingBasis = (purchasePrice + rehabBudget) * 0.80; // 80% Bâtiment, 20% Terrain
+  const annualDepreciation = buildingBasis / 27.5;
+  const taxableIncomeYear1 = Math.max(0, annualNOI - (loanAmount * (interestRate / 100)) - annualDepreciation);
+  const annualTaxSaved = annualDepreciation * (marginalTaxRate / 100);
+  const taxShelteredCashFlow = Math.min(annualNetCashFlow, annualDepreciation);
+
+  // Modélisation Sortie & Amortissement Multi-Annuel
+  const futureAnnualNOI = annualNOI * Math.pow(1 + (annualRentGrowth / 100), holdingPeriodYears);
+  const projectedExitSalePrice = exitCapRate > 0 ? Math.round(futureAnnualNOI / (exitCapRate / 100)) : purchasePrice;
+  
+  // Tableau d'Amortissement Dynamique sur 30 Ans
+  const amortizationSchedule: Array<{
+    year: number;
+    remainingBalance: number;
+    principalPaid: number;
+    interestPaid: number;
+    propertyValue: number;
+    equity: number;
+  }> = [];
+
+  let currentBalance = loanAmount;
+  let runningPropertyValue = purchasePrice + rehabBudget;
+
+  for (let y = 1; y <= Math.min(30, loanTermYears); y++) {
+    let yearInterest = 0;
+    let yearPrincipal = 0;
+
+    for (let m = 1; m <= 12; m++) {
+      if (currentBalance <= 0) break;
+      const mInterest = currentBalance * monthlyInterestRate;
+      const mPrincipal = (y <= interestOnlyYears) ? 0 : Math.min(currentBalance, monthlyMortgage - mInterest);
+      yearInterest += mInterest;
+      yearPrincipal += mPrincipal;
+      currentBalance = Math.max(0, currentBalance - mPrincipal);
+    }
+
+    runningPropertyValue = runningPropertyValue * (1 + (annualAppreciation / 100));
+
+    amortizationSchedule.push({
+      year: y,
+      remainingBalance: Math.round(currentBalance),
+      principalPaid: Math.round(yearPrincipal),
+      interestPaid: Math.round(yearInterest),
+      propertyValue: Math.round(runningPropertyValue),
+      equity: Math.round(runningPropertyValue - currentBalance)
+    });
+  }
+
+  // Calcul du TRI (IRR) & Multiple d'Équité à l'année sélectionnée
+  const exitYearData = amortizationSchedule[Math.min(holdingPeriodYears - 1, amortizationSchedule.length - 1)] || amortizationSchedule[0];
+  const netProceedsAtSale = projectedExitSalePrice - (projectedExitSalePrice * 0.06) - (exitYearData?.remainingBalance || 0);
+  const totalCumulativeCashFlow = Math.round(annualNetCashFlow * holdingPeriodYears);
+  const totalReturnDollars = netProceedsAtSale + totalCumulativeCashFlow;
+  const equityMultiple = totalCashInvested > 0 ? (totalReturnDollars / totalCashInvested).toFixed(2) : '0.00';
+  
+  // TRI / IRR approximé
+  const estimatedIRR = totalCashInvested > 0 
+    ? ((Math.pow(Math.max(0.1, totalReturnDollars / totalCashInvested), 1 / holdingPeriodYears) - 1) * 100).toFixed(1)
     : '0.0';
 
   // Rent Roll Upside
@@ -441,11 +417,6 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
   const brrrrARV = deal.arv || purchasePrice * 1.35;
   const brrrrRefinanceLoan = brrrrARV * 0.75;
   const brrrrCashLeftInDeal = Math.max(0, (purchasePrice + rehabBudget + closingCostsAmount) - brrrrRefinanceLoan);
-
-  // 5. FONCTION D'EXPORTATION DEAL MEMO PDF
-  const handleExportPDF = () => {
-    window.print();
-  };
 
   return (
     <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black flex flex-col justify-between overflow-x-hidden">
@@ -463,6 +434,15 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
           </Link>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => window.print()}
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-200 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition cursor-pointer"
+            >
+              <Printer className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="hidden sm:inline">Export Deal Memo (PDF)</span>
+              <span className="sm:hidden">PDF</span>
+            </button>
+
             <Link 
               href={userTier ? '/deals' : '/'}
               className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition"
@@ -516,12 +496,8 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* SECTION 5 & 6 BIEN VISIBLES : STRATÉGIE (TOGGLE) + EXPORT PDF MEMO       */}
-        {/* ========================================================================= */}
+        {/* STRATÉGIE & EXPORT MEMO BAR */}
         <div className="bg-[#0b1120] border-2 border-emerald-500/40 rounded-3xl p-4 sm:p-5 mb-6 shadow-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-          
-          {/* 6. SÉLECTEUR DE STRATÉGIE (EXIT STRATEGY TOGGLE) */}
           <div className="space-y-1.5 flex-1">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block flex items-center gap-1.5">
               <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Select Acquisition &amp; Exit Strategy:
@@ -565,20 +541,18 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
             </div>
           </div>
 
-          {/* 5. BOUTON EXPORT EXECUTIVE DEAL MEMO (PDF) */}
           <div className="md:border-l md:border-slate-800 md:pl-4 flex flex-col justify-center">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
               Lender Diligence Packet:
             </span>
             <button
-              onClick={handleExportPDF}
+              onClick={() => window.print()}
               className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <FileText className="w-4 h-4" />
               <span>Export Deal Memo (PDF)</span>
             </button>
           </div>
-
         </div>
 
         {/* 2-Column Institutional Grid */}
@@ -587,13 +561,36 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
           {/* Main Left Column (2/3) */}
           <div className="lg:col-span-2 space-y-6">
             
-            {/* Property Image Banner */}
-            <div className="h-64 sm:h-80 rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl relative">
-              <img 
-                src={deal.imageUrl} 
-                alt={deal.title} 
-                className="w-full h-full object-cover"
-              />
+            {/* GALERIE MULTI-PHOTOS INTERACTIVE */}
+            <div className="space-y-3">
+              <div className="h-72 sm:h-96 rounded-3xl overflow-hidden bg-slate-950 border border-slate-800 shadow-2xl relative">
+                <img 
+                  src={dealImages[activeImageIndex]} 
+                  alt={`${deal.title} - Photo ${activeImageIndex + 1}`} 
+                  className="w-full h-full object-cover transition-all duration-300"
+                />
+                <div className="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-3 py-1 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 font-bold">
+                  📷 {activeImageIndex + 1} / {dealImages.length}
+                </div>
+              </div>
+
+              {dealImages.length > 1 && (
+                <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-thin">
+                  {dealImages.map((imgUrl: string, idx: number) => (
+                    <button
+                      key={idx}
+                      onClick={() => setActiveImageIndex(idx)}
+                      className={`relative h-16 w-24 sm:h-20 sm:w-28 rounded-2xl overflow-hidden border-2 flex-shrink-0 transition-all cursor-pointer ${
+                        activeImageIndex === idx 
+                          ? 'border-emerald-400 scale-95 shadow-lg shadow-emerald-500/20' 
+                          : 'border-slate-800 opacity-60 hover:opacity-100'
+                      }`}
+                    >
+                      <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Core KPIs Header */}
@@ -618,7 +615,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* BRRRR / FLIP SIMULATION CARD */}
+            {/* BRRRR SPECIAL MATRIX */}
             {strategy === 'BRRRR' && (
               <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-5 rounded-3xl shadow-xl">
                 <div className="flex items-center gap-2 mb-3">
@@ -646,7 +643,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             )}
 
-            {/* MODULE 1: DETAILED RENT ROLL & UNIT MIX */}
+            {/* RENT ROLL & UNIT MIX ANALYSIS */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
                 <div>
@@ -687,147 +684,317 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* MODULE 2: MEGA-CALCULATRICE HYPOTHÉCAIRE */}
+            {/* MEGA CALCULATRICE HYPOTHÉCAIRE & SOUSCRIPTION COMPLETE */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-7 shadow-2xl space-y-6">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 border-b border-slate-800/80 pb-4">
                 <div>
                   <h3 className="text-base font-black text-white flex items-center gap-2">
                     <Calculator className="w-5 h-5 text-emerald-400" />
-                    <span>Interactive Mortgage &amp; Cash-Flow Modeler</span>
+                    <span>Institutional Underwriting &amp; Mortgage Engine</span>
                   </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Modifiez vos hypothèses de prêt et d'exploitation en temps réel.</p>
+                  <p className="text-xs text-slate-400 mt-0.5">Modélisation complète de dette, options I/O, fiscalité et ratios de couverture.</p>
                 </div>
                 <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 w-fit">
-                  Live Calculator
+                  Wall St. Model
                 </span>
               </div>
 
-              {/* SECTION A : DEBT & FINANCING */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950/70 p-4 rounded-2xl border border-slate-800/80 text-xs">
-                <div>
-                  <label className="text-slate-400 font-bold block mb-1">Contract Price ($)</label>
-                  <input 
-                    type="number"
-                    value={purchasePrice}
-                    onChange={(e) => setPurchasePrice(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold focus:border-emerald-400 outline-none"
-                  />
-                </div>
+              {/* 1. Financement & Structure de Dette */}
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-1.5">
+                  <Coins className="w-3.5 h-3.5" />
+                  <span>1. Debt Financing &amp; Capital Stack</span>
+                </h4>
 
-                <div>
-                  <div className="flex justify-between font-bold mb-1">
-                    <span className="text-slate-400">Down Payment ({downPercent}%)</span>
-                    <span className="text-emerald-400 font-mono">${Math.round(downPaymentAmount).toLocaleString()}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-950/70 p-4 rounded-2xl border border-slate-800/80 text-xs">
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Contract Price ($)</label>
+                    <input 
+                      type="number"
+                      value={purchasePrice}
+                      onChange={(e) => setPurchasePrice(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold focus:border-emerald-400 outline-none"
+                    />
                   </div>
-                  <input 
-                    type="range"
-                    min="0"
-                    max="100"
-                    step="5"
-                    value={downPercent}
-                    onChange={(e) => setDownPercent(Number(e.target.value))}
-                    className="w-full accent-emerald-400 bg-slate-900 rounded-lg cursor-pointer h-2 mt-2"
-                  />
-                </div>
 
-                <div>
-                  <div className="flex justify-between font-bold mb-1">
-                    <span className="text-slate-400">Interest Rate (%)</span>
-                    <span className="text-cyan-400 font-mono">{interestRate}%</span>
+                  <div>
+                    <div className="flex justify-between font-bold mb-1">
+                      <span className="text-slate-400">Down Payment ({downPercent}%)</span>
+                      <span className="text-emerald-400 font-mono">${Math.round(downPaymentAmount).toLocaleString()}</span>
+                    </div>
+                    <input 
+                      type="range"
+                      min="0"
+                      max="100"
+                      step="5"
+                      value={downPercent}
+                      onChange={(e) => setDownPercent(Number(e.target.value))}
+                      className="w-full accent-emerald-400 bg-slate-900 rounded-lg cursor-pointer h-2 mt-2"
+                    />
                   </div>
-                  <input 
-                    type="number"
-                    step="0.125"
-                    value={interestRate}
-                    onChange={(e) => setInterestRate(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold focus:border-cyan-400 outline-none"
-                  />
+
+                  <div>
+                    <div className="flex justify-between font-bold mb-1">
+                      <span className="text-slate-400">Interest Rate (%)</span>
+                      <span className="text-cyan-400 font-mono">{interestRate}%</span>
+                    </div>
+                    <input 
+                      type="number"
+                      step="0.125"
+                      value={interestRate}
+                      onChange={(e) => setInterestRate(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold focus:border-cyan-400 outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Loan Amortization Term</label>
+                    <div className="grid grid-cols-3 gap-1">
+                      {[15, 25, 30].map(term => (
+                        <button
+                          key={term}
+                          onClick={() => setLoanTermYears(term)}
+                          className={`py-2 rounded-lg font-bold transition text-[11px] ${
+                            loanTermYears === term 
+                              ? 'bg-emerald-500 text-black shadow-md' 
+                              : 'bg-slate-900 border border-slate-700 text-slate-400'
+                          }`}
+                        >
+                          {term} Yrs
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Interest-Only Period</label>
+                    <select
+                      value={interestOnlyYears}
+                      onChange={(e) => setInterestOnlyYears(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold outline-none"
+                    >
+                      <option value="0">None (Full Amortization)</option>
+                      <option value="1">1 Year I/O</option>
+                      <option value="2">2 Years I/O</option>
+                      <option value="3">3 Years I/O</option>
+                      <option value="5">5 Years I/O</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Initial Rehab / CapEx ($)</label>
+                    <input 
+                      type="number"
+                      step="500"
+                      value={rehabBudget}
+                      onChange={(e) => setRehabBudget(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-mono font-bold focus:border-amber-400 outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* SECTION B : OPEX & TAXES */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/70 p-4 rounded-2xl border border-slate-800/80 text-xs">
-                <div>
-                  <label className="text-slate-400 font-bold block mb-1">Property Taxes ($/yr)</label>
-                  <input 
-                    type="number"
-                    value={annualTaxes}
-                    onChange={(e) => setAnnualTaxes(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
-                  />
-                </div>
+              {/* 2. Opex & Charges Détaillées */}
+              <div>
+                <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 mb-3 flex items-center gap-1.5">
+                  <Sliders className="w-3.5 h-3.5" />
+                  <span>2. Operating Expenses &amp; Municipal Escrows</span>
+                </h4>
 
-                <div>
-                  <label className="text-slate-400 font-bold block mb-1">Hazard Insurance ($/yr)</label>
-                  <input 
-                    type="number"
-                    value={annualInsurance}
-                    onChange={(e) => setAnnualInsurance(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
-                  />
-                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-950/70 p-4 rounded-2xl border border-slate-800/80 text-xs">
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Property Taxes ($/yr)</label>
+                    <input 
+                      type="number"
+                      value={annualTaxes}
+                      onChange={(e) => setAnnualTaxes(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
+                    />
+                  </div>
 
-                <div>
-                  <label className="text-slate-400 font-bold block mb-1">Management Fee (%)</label>
-                  <input 
-                    type="number"
-                    value={managementRate}
-                    onChange={(e) => setManagementRate(Number(e.target.value))}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
-                  />
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Hazard Insurance ($/yr)</label>
+                    <input 
+                      type="number"
+                      value={annualInsurance}
+                      onChange={(e) => setAnnualInsurance(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Management Fee (%)</label>
+                    <input 
+                      type="number"
+                      value={managementRate}
+                      onChange={(e) => setManagementRate(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Maintenance (%)</label>
+                    <input 
+                      type="number"
+                      value={maintenanceRate}
+                      onChange={(e) => setMaintenanceRate(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">CapEx Structural (%)</label>
+                    <input 
+                      type="number"
+                      value={capexRate}
+                      onChange={(e) => setCapexRate(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 font-bold block mb-1">Water/Sewer Escrow ($/yr)</label>
+                    <input 
+                      type="number"
+                      value={annualUtilities}
+                      onChange={(e) => setAnnualUtilities(Number(e.target.value))}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-1.5 text-slate-200 font-mono font-bold outline-none"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* EXECUTIVE UNDERWRITING BAR */}
-              <div className="bg-slate-950 p-4 rounded-2xl border border-emerald-500/30 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Monthly P&amp;I</span>
-                  <strong className="text-red-400 font-mono text-sm block mt-0.5">-${Math.round(monthlyMortgage)}/mo</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Total Cash In</span>
-                  <strong className="text-white font-mono text-sm block mt-0.5">${Math.round(totalCashInvested).toLocaleString()}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual NOI</span>
-                  <strong className="text-cyan-300 font-mono text-sm block mt-0.5">${Math.round(annualNOI).toLocaleString()}/yr</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Free Cash Flow</span>
-                  <strong className="text-emerald-400 font-mono text-sm block mt-0.5">+${Math.round(monthlyNetCashFlow).toLocaleString()}/mo</strong>
+              {/* 3. Ingénierie Fiscale (IRS Tax Shelter) */}
+              <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800">
+                <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center justify-between">
+                  <span>🏛️ IRS 27.5-Year Depreciation &amp; Tax Shelter Analysis</span>
+                  <span className="text-[10px] text-slate-400 font-mono">Tax Bracket: {marginalTaxRate}%</span>
+                </h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Depreciable Basis (80%)</span>
+                    <strong className="text-white font-mono text-sm block mt-0.5">${Math.round(buildingBasis).toLocaleString()}</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Depreciation Write-off</span>
+                    <strong className="text-cyan-300 font-mono text-sm block mt-0.5">${Math.round(annualDepreciation).toLocaleString()} / yr</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Tax Shelter Shield</span>
+                    <strong className="text-emerald-400 font-mono text-sm block mt-0.5">${Math.round(annualTaxSaved).toLocaleString()} / yr</strong>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Tax-Free Cash-Flow</span>
+                    <strong className="text-emerald-400 font-mono text-sm block mt-0.5">100% Protected</strong>
+                  </div>
                 </div>
               </div>
+
+              {/* Stress Test & Break-Even Ratio */}
+              <div className="bg-amber-950/20 border border-amber-500/30 p-4 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 text-xs">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0" />
+                  <div>
+                    <strong className="text-white block font-bold">Break-Even Occupancy Threshold: {breakEvenOccupancy}%</strong>
+                    <span className="text-slate-400">La propriété reste à flux de trésorerie positif même avec jusqu'à {100 - breakEvenOccupancy}% d'inoccupation.</span>
+                  </div>
+                </div>
+                <span className="text-xs font-mono font-black text-amber-300 bg-amber-900/60 px-3 py-1 rounded-xl border border-amber-500/40">
+                  Fixed Costs: ${Math.round(totalFixedCostsAnnual / 12).toLocaleString()}/mo
+                </span>
+              </div>
+
+              {/* TABLEAU D'AMORTISSEMENT DÉPLIABLE (30 ANS) */}
+              <div className="border border-slate-800 rounded-2xl overflow-hidden">
+                <button
+                  onClick={() => setShowAmortizationTable(!showAmortizationTable)}
+                  className="w-full p-4 bg-slate-950 flex items-center justify-between text-xs font-black uppercase text-slate-300 hover:text-white cursor-pointer"
+                >
+                  <span className="flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-emerald-400" />
+                    <span>View 30-Year Loan Amortization &amp; Equity Waterfall Schedule</span>
+                  </span>
+                  {showAmortizationTable ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </button>
+
+                {showAmortizationTable && (
+                  <div className="p-4 bg-slate-900/90 overflow-x-auto max-h-80 scrollbar-thin">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-slate-800 text-slate-500 text-[10px] uppercase">
+                          <th className="py-2">Year</th>
+                          <th className="py-2">Principal Paid</th>
+                          <th className="py-2">Interest Paid</th>
+                          <th className="py-2">Remaining Loan</th>
+                          <th className="py-2">Property Value</th>
+                          <th className="py-2">Total Equity</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+                        {amortizationSchedule.map((row) => (
+                          <tr key={row.year} className="hover:bg-slate-800/50">
+                            <td className="py-2 font-bold text-white">Year {row.year}</td>
+                            <td className="py-2 text-emerald-400">+${row.principalPaid.toLocaleString()}</td>
+                            <td className="py-2 text-red-400">-${row.interestPaid.toLocaleString()}</td>
+                            <td className="py-2 text-slate-300">${row.remainingBalance.toLocaleString()}</td>
+                            <td className="py-2 text-cyan-300">${row.propertyValue.toLocaleString()}</td>
+                            <td className="py-2 font-bold text-emerald-300">${row.equity.toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
             </div>
 
-            {/* MODULE 3: 5-YEAR PROJECTION & TOTAL ROI */}
+            {/* EXIT & IRR WATERFALL PROJECTION */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-sm font-black text-white uppercase tracking-wider">5-Year Equity &amp; Total Return Forecast</h3>
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-cyan-400" />
+                    <span>Exit Strategy &amp; IRR Waterfall Analysis</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Simulation de sortie avec calcul du Multiple sur Capital et du TRI net.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-bold">Hold:</span>
+                  <select
+                    value={holdingPeriodYears}
+                    onChange={(e) => setHoldingPeriodYears(Number(e.target.value))}
+                    className="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-lg px-2 py-1 outline-none"
+                  >
+                    <option value="3">3 Years</option>
+                    <option value="5">5 Years</option>
+                    <option value="7">7 Years</option>
+                    <option value="10">10 Years</option>
+                  </select>
+                </div>
               </div>
-              <p className="text-xs text-slate-400 mb-4">Projection basée sur 3 % d'appréciation annuelle + amortissement régulier du capital par les locataires.</p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                 <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Estimated Year 5 Value</span>
-                  <strong className="text-white font-mono text-sm block mt-0.5">${estimatedValueYear5.toLocaleString()}</strong>
+                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Projected Year {holdingPeriodYears} Sale Price</span>
+                  <strong className="text-white font-mono text-sm block mt-0.5">${projectedExitSalePrice.toLocaleString()}</strong>
                 </div>
                 <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">5-Yr Equity Gain</span>
-                  <strong className="text-cyan-300 font-mono text-sm block mt-0.5">+${estimatedEquityGain5Yrs.toLocaleString()}</strong>
-                </div>
-                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">5-Yr Cash-Flow Sum</span>
-                  <strong className="text-emerald-400 font-mono text-sm block mt-0.5">+${totalCumulativeCashFlow5Yrs.toLocaleString()}</strong>
+                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Cumulative Net Cash-Flow</span>
+                  <strong className="text-cyan-300 font-mono text-sm block mt-0.5">+${totalCumulativeCashFlow.toLocaleString()}</strong>
                 </div>
                 <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
-                  <span className="text-emerald-400 block text-[9px] uppercase font-bold">Average Annualized ROI</span>
-                  <strong className="text-emerald-400 font-mono text-sm block mt-0.5">~{fiveYearTotalReturn}% / yr</strong>
+                  <span className="text-emerald-400 block text-[9px] uppercase font-bold">Internal Rate of Return (IRR)</span>
+                  <strong className="text-emerald-400 font-mono text-base block mt-0.5">~{estimatedIRR}% Net</strong>
+                </div>
+                <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
+                  <span className="text-emerald-400 block text-[9px] uppercase font-bold">Equity Multiple</span>
+                  <strong className="text-emerald-400 font-mono text-base block mt-0.5">{equityMultiple}x Capital</strong>
                 </div>
               </div>
             </div>
 
-            {/* MODULE 4: PHYSICAL MECHANICS & AUDIT */}
+            {/* PHYSICAL MECHANICS & INSPECTION AUDIT */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-3">
                 <Wrench className="w-5 h-5 text-amber-400" />
@@ -865,7 +1032,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
 
-            {/* MODULE 5: NEIGHBORHOOD MARKET COMPS */}
+            {/* NEIGHBORHOOD MARKET COMPS */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-3">
                 <Compass className="w-5 h-5 text-cyan-400" />
@@ -897,7 +1064,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
 
           </div>
 
-          {/* Right Column (1/3): Assignor Contacts & Fast-Track LOI */}
+          {/* Right Column (1/3): Assignor Contacts & LOI Submission */}
           <div className="space-y-6">
             
             {/* Direct Wholesaler Desk Card */}
@@ -968,7 +1135,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               )}
             </div>
 
-            {/* Fast-Track Acquisition / LOI Generator */}
+            {/* Fast-Track LOI Generator */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-base">🚀</span>
@@ -999,7 +1166,7 @@ export default function DealDetailPage({ params }: { params: Promise<{ id: strin
               )}
             </div>
 
-            {/* Street View / Map Quickview */}
+            {/* Satellite Area Map */}
             <div className="bg-[#0d1527] border border-slate-800 rounded-3xl p-5 shadow-xl">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-2">Target Market Geospatial Radar</span>
               <div className="h-44 rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 relative flex items-center justify-center">
