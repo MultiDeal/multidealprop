@@ -138,18 +138,16 @@ function DealsContent() {
   const urlTier = searchParams.get('tier') || searchParams.get('plan') || searchParams.get('status');
   
   const [userTier, setUserTier] = useState<'starter' | 'vip'>('vip');
-  const [activeModalDeal, setActiveModalDeal] = useState<DealItem | null>(null);
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
-  const [contactModalDeal, setContactModalDeal] = useState<DealItem | null>(null);
   const [copiedText, setCopiedText] = useState<string | null>(null);
 
   useEffect(() => {
-    if (urlTier === 'vip' || urlTier === 'vip_49' || urlTier === 'elite') {
-      setUserTier('vip');
-      localStorage.setItem('multidealprop_tier', 'vip');
-    } else if (urlTier === 'starter' || urlTier === 'starter_29' || urlTier === 'pro') {
+    if (urlTier === 'starter' || urlTier === 'starter_29' || urlTier === 'pro') {
       setUserTier('starter');
       localStorage.setItem('multidealprop_tier', 'starter');
+    } else if (urlTier === 'vip' || urlTier === 'vip_49' || urlTier === 'elite') {
+      setUserTier('vip');
+      localStorage.setItem('multidealprop_tier', 'vip');
     } else {
       const saved = localStorage.getItem('multidealprop_tier');
       if (saved === 'starter') {
@@ -168,14 +166,10 @@ function DealsContent() {
     setTimeout(() => setCopiedText(null), 2500);
   };
 
-  const getGmailUrl = (email: string, subject: string, body: string) => {
-    return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
-
   return (
     <div className="min-h-screen bg-[#06080F] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black flex flex-col justify-between overflow-x-hidden">
       
-      {/* 1. Header Navigation Identique à la page principale */}
+      {/* 1. Header Navigation */}
       <header className="border-b border-slate-800 bg-[#06080F]/95 backdrop-blur sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
           
@@ -307,85 +301,6 @@ function DealsContent() {
           </div>
         )}
 
-        {/* Modal: Direct Wholesaler Contact */}
-        {contactModalDeal && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-[#0d1527] border border-slate-700 rounded-3xl max-w-lg w-full p-6 sm:p-8 relative shadow-2xl">
-              <button 
-                onClick={() => setContactModalDeal(null)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center font-bold"
-              >
-                ✕
-              </button>
-              
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full uppercase">
-                  Direct Assignor Contact
-                </span>
-              </div>
-
-              <h3 className="text-xl font-black text-white mb-1">{contactModalDeal.title}</h3>
-              <p className="text-xs text-slate-400 mb-6">{contactModalDeal.address}</p>
-
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 mb-6 space-y-3 text-xs">
-                <div>
-                  <span className="text-slate-500 block uppercase font-bold text-[10px]">Assignor Name:</span>
-                  <span className="text-white font-semibold text-sm">{contactModalDeal.wholesaler.name}</span>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-slate-800">
-                  <div>
-                    <span className="text-slate-500 block uppercase font-bold text-[10px]">Direct Phone:</span>
-                    <span className="text-emerald-400 font-mono text-sm">{contactModalDeal.wholesaler.phone}</span>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(contactModalDeal.wholesaler.phone, 'phone')}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 cursor-pointer"
-                  >
-                    {copiedText === 'phone' ? '✓ Copied' : 'Copy Phone'}
-                  </button>
-                </div>
-                <div className="flex justify-between items-center pt-2 border-t border-slate-800">
-                  <div>
-                    <span className="text-slate-500 block uppercase font-bold text-[10px]">Direct Email:</span>
-                    <span className="text-emerald-400 font-mono text-xs">{contactModalDeal.wholesaler.email}</span>
-                  </div>
-                  <button
-                    onClick={() => handleCopy(contactModalDeal.wholesaler.email, 'email')}
-                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg border border-slate-700 cursor-pointer"
-                  >
-                    {copiedText === 'email' ? '✓ Copied' : 'Copy Email'}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <a
-                  href={getGmailUrl(
-                    contactModalDeal.wholesaler.email,
-                    `LOI Submission / Inquiry - ${contactModalDeal.address}`,
-                    `Hello ${contactModalDeal.wholesaler.name},\n\nI am writing to inquire about the assignment contract for ${contactModalDeal.address} (${contactModalDeal.price}). Please send over the complete diligence packet and current title status.\n\nBest regards.`
-                  )}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full text-center block bg-red-600 hover:bg-red-500 text-white font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition shadow-lg shadow-red-900/30 cursor-pointer"
-                >
-                  ✉️ Open Compose in Gmail Web &rarr;
-                </a>
-
-                <button
-                  onClick={() => {
-                    const fullInfo = `Deal: ${contactModalDeal.title}\nAddress: ${contactModalDeal.address}\nPrice: ${contactModalDeal.price}\nAssignor: ${contactModalDeal.wholesaler.name}\nPhone: ${contactModalDeal.wholesaler.phone}\nEmail: ${contactModalDeal.wholesaler.email}`;
-                    handleCopy(fullInfo, 'full_deal');
-                  }}
-                  className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-3.5 rounded-xl transition border border-slate-700 cursor-pointer"
-                >
-                  {copiedText === 'full_deal' ? '✓ Complete Details Copied!' : '📋 Copy All Contact Info'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* VIP Privilege Banner */}
         {isVip && (
           <div className="mb-8 p-4 sm:p-5 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -420,9 +335,9 @@ function DealsContent() {
                 }`}
               >
                 <div>
-                  <div 
-                    className="relative h-48 w-full bg-slate-950 overflow-hidden cursor-pointer" 
-                    onClick={() => !isLockedForStarter && setActiveModalDeal(deal)}
+                  <Link 
+                    href={isLockedForStarter ? '/vip' : `/deals/${deal.id}`}
+                    className="relative h-48 w-full bg-slate-950 overflow-hidden block" 
                   >
                     <img 
                       src={deal.imageUrl} 
@@ -441,15 +356,15 @@ function DealsContent() {
                         </span>
                       </div>
                     )}
-                  </div>
+                  </Link>
 
                   <div className="p-5">
-                    <h3 
-                      onClick={() => !isLockedForStarter && setActiveModalDeal(deal)}
-                      className="text-sm sm:text-base font-bold text-white mb-2 leading-snug cursor-pointer hover:text-emerald-400 transition"
+                    <Link 
+                      href={isLockedForStarter ? '/vip' : `/deals/${deal.id}`}
+                      className="text-sm sm:text-base font-bold text-white mb-2 leading-snug block hover:text-emerald-400 transition"
                     >
                       {deal.title}
-                    </h3>
+                    </Link>
 
                     <div className="flex items-baseline gap-2 mb-4">
                       <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono">{deal.price}</span>
@@ -507,20 +422,12 @@ function DealsContent() {
 
                 <div className="px-5 pb-5 pt-0 space-y-2">
                   {!isLockedForStarter && (
-                    <>
-                      <button
-                        onClick={() => setActiveModalDeal(deal)}
-                        className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 border border-slate-700 cursor-pointer"
-                      >
-                        🔍 View Full Due Diligence &amp; Photos
-                      </button>
-                      <button
-                        onClick={() => setContactModalDeal(deal)}
-                        className="w-full text-center block bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 shadow-md shadow-emerald-500/10 cursor-pointer"
-                      >
-                        Connect with Assignor &rarr;
-                      </button>
-                    </>
+                    <Link
+                      href={`/deals/${deal.id}`}
+                      className="w-full text-center block bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs uppercase tracking-wider py-3 rounded-xl transition duration-200 border border-slate-700"
+                    >
+                      🔍 View Full Due Diligence &amp; Modeler &rarr;
+                    </Link>
                   )}
                 </div>
               </div>
@@ -528,101 +435,9 @@ function DealsContent() {
           })}
         </div>
 
-        {/* Modal: Full Due Diligence */}
-        {activeModalDeal && (
-          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
-            <div className="bg-[#0d1527] border border-slate-700 rounded-3xl max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 sm:p-8 relative shadow-2xl">
-              
-              <button 
-                onClick={() => setActiveModalDeal(null)}
-                className="absolute top-5 right-5 text-slate-400 hover:text-white bg-slate-800 rounded-full w-9 h-9 flex items-center justify-center font-bold text-lg cursor-pointer"
-              >
-                ✕
-              </button>
-
-              <div className="rounded-2xl overflow-hidden mb-6 h-64 sm:h-72 w-full">
-                <img 
-                  src={activeModalDeal.imageUrl} 
-                  alt={activeModalDeal.title} 
-                  className="w-full h-full object-cover"
-                />
-              </div>
-
-              <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full uppercase tracking-wider">
-                  {activeModalDeal.location}
-                </span>
-                {activeModalDeal.isExclusive && (
-                  <span className="text-xs font-black bg-amber-500 text-slate-950 px-3 py-1 rounded-full uppercase tracking-wider">
-                    VIP 48h Window
-                  </span>
-                )}
-              </div>
-
-              <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">{activeModalDeal.title}</h2>
-              <p className="text-emerald-400 text-2xl font-black mb-4 font-mono">{activeModalDeal.price} <span className="text-sm text-slate-400 font-normal">({activeModalDeal.units} Total Units)</span></p>
-
-              <p className="text-slate-300 text-sm leading-relaxed mb-6 bg-slate-900/60 p-4 rounded-xl border border-slate-800">
-                {activeModalDeal.description}
-              </p>
-
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Institutional Underwriting Metrics</h4>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-900 p-4 rounded-2xl border border-slate-800 text-xs mb-6">
-                <div>
-                  <span className="text-slate-500 block uppercase">Current In-Place Cap</span>
-                  <strong className="text-slate-200 text-sm">{activeModalDeal.capRate}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block uppercase">Pro-Forma Stabilized Cap</span>
-                  <strong className="text-emerald-400 text-sm">{activeModalDeal.proFormaCap}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block uppercase">Cash-on-Cash Return</span>
-                  <strong className="text-emerald-400 text-sm">{activeModalDeal.metrics.cashOnCash}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block uppercase">Current Gross Income</span>
-                  <strong className="text-slate-200 text-sm">{activeModalDeal.metrics.currentGross}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block uppercase">Pro-Forma Gross</span>
-                  <strong className="text-slate-200 text-sm">{activeModalDeal.metrics.proFormaGross}</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block uppercase">Estimated Rehab Budget</span>
-                  <strong className="text-amber-400 text-sm">{activeModalDeal.metrics.rehabEstimate}</strong>
-                </div>
-              </div>
-
-              <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl mb-6">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-2">Primary Contract Assignor Contact</h4>
-                <div className="text-sm text-slate-200 space-y-1">
-                  <p><strong>Desk Contact:</strong> {activeModalDeal.wholesaler.name}</p>
-                  <p><strong>Direct Phone:</strong> <span className="text-emerald-400 font-mono">{activeModalDeal.wholesaler.phone}</span></p>
-                  <p><strong>Assignment Email:</strong> <span className="text-emerald-400 font-mono">{activeModalDeal.wholesaler.email}</span></p>
-                  <p><strong>Full Address:</strong> {activeModalDeal.address}</p>
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3">
-                <button
-                  onClick={() => {
-                    setActiveModalDeal(null);
-                    setContactModalDeal(activeModalDeal);
-                  }}
-                  className="flex-1 text-center bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider py-4 rounded-xl transition shadow-lg shadow-emerald-500/20 cursor-pointer"
-                >
-                  Submit LOI / Connect Directly &rarr;
-                </button>
-              </div>
-
-            </div>
-          </div>
-        )}
-
       </main>
 
-      {/* 8. Institutional Footer Identique à la page principale */}
+      {/* 8. Institutional Footer */}
       <footer className="border-t border-slate-800 bg-[#04060A] py-8 sm:py-12 mt-16 text-slate-400 text-xs font-sans">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6 sm:space-y-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 sm:gap-6 text-center md:text-left">
