@@ -18,7 +18,8 @@ import {
   Coins,
   Compass,
   Briefcase,
-  LogIn
+  LogIn,
+  LayoutDashboard
 } from 'lucide-react';
 
 interface Deal {
@@ -108,8 +109,16 @@ export default function HomePage() {
   const [selectedState, setSelectedState] = useState<string>('ALL');
   const [minCapRate, setMinCapRate] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  
+  // Détection de session active
+  const [userTier, setUserTier] = useState<string | null>(null);
 
   useEffect(() => {
+    const saved = localStorage.getItem('multidealprop_tier');
+    if (saved === 'starter' || saved === 'vip') {
+      setUserTier(saved);
+    }
+
     async function fetchDeals() {
       try {
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -179,7 +188,8 @@ export default function HomePage() {
       <header className="border-b border-slate-800 bg-[#06080F]/95 backdrop-blur sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
           
-          <Link href="/" className="flex items-center gap-2 flex-shrink-0">
+          {/* Logo : redirige vers /deals si connecté, sinon vers / */}
+          <Link href={userTier ? '/deals' : '/'} className="flex items-center gap-2 flex-shrink-0">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-cyan-400 flex items-center justify-center text-black font-black text-xs shadow-lg shadow-emerald-500/20">
               MP
             </div>
@@ -198,21 +208,34 @@ export default function HomePage() {
               <span className="sm:hidden">Submit</span>
             </Link>
 
-            <Link 
-              href="/login" 
-              className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-200 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-700 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all"
-            >
-              <LogIn className="w-3.5 h-3.5 text-slate-400" />
-              <span>Sign In</span>
-            </Link>
+            {/* Si connecté : bouton direct vers l'espace actif */}
+            {userTier ? (
+              <Link 
+                href="/deals" 
+                className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-3 py-1.5 sm:py-2 rounded-xl transition-all"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>My Deals Desk ({userTier.toUpperCase()})</span>
+              </Link>
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  className="inline-flex items-center gap-1 text-[11px] sm:text-xs font-bold text-slate-200 hover:text-white bg-slate-900/90 hover:bg-slate-800 border border-slate-700 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl transition-all"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Sign In</span>
+                </Link>
 
-            <Link 
-              href="/vip" 
-              className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-black text-[11px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center gap-1 flex-shrink-0"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Unlock Deals</span>
-            </Link>
+                <Link 
+                  href="/vip" 
+                  className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300 text-black font-black text-[11px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl shadow-lg shadow-emerald-500/20 hover:opacity-95 transition-all flex items-center gap-1 flex-shrink-0"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  <span>Unlock Deals</span>
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -539,7 +562,15 @@ export default function HomePage() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs font-medium">
-              <Link href="/login" className="text-white hover:text-emerald-400 transition-colors font-bold">Sign In / Access</Link>
+              {userTier ? (
+                <Link href="/deals" className="text-emerald-400 hover:underline transition-colors font-bold">
+                  My Deals Desk ({userTier.toUpperCase()})
+                </Link>
+              ) : (
+                <Link href="/login" className="text-white hover:text-emerald-400 transition-colors font-bold">
+                  Sign In / Access
+                </Link>
+              )}
               <Link href="/submit-deal" className="text-emerald-400 hover:underline transition-colors font-bold">+ Submit Deal</Link>
               <Link href="/about" className="hover:text-emerald-400 transition-colors">About Us</Link>
               <Link href="/vip" className="hover:text-emerald-400 transition-colors">Pricing Plans</Link>
