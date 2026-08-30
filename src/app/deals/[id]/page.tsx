@@ -606,29 +606,55 @@ export default function DealDetailPage() {
               )}
             </div>
 
-            {/* HERO BAR : NET CASH FLOW - 100% NET ET LISIBLE SANS AUCUN FLOU */}
-            <div className="bg-[#0b1120] border-2 border-emerald-500/50 p-5 sm:p-6 rounded-3xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-5">
-              <div className="text-left">
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  <span className="text-xs uppercase font-black tracking-wider text-emerald-400">
-                    Net Free Cash Flow (Monthly &amp; Annual)
-                  </span>
-                </div>
-                <p className="text-xs text-slate-200 leading-relaxed max-w-xl font-medium">
-                  Flux de trésorerie net direct après déduction du prêt hypothécaire (P&amp;I), des taxes foncières, assurances, gestion et réserves d&apos;exploitation.
-                </p>
+            {/* LES 4 CORE METRICS RÉTABLIES (CAP RATE, COC, CASH FLOW, DSCR) */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0d1527] border border-emerald-500/30 p-4 sm:p-5 rounded-2xl text-center shadow-xl">
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                <span className="text-[10px] uppercase font-black text-slate-300 block tracking-wider">CAP RATE</span>
+                <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono mt-1 block">{capRate}%</span>
               </div>
-
-              <div className="text-center sm:text-right bg-slate-950 px-6 py-3.5 rounded-2xl border border-slate-700 min-w-[220px] shadow-xl">
-                <span className={`text-2xl sm:text-3xl font-black font-mono block tracking-tight ${monthlyNetCashFlow >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                <span className="text-[10px] uppercase font-black text-slate-300 block tracking-wider">CASH-ON-CASH</span>
+                <span className="text-xl sm:text-2xl font-black text-emerald-400 font-mono mt-1 block">{cashOnCash}%</span>
+              </div>
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                <span className="text-[10px] uppercase font-black text-slate-300 block tracking-wider">NET CASH FLOW</span>
+                <span className={`text-xl sm:text-2xl font-black font-mono mt-1 block ${monthlyNetCashFlow >= 0 ? 'text-cyan-300' : 'text-red-400'}`}>
                   {monthlyNetCashFlow >= 0 ? '+' : ''}${Math.round(monthlyNetCashFlow).toLocaleString()}/mo
                 </span>
-                <span className="text-xs font-mono text-emerald-300 font-bold block mt-1">
-                  {annualNetCashFlow >= 0 ? '+' : ''}${Math.round(annualNetCashFlow).toLocaleString()} / year
-                </span>
+              </div>
+              <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80">
+                <span className="text-[10px] uppercase font-black text-slate-300 block tracking-wider">DSCR RATIO</span>
+                <span className="text-xl sm:text-2xl font-black text-amber-400 font-mono mt-1 block">{dscr}x</span>
               </div>
             </div>
+
+            {/* BRRRR Simulation */}
+            {strategy === 'BRRRR' && (
+              <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-5 rounded-3xl shadow-xl">
+                <div className="flex items-center gap-2 mb-3">
+                  <Flame className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-sm font-black text-white uppercase tracking-wider">BRRRR Equity &amp; Refinance Matrix</h3>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">After Repair Value (ARV)</span>
+                    <strong className="text-white font-mono text-sm block mt-0.5">${brrrrARV.toLocaleString()}</strong>
+                  </div>
+                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Estimated Rehab</span>
+                    <strong className="text-amber-400 font-mono text-sm block mt-0.5">${rehabBudget.toLocaleString()}</strong>
+                  </div>
+                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                    <span className="text-slate-500 block text-[9px] uppercase font-bold">75% Refinance Cashout</span>
+                    <strong className="text-cyan-300 font-mono text-sm block mt-0.5">${Math.round(brrrrRefinanceLoan).toLocaleString()}</strong>
+                  </div>
+                  <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
+                    <span className="text-emerald-400 block text-[9px] uppercase font-bold">Net Cash Left in Deal</span>
+                    <strong className="text-emerald-400 font-mono text-sm block mt-0.5">${Math.round(brrrrCashLeftInDeal).toLocaleString()}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Rent Roll - FLOUTÉ AVEC RIDEAU POUR LES NON PAYANTS */}
             <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
@@ -864,26 +890,6 @@ export default function DealDetailPage() {
                 </div>
               </div>
 
-              {/* Ratios & Cap Rate */}
-              <div className="bg-slate-950 p-4 rounded-2xl border border-emerald-500/30 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div>
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Unleveraged Cap Rate</span>
-                  <strong className="text-emerald-400 font-mono text-sm block mt-0.5">{capRate}%</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Cash-on-Cash Return</span>
-                  <strong className="text-emerald-400 font-mono text-sm block mt-0.5">{cashOnCash}%</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual NOI</span>
-                  <strong className="text-cyan-300 font-mono text-sm block mt-0.5">${Math.round(annualNOI).toLocaleString()}/yr</strong>
-                </div>
-                <div>
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">DSCR Coverage</span>
-                  <strong className="text-amber-400 font-mono text-sm block mt-0.5">{dscr}x</strong>
-                </div>
-              </div>
-
               {/* Fiscalité */}
               <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800">
                 <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center justify-between">
@@ -967,6 +973,51 @@ export default function DealDetailPage() {
                 )}
               </div>
 
+            </div>
+
+            {/* Exit Waterfall */}
+            <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 text-cyan-400" />
+                    <span>Exit Strategy &amp; IRR Waterfall Analysis</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">Simulation de sortie avec calcul du Multiple sur Capital et du TRI net.</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400 font-bold">Hold:</span>
+                  <select
+                    value={holdingPeriodYears}
+                    onChange={(e) => setHoldingPeriodYears(Number(e.target.value))}
+                    className="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-lg px-2 py-1 outline-none"
+                  >
+                    <option value="3">3 Years</option>
+                    <option value="5">5 Years</option>
+                    <option value="7">7 Years</option>
+                    <option value="10">10 Years</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Projected Year {holdingPeriodYears} Sale Price</span>
+                  <strong className="text-white font-mono text-sm block mt-0.5">${projectedExitSalePrice.toLocaleString()}</strong>
+                </div>
+                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Cumulative Net Cash-Flow</span>
+                  <strong className="text-cyan-300 font-mono text-sm block mt-0.5">+${totalCumulativeCashFlow.toLocaleString()}</strong>
+                </div>
+                <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
+                  <span className="text-emerald-400 block text-[9px] uppercase font-bold">Internal Rate of Return (IRR)</span>
+                  <strong className="text-emerald-400 font-mono text-base block mt-0.5">~{estimatedIRR}% Net</strong>
+                </div>
+                <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
+                  <span className="text-emerald-400 block text-[9px] uppercase font-bold">Equity Multiple</span>
+                  <strong className="text-emerald-400 font-mono text-base block mt-0.5">{equityMultiple}x Capital</strong>
+                </div>
+              </div>
             </div>
 
             {/* Fiche Mécanique - FLOUTÉE POUR LES NON PAYANTS */}
