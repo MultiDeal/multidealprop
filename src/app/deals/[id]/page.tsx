@@ -290,5 +290,9 @@ export default function DealDetailPage() {
 
   const handleStrategyChange = (newStrategy: 'BUY_HOLD' | 'BRRRR' | 'FLIP') => {
     setStrategy(newStrategy);
-    if (new
-        
+    if (newStrategy === 'BUY_HOLD') setRehabBudget(0);
+    if (newStrategy === 'BRRRR') setRehabBudget(35000);
+    if (newStrategy === 'FLIP') setRehabBudget(45000);
+  };
+
+  const downPaymentAmount = (purchasePrice * downPercent) / 10
