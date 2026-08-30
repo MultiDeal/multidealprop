@@ -24,7 +24,8 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  AlertTriangle
+  AlertTriangle,
+  EyeOff
 } from 'lucide-react';
 
 interface UnitDetail {
@@ -426,15 +427,6 @@ export default function DealDetailPage() {
           </Link>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.print()}
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-200 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition cursor-pointer"
-            >
-              <Printer className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="hidden sm:inline">Export Deal Memo (PDF)</span>
-              <span className="sm:hidden">PDF</span>
-            </button>
-
             <Link 
               href={userTier ? '/deals' : '/'}
               className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-300 hover:text-white bg-slate-900 border border-slate-800 hover:border-slate-700 px-3 py-1.5 rounded-xl transition"
@@ -473,7 +465,11 @@ export default function DealDetailPage() {
             <h1 className="text-xl sm:text-3xl font-black text-white">{deal.title}</h1>
             <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
               <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{isUnlocked ? deal.address : `${deal.location} (Exact Street Unlocked with Membership)`}</span>
+              <span>
+                {isUnlocked 
+                  ? deal.address 
+                  : `${deal.address.split(',')[0].slice(0, 5)}•••••• St, ${deal.location} (Exact Street Unlocked with Membership)`}
+              </span>
             </p>
           </div>
 
@@ -488,7 +484,7 @@ export default function DealDetailPage() {
           </div>
         </div>
 
-        {/* Stratégie & Export */}
+        {/* Stratégie & Export Deal Memo */}
         <div className="bg-[#0b1120] border-2 border-emerald-500/40 rounded-3xl p-4 sm:p-5 mb-6 shadow-2xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
           <div className="space-y-1.5 flex-1">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
@@ -537,13 +533,23 @@ export default function DealDetailPage() {
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1.5">
               Lender Diligence Packet:
             </span>
-            <button
-              onClick={() => window.print()}
-              className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <FileText className="w-4 h-4" />
-              <span>Export Deal Memo (PDF)</span>
-            </button>
+            {isUnlocked ? (
+              <button
+                onClick={() => window.print()}
+                className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Export Deal Memo (PDF)</span>
+              </button>
+            ) : (
+              <Link
+                href="/vip"
+                className="bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-700 font-bold text-xs uppercase tracking-wider px-4 py-3 rounded-xl transition-all flex items-center justify-center gap-1.5"
+              >
+                <Lock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Unlock PDF Deal Memo</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -559,11 +565,24 @@ export default function DealDetailPage() {
                 <img 
                   src={dealImages[activeImageIndex]} 
                   alt={`${deal.title} - Photo ${activeImageIndex + 1}`} 
-                  className="w-full h-full object-cover transition-all duration-300"
+                  className={`w-full h-full object-cover transition-all duration-300 ${!isUnlocked && activeImageIndex > 0 ? 'filter blur-md' : ''}`}
                 />
                 <div className="absolute bottom-3 right-3 bg-slate-950/80 backdrop-blur px-3 py-1 rounded-xl border border-slate-800 text-[11px] font-mono text-slate-300 font-bold">
                   📷 {activeImageIndex + 1} / {dealImages.length}
                 </div>
+
+                {!isUnlocked && activeImageIndex > 0 && (
+                  <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-sm flex flex-col items-center justify-center text-center p-4">
+                    <Lock className="w-8 h-8 text-amber-400 mb-2" />
+                    <span className="text-white font-black text-sm uppercase">Full HD Interior Photo Gallery Locked</span>
+                    <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                      Unlock full high-resolution interior, mechanical, and roof inspection photos with Starter or VIP access.
+                    </p>
+                    <Link href="/vip" className="mt-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs px-4 py-2 rounded-xl transition">
+                      Unlock Gallery ($29/mo)
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {dealImages.length > 1 && (
@@ -578,14 +597,19 @@ export default function DealDetailPage() {
                           : 'border-slate-800 opacity-60 hover:opacity-100'
                       }`}
                     >
-                      <img src={imgUrl} alt="Thumbnail" className="w-full h-full object-cover" />
+                      <img src={imgUrl} alt="Thumbnail" className={`w-full h-full object-cover ${!isUnlocked && idx > 0 ? 'filter blur-sm' : ''}`} />
+                      {!isUnlocked && idx > 0 && (
+                        <div className="absolute inset-0 bg-slate-950/40 flex items-center justify-center">
+                          <Lock className="w-3.5 h-3.5 text-amber-400" />
+                        </div>
+                      )}
                     </button>
                   ))}
                 </div>
               )}
             </div>
 
-            {/* HERO BAR : NET CASH FLOW EXCLUSIF */}
+            {/* HERO BAR : NET CASH FLOW (L'APPÂT VISUEL N°1) */}
             <div className="bg-[#0d1527] border border-emerald-500/30 p-5 sm:p-6 rounded-2xl shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="text-left">
                 <span className="text-[10px] uppercase font-black text-slate-400 block tracking-wider">
@@ -606,36 +630,8 @@ export default function DealDetailPage() {
               </div>
             </div>
 
-            {/* BRRRR Simulation */}
-            {strategy === 'BRRRR' && (
-              <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-5 rounded-3xl shadow-xl">
-                <div className="flex items-center gap-2 mb-3">
-                  <Flame className="w-5 h-5 text-cyan-400" />
-                  <h3 className="text-sm font-black text-white uppercase tracking-wider">BRRRR Equity &amp; Refinance Matrix</h3>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <span className="text-slate-500 block text-[9px] uppercase font-bold">After Repair Value (ARV)</span>
-                    <strong className="text-white font-mono text-sm block mt-0.5">${brrrrARV.toLocaleString()}</strong>
-                  </div>
-                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <span className="text-slate-500 block text-[9px] uppercase font-bold">Estimated Rehab</span>
-                    <strong className="text-amber-400 font-mono text-sm block mt-0.5">${rehabBudget.toLocaleString()}</strong>
-                  </div>
-                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <span className="text-slate-500 block text-[9px] uppercase font-bold">75% Refinance Cashout</span>
-                    <strong className="text-cyan-300 font-mono text-sm block mt-0.5">${Math.round(brrrrRefinanceLoan).toLocaleString()}</strong>
-                  </div>
-                  <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
-                    <span className="text-emerald-400 block text-[9px] uppercase font-bold">Net Cash Left in Deal</span>
-                    <strong className="text-emerald-400 font-mono text-sm block mt-0.5">${Math.round(brrrrCashLeftInDeal).toLocaleString()}</strong>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Rent Roll */}
-            <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+            {/* Rent Roll - FLOUTÉ AVEC RIDEAU POUR LES NON PAYANTS */}
+            <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
               <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
                 <div>
                   <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
@@ -649,7 +645,7 @@ export default function DealDetailPage() {
                 </span>
               </div>
 
-              <div className="overflow-x-auto">
+              <div className={`overflow-x-auto ${!isUnlocked ? 'filter blur-sm select-none pointer-events-none' : ''}`}>
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-500 text-[10px] uppercase">
@@ -673,6 +669,19 @@ export default function DealDetailPage() {
                   </tbody>
                 </table>
               </div>
+
+              {!isUnlocked && (
+                <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center">
+                  <Lock className="w-6 h-6 text-amber-400 mb-1" />
+                  <span className="text-white font-black text-xs uppercase">Itemized Lease Details &amp; Unit Breakdown Locked</span>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-sm">
+                    View lease expiration dates, square footage, and unit-by-unit upside potential.
+                  </p>
+                  <Link href="/vip" className="mt-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[11px] uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition shadow-lg">
+                    Unlock Unit Mix &rarr;
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Calculatrice & Souscription Institutionnelle */}
@@ -686,7 +695,7 @@ export default function DealDetailPage() {
                   <p className="text-xs text-slate-400 mt-0.5">Mod&eacute;lisation compl&egrave;te de dette, options I/O, fiscalit&eacute; et ratios de couverture.</p>
                 </div>
                 <span className="text-[10px] font-black uppercase text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 w-fit">
-                  Wall St. Model
+                  Live Calculator
                 </span>
               </div>
 
@@ -960,58 +969,13 @@ export default function DealDetailPage() {
 
             </div>
 
-            {/* Exit Waterfall */}
-            <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
-              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2 mb-4">
-                <div>
-                  <h3 className="text-sm sm:text-base font-black text-white flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-cyan-400" />
-                    <span>Exit Strategy &amp; IRR Waterfall Analysis</span>
-                  </h3>
-                  <p className="text-xs text-slate-400 mt-0.5">Simulation de sortie avec calcul du Multiple sur Capital et du TRI net.</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400 font-bold">Hold:</span>
-                  <select
-                    value={holdingPeriodYears}
-                    onChange={(e) => setHoldingPeriodYears(Number(e.target.value))}
-                    className="bg-slate-900 border border-slate-700 text-xs font-bold text-white rounded-lg px-2 py-1 outline-none"
-                  >
-                    <option value="3">3 Years</option>
-                    <option value="5">5 Years</option>
-                    <option value="7">7 Years</option>
-                    <option value="10">10 Years</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Projected Year {holdingPeriodYears} Sale Price</span>
-                  <strong className="text-white font-mono text-sm block mt-0.5">${projectedExitSalePrice.toLocaleString()}</strong>
-                </div>
-                <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                  <span className="text-slate-500 block text-[9px] uppercase font-bold">Cumulative Net Cash-Flow</span>
-                  <strong className="text-cyan-300 font-mono text-sm block mt-0.5">+${totalCumulativeCashFlow.toLocaleString()}</strong>
-                </div>
-                <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
-                  <span className="text-emerald-400 block text-[9px] uppercase font-bold">Internal Rate of Return (IRR)</span>
-                  <strong className="text-emerald-400 font-mono text-base block mt-0.5">~{estimatedIRR}% Net</strong>
-                </div>
-                <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
-                  <span className="text-emerald-400 block text-[9px] uppercase font-bold">Equity Multiple</span>
-                  <strong className="text-emerald-400 font-mono text-base block mt-0.5">{equityMultiple}x Capital</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Fiche Mécanique */}
-            <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl">
+            {/* Fiche Mécanique - FLOUTÉE POUR LES NON PAYANTS */}
+            <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
               <div className="flex items-center gap-2 mb-3">
                 <Wrench className="w-5 h-5 text-amber-400" />
                 <h3 className="text-sm font-black text-white uppercase tracking-wider">Physical Mechanics &amp; Inspection Audit</h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className={`grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs ${!isUnlocked ? 'filter blur-sm select-none pointer-events-none' : ''}`}>
                 <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0 mt-0.5" />
                   <div>
@@ -1041,6 +1005,19 @@ export default function DealDetailPage() {
                   </div>
                 </div>
               </div>
+
+              {!isUnlocked && (
+                <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-[2px] flex flex-col items-center justify-center p-4 text-center">
+                  <Lock className="w-6 h-6 text-amber-400 mb-1" />
+                  <span className="text-white font-black text-xs uppercase">Mechanical &amp; Inspection Audit Locked</span>
+                  <p className="text-[11px] text-slate-400 mt-1 max-w-sm">
+                    Access electrical panel ages, roof inspection reports, and plumbing line verification.
+                  </p>
+                  <Link href="/vip" className="mt-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-[11px] uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition shadow-lg">
+                    Unlock Inspection Audit &rarr;
+                  </Link>
+                </div>
+              )}
             </div>
 
             {/* Comparables */}
