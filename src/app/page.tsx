@@ -14,20 +14,31 @@ import {
   BarChart3, 
   ChevronDown, 
   ChevronUp, 
-  Download,
-  ShieldCheck,
-  Zap
+  Download, 
+  Zap, 
+  PlusCircle,
+  Phone,
+  Mail,
+  CheckCircle2,
+  ExternalLink
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
+
+// Configuration Supabase pour charger les deals récents postés par les promoteurs/wholesalers
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function HomePage() {
   const [isMemoUnlocked, setIsMemoUnlocked] = useState<boolean>(false);
   const [isCheckingOut, setIsCheckingOut] = useState<boolean>(false);
+  const [recentDeals, setRecentDeals] = useState<any[]>([]);
 
-  // Données de la propriété
+  // Propriété analysée en direct
   const [propertyTitle, setPropertyTitle] = useState<string>('Turnkey Cleveland Duplex (Live Sample)');
   const [propertyAddress, setPropertyAddress] = useState<string>('1428 E 120th St, Cleveland, OH 44106');
   const [unitsCount, setUnitsCount] = useState<number>(2);
-  const [yearBuilt, setYearBuilt] = useState<string>('1924 (Updated)');
+  const [yearBuilt, setYearBuilt] = useState<string>('1924 (Renovated)');
 
   // Stratégie
   const [strategy, setStrategy] = useState<'BUY_HOLD' | 'BRRRR' | 'FLIP'>('BUY_HOLD');
@@ -53,7 +64,7 @@ export default function HomePage() {
   const [capexRate, setCapexRate] = useState<number>(5);
   const [annualUtilities, setAnnualUtilities] = useState<number>(780);
 
-  // Modélisation Sortie & Amortissement
+  // Projections
   const [holdingPeriodYears, setHoldingPeriodYears] = useState<number>(5);
   const [exitCapRate, setExitCapRate] = useState<number>(7.5);
   const [annualAppreciation, setAnnualAppreciation] = useState<number>(3.0);
@@ -62,6 +73,7 @@ export default function HomePage() {
 
   const [showAmortizationTable, setShowAmortizationTable] = useState<boolean>(false);
 
+  // Vérification session débloquée
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('memo_paid') === 'true') {
@@ -70,6 +82,23 @@ export default function HomePage() {
     } else if (localStorage.getItem('multideal_memo_unlocked') === 'true') {
       setIsMemoUnlocked(true);
     }
+
+    // Charger les deals récemment soumis
+    async function fetchDeals() {
+      try {
+        const { data, error } = await supabase
+          .from('deals')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(6);
+        if (!error && data && data.length > 0) {
+          setRecentDeals(data);
+        }
+      } catch (e) {
+        console.error('Error fetching deals', e);
+      }
+    }
+    fetchDeals();
   }, []);
 
   const handleStrategyChange = (newStrategy: 'BUY_HOLD' | 'BRRRR' | 'FLIP') => {
@@ -79,10 +108,23 @@ export default function HomePage() {
     if (newStrategy === 'FLIP') setRehabBudget(40000);
   };
 
-  // Calculs financiers
+  // Chargement d'un deal du catalogue dans l'analyseur
+  const loadDealIntoAnalyzer = (deal: any) => {
+    setPropertyTitle(deal.title || 'Multi-Family Deal');
+    setPropertyAddress(deal.formatted_address || deal.address || 'Address on file');
+    setUnitsCount(Number(deal.units) || 2);
+    setPurchasePrice(Number(deal.price) || 90000);
+    setMonthlyRent(Number(deal.monthly_rent) || 1600);
+    setEstimatedARV(Number(deal.arv) || Math.round(Number(deal.price) * 1.35));
+    if (deal.taxes) setAnnualTaxes(Number(deal.taxes));
+    if (deal.insurance) setAnnualInsurance(Number(deal.insurance));
+    window.scrollTo({ top: 400, behavior: 'smooth' });
+  };
+
+  // --- CALCULS FINANCIERS ---
   const downPaymentAmount = (purchasePrice * downPercent) / 100;
   const loanAmount = Math.max(0, purchasePrice - downPaymentAmount);
-  const closingCostsAmount = (loanAmount * 0.025);
+  const closingCostsAmount = loanAmount * 0.025;
   const totalCashInvested = downPaymentAmount + closingCostsAmount + rehabBudget;
 
   const monthlyInterestRate = interestRate / 100 / 12;
@@ -124,7 +166,7 @@ export default function HomePage() {
   const brrrrRefinanceLoan = brrrrARV * 0.75;
   const brrrrCashLeftInDeal = Math.max(0, (purchasePrice + rehabBudget + closingCostsAmount) - brrrrRefinanceLoan);
 
-  // Tableau d'amortissement
+  // Amortissement
   const amortizationSchedule = [];
   let currentBalance = loanAmount;
   let runningVal = purchasePrice + rehabBudget;
@@ -150,6 +192,7 @@ export default function HomePage() {
     });
   }
 
+  // Paiement Stripe
   const handleStripeCheckout = async () => {
     try {
       setIsCheckingOut(true);
@@ -174,76 +217,90 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#05070E] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
       
-      {/* Navigation */}
+      {/* Navigation Header */}
       <header className="border-b border-slate-800/80 bg-[#05070E]/90 backdrop-blur sticky top-0 z-50 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+          <Link href="/" className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20">
               MP
             </div>
             <span className="font-black text-lg tracking-wider text-white">
               MULTIDEAL<span className="text-emerald-400">PROP</span>
             </span>
-          </div>
+          </Link>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-4">
+            {/* BOUTON WHOLESALER / PROMOTEURS */}
+            <Link
+              href="/submit-deal"
+              className="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs px-3 sm:px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Post a Deal (Free)</span>
+            </Link>
+
+            {/* BOUTON PAIEMENT STRIPE / EXPORT MEMO */}
             {isMemoUnlocked ? (
-              <span className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-bold flex items-center gap-1.5">
-                <Unlock className="w-3.5 h-3.5" /> Diligence Memo Unlocked
-              </span>
+              <button
+                onClick={() => window.print()}
+                className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs px-3 py-2 rounded-xl font-bold flex items-center gap-1.5 hover:bg-emerald-500/20 transition cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5" /> Print Memo
+              </button>
             ) : (
               <button
                 onClick={handleStripeCheckout}
                 disabled={isCheckingOut}
-                className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs px-4 py-2 rounded-xl transition shadow-lg shadow-emerald-500/20"
+                className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs px-3 sm:px-4 py-2 rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
               >
-                {isCheckingOut ? 'Opening Checkout...' : 'Export Lender Memo ($9.99)'}
+                <Lock className="w-3.5 h-3.5" />
+                <span>{isCheckingOut ? 'Loading...' : 'Lender Memo ($9.99)'}</span>
               </button>
             )}
           </div>
         </div>
       </header>
 
-      {/* Hero Header */}
+      {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 text-center space-y-3">
         <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-emerald-400 text-xs font-black uppercase tracking-wider">
           <Zap className="w-3 h-3" /> Institutional Multi-Family Underwriting Engine
         </div>
         <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-          Analyze Any Plex or Multi-Family Deal in <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Seconds</span>
+          Underwrite Any Multi-Family Deal in <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Seconds</span>
         </h1>
         <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
-          Test any property on the market. Pre-calculate DSCR, Cap Rate, BRRRR exit scenarios and IRS 27.5-year tax sheltering.
+          Test any duplex, triplex, or commercial apartment building. Pre-calculate DSCR, Cap Rate, BRRRR equity cashout and IRS 27.5-year tax shelter.
         </p>
       </div>
 
       {/* Main Workspace */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 space-y-6">
         
-        {/* Barre d'édition du bien */}
+        {/* Propriété en cours d'analyse */}
         <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
           <div className="flex-1 w-full space-y-2">
             <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
-              Edit Property Parameters (Live)
+              Live Property Parameters
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <input
                 type="text"
                 value={propertyTitle}
                 onChange={(e) => setPropertyTitle(e.target.value)}
-                placeholder="Deal Title"
+                placeholder="Deal Headline"
                 className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:border-emerald-400"
               />
               <input
                 type="text"
                 value={propertyAddress}
                 onChange={(e) => setPropertyAddress(e.target.value)}
-                placeholder="Property Address"
+                placeholder="Property Address (e.g. Cleveland, OH)"
                 className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-emerald-400"
               />
             </div>
             <div className="flex items-center gap-3 text-xs text-slate-400 font-bold">
-              <span>Units:</span>
+              <span>Doors:</span>
               <input
                 type="number"
                 min="1"
@@ -272,16 +329,16 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Sélection de Stratégie & Bouton PDF */}
+        {/* Stratégies & Déblocage PDF */}
         <div className="bg-[#0c1222] border-2 border-emerald-500/30 rounded-3xl p-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-2xl">
           <div className="flex-1 space-y-2">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Investment Underwriting Model
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Underwriting Strategy Model:
             </span>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => handleStrategyChange('BUY_HOLD')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   strategy === 'BUY_HOLD' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'bg-slate-900 text-slate-400 border border-slate-800'
                 }`}
               >
@@ -289,7 +346,7 @@ export default function HomePage() {
               </button>
               <button
                 onClick={() => handleStrategyChange('BRRRR')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   strategy === 'BRRRR' ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20' : 'bg-slate-900 text-slate-400 border border-slate-800'
                 }`}
               >
@@ -297,7 +354,7 @@ export default function HomePage() {
               </button>
               <button
                 onClick={() => handleStrategyChange('FLIP')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 ${
+                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   strategy === 'FLIP' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'bg-slate-900 text-slate-400 border border-slate-800'
                 }`}
               >
@@ -310,7 +367,7 @@ export default function HomePage() {
             {isMemoUnlocked ? (
               <button
                 onClick={() => window.print()}
-                className="bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2"
+                className="bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Download className="w-4 h-4" /> Export Lender Memo (PDF)
               </button>
@@ -318,7 +375,7 @@ export default function HomePage() {
               <button
                 onClick={handleStripeCheckout}
                 disabled={isCheckingOut}
-                className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
               >
                 <Lock className="w-3.5 h-3.5" /> Get Diligence Memo ($9.99)
               </button>
@@ -348,9 +405,42 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Calculatrice Financement & Dépenses */}
+        {/* BRRRR Card si activée */}
+        {strategy === 'BRRRR' && (
+          <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-5 rounded-3xl shadow-xl">
+            <div className="flex items-center gap-2 mb-3">
+              <Flame className="w-5 h-5 text-cyan-400" />
+              <h3 className="text-sm font-black text-white uppercase tracking-wider">BRRRR Equity &amp; Refinance Matrix</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+              <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-500 block text-[9px] uppercase font-bold">Estimated ARV</span>
+                <input
+                  type="number"
+                  value={estimatedARV}
+                  onChange={(e) => setEstimatedARV(Number(e.target.value))}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs mt-1"
+                />
+              </div>
+              <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-500 block text-[9px] uppercase font-bold">Rehab Capital</span>
+                <strong className="text-amber-400 font-mono text-sm block mt-1">${rehabBudget.toLocaleString()}</strong>
+              </div>
+              <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
+                <span className="text-slate-500 block text-[9px] uppercase font-bold">75% Refi Loan</span>
+                <strong className="text-cyan-300 font-mono text-sm block mt-1">${Math.round(brrrrRefinanceLoan).toLocaleString()}</strong>
+              </div>
+              <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
+                <span className="text-emerald-400 block text-[9px] uppercase font-bold">Net Cash Left in Deal</span>
+                <strong className="text-emerald-400 font-mono text-sm block mt-1">${Math.round(brrrrCashLeftInDeal).toLocaleString()}</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Inputs de Financement & Dépenses */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 space-y-4">
+          <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
             <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
               <Coins className="w-4 h-4" /> 1. Debt &amp; Monthly Revenue
             </h4>
@@ -419,7 +509,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 space-y-4">
+          <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
             <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
               <Sliders className="w-4 h-4" /> 2. Operating Expenses
             </h4>
@@ -482,10 +572,10 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Fiscale IRS 27.5 ans */}
+        {/* Section Fiscale IRS 27.5 ans */}
         <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
           <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center justify-between">
-            <span>🏛️ IRS 27.5-Year Tax Depreciation Shield</span>
+            <span>🏛️ IRS 27.5-Year Tax Depreciation Shelter</span>
             <span className="text-[10px] text-slate-400 font-mono">Tax Bracket: {marginalTaxRate}%</span>
           </h4>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
@@ -498,14 +588,153 @@ export default function HomePage() {
               <strong className="text-cyan-300 font-mono text-sm block mt-0.5">${Math.round(annualDepreciation).toLocaleString()} / yr</strong>
             </div>
             <div>
-              <span className="text-slate-500 block text-[9px] uppercase font-bold">Estimated Tax Shield</span>
+              <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Tax Shelter</span>
               <strong className="text-emerald-400 font-mono text-sm block mt-0.5">${Math.round(annualTaxSaved).toLocaleString()} / yr</strong>
             </div>
             <div>
-              <span className="text-slate-500 block text-[9px] uppercase font-bold">Tax-Shield Status</span>
-              <strong className="text-emerald-400 font-mono text-sm block mt-0.5">100% Tax Protected</strong>
+              <span className="text-slate-500 block text-[9px] uppercase font-bold">Cash Protection</span>
+              <strong className="text-emerald-400 font-mono text-sm block mt-0.5">100% Tax Sheltered</strong>
             </div>
           </div>
+        </div>
+
+        {/* Tableau d'Amortissement Dépliable */}
+        <div className="border border-slate-800 rounded-2xl overflow-hidden">
+          <button
+            onClick={() => setShowAmortizationTable(!showAmortizationTable)}
+            className="w-full p-4 bg-slate-950 flex items-center justify-between text-xs font-black uppercase text-slate-300 hover:text-white cursor-pointer"
+          >
+            <span className="flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-emerald-400" />
+              <span>30-Year Loan Amortization Breakdown</span>
+            </span>
+            {showAmortizationTable ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+          </button>
+
+          {showAmortizationTable && (
+            <div className="p-4 bg-slate-900/90 overflow-x-auto max-h-72 scrollbar-thin">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-slate-800 text-slate-500 text-[10px] uppercase">
+                    <th className="py-2">Year</th>
+                    <th className="py-2">Principal Paid</th>
+                    <th className="py-2">Interest Paid</th>
+                    <th className="py-2">Remaining Loan</th>
+                    <th className="py-2">Property Value</th>
+                    <th className="py-2">Total Equity</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
+                  {amortizationSchedule.map((row) => (
+                    <tr key={row.year} className="hover:bg-slate-800/50">
+                      <td className="py-2 font-bold text-white">Year {row.year}</td>
+                      <td className="py-2 text-emerald-400">+${row.principalPaid.toLocaleString()}</td>
+                      <td className="py-2 text-red-400">-${row.interestPaid.toLocaleString()}</td>
+                      <td className="py-2 text-slate-300">${row.remainingBalance.toLocaleString()}</td>
+                      <td className="py-2 text-cyan-300">${row.propertyValue.toLocaleString()}</td>
+                      <td className="py-2 font-bold text-emerald-300">${row.equity.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Section Catalogue des Deals Soumis par les Wholesalers */}
+        <div className="pt-10 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+            <div>
+              <h2 className="text-lg font-black text-white flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-emerald-400" />
+                Featured Wholesaler &amp; Off-Market Inventory
+              </h2>
+              <p className="text-slate-400 text-xs mt-0.5">
+                Direct assignment contracts and verified off-market deals. Click to load in underwriter.
+              </p>
+            </div>
+            <Link
+              href="/submit-deal"
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-400 hover:text-emerald-300 transition"
+            >
+              <span>+ Post your inventory for free</span>
+              <ExternalLink className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+
+          {recentDeals.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {recentDeals.map((deal) => (
+                <div 
+                  key={deal.id}
+                  className="bg-slate-900/60 border border-slate-800 rounded-3xl overflow-hidden hover:border-emerald-500/50 transition flex flex-col justify-between group shadow-xl"
+                >
+                  <div className="relative h-44 w-full bg-slate-950 overflow-hidden">
+                    <img 
+                      src={deal.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80'} 
+                      alt={deal.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                    />
+                    <div className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur px-2.5 py-1 rounded-lg border border-slate-800 text-[10px] font-black text-emerald-400">
+                      {deal.units || 2} DOORS
+                    </div>
+                    <div className="absolute top-3 right-3 bg-emerald-500 text-slate-950 px-2.5 py-1 rounded-lg font-black text-xs font-mono">
+                      ${Number(deal.price).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <div className="p-4 space-y-3 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-white line-clamp-1">{deal.title}</h3>
+                      <p className="text-slate-400 text-xs flex items-center gap-1 mt-1">
+                        <MapPin className="w-3 h-3 text-slate-500" />
+                        <span className="truncate">{deal.formatted_address || deal.location}</span>
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 text-[11px] font-mono">
+                      <div>
+                        <span className="text-slate-500 block text-[9px]">GROSS RENT</span>
+                        <span className="text-white font-bold">${Number(deal.monthly_rent || 0).toLocaleString()}/mo</span>
+                      </div>
+                      <div>
+                        <span className="text-slate-500 block text-[9px]">EST. ARV</span>
+                        <span className="text-cyan-300 font-bold">${Number(deal.arv || deal.price * 1.3).toLocaleString()}</span>
+                      </div>
+                    </div>
+
+                    {deal.wholesaler_name && (
+                      <div className="text-[10px] text-slate-400 border-t border-slate-800 pt-2 flex items-center justify-between">
+                        <span>Rep: <strong className="text-slate-300">{deal.wholesaler_name}</strong></span>
+                        <span className="font-mono text-emerald-400">{deal.wholesaler_phone}</span>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={() => loadDealIntoAnalyzer(deal)}
+                      className="w-full bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 text-xs font-black py-2 rounded-xl transition cursor-pointer"
+                    >
+                      Underwrite this Deal ↗
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-8 text-center space-y-2">
+              <Building2 className="w-8 h-8 text-slate-600 mx-auto" />
+              <h3 className="text-sm font-bold text-slate-300">No Wholesaler Inventory Published Yet</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Be the first to list your assignment contracts or off-market multi-family plexes.
+              </p>
+              <Link
+                href="/submit-deal"
+                className="inline-block mt-2 bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs"
+              >
+                + Submit a Deal Now
+              </Link>
+            </div>
+          )}
         </div>
 
       </main>
