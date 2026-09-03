@@ -8,10 +8,11 @@ import {
   CheckCircle2, 
   UploadCloud, 
   X, 
-  Image as ImageIcon,
+  ImageIcon,
   FolderOpen,
   User,
-  Loader2
+  Loader2,
+  DollarSign
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -39,7 +40,7 @@ export default function SubmitDealPage() {
     arv: '',
     monthly_rent: '',
     rehab: '',
-    cloud_folder_url: '', // Lien Google Drive / Dropbox optionnel
+    cloud_folder_url: '',
     wholesaler_name: '',
     wholesaler_phone: '',
     wholesaler_email: '',
@@ -49,7 +50,6 @@ export default function SubmitDealPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Gestion de la sélection de fichiers
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const filesArray = Array.from(e.target.files);
@@ -57,7 +57,6 @@ export default function SubmitDealPage() {
     }
   };
 
-  // Drag & Drop
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     if (e.dataTransfer.files) {
@@ -67,11 +66,8 @@ export default function SubmitDealPage() {
   };
 
   const addFiles = (files: File[]) => {
-    // Limite à 5 photos pour garder un téléversement rapide
     const combinedFiles = [...selectedFiles, ...files].slice(0, 5);
     setSelectedFiles(combinedFiles);
-
-    // Génération des prévisualisations
     const newPreviews = combinedFiles.map(file => URL.createObjectURL(file));
     setPreviewUrls(newPreviews);
   };
@@ -83,7 +79,6 @@ export default function SubmitDealPage() {
     setPreviewUrls(updatedPreviews);
   };
 
-  // Téléversement vers Supabase Storage
   const uploadImagesToStorage = async (dealId: string): Promise<string[]> => {
     const uploadedUrls: string[] = [];
 
@@ -100,11 +95,10 @@ export default function SubmitDealPage() {
         .upload(filePath, file, { cacheControl: '3600', upsert: false });
 
       if (uploadError) {
-        console.warn(`Storage upload note for file ${i}:`, uploadError.message);
+        console.warn(`Storage note:`, uploadError.message);
         continue;
       }
 
-      // Récupération de l'URL publique
       const { data: publicUrlData } = supabase.storage
         .from('deal-images')
         .getPublicUrl(filePath);
@@ -126,7 +120,6 @@ export default function SubmitDealPage() {
       const dealId = 'deal_' + Math.random().toString(36).substring(2, 9);
       let mainImageUrl = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
 
-      // Téléversement des photos si présentes
       if (selectedFiles.length > 0) {
         const urls = await uploadImagesToStorage(dealId);
         if (urls.length > 0) {
@@ -134,7 +127,7 @@ export default function SubmitDealPage() {
         }
       }
 
-      setUploadProgressText('Publishing deal data to database...');
+      setUploadProgressText('Publishing deal data to marketplace...');
 
       const price = Number(formData.price) || 0;
       const units = Number(formData.units) || 2;
@@ -174,7 +167,7 @@ export default function SubmitDealPage() {
       if (error) throw error;
       setSubmitted(true);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error submitting deal. Please verify your Supabase settings.');
+      setErrorMsg(err.message || 'Error submitting deal. Please verify connection.');
     } finally {
       setLoading(false);
       setUploadProgressText('');
@@ -182,58 +175,66 @@ export default function SubmitDealPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#05070E] text-slate-100 font-sans antialiased p-4 sm:p-8">
-      <div className="max-w-3xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#05070E] text-slate-100 font-sans antialiased px-4 py-6 sm:py-10">
+      <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
         
-        <Link href="/" className="inline-flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white transition">
-          <ArrowLeft className="w-4 h-4" /> Back to Dashboard
+        {/* Lien Retour */}
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2.5 text-sm sm:text-base font-bold text-slate-400 hover:text-emerald-400 transition"
+        >
+          <ArrowLeft className="w-5 h-5" /> Back to MultiDealProp
         </Link>
 
         {submitted ? (
-          <div className="bg-slate-900 border border-emerald-500/40 rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-2xl">
-            <CheckCircle2 className="w-14 h-14 text-emerald-400 mx-auto" />
-            <h2 className="text-2xl sm:text-3xl font-black text-white">Deal Published Live!</h2>
-            <p className="text-slate-400 text-sm max-w-md mx-auto">
-              Your property has been listed with real photos and automated institutional financial metrics (Cap Rate, DSCR).
+          <div className="bg-slate-900 border-2 border-emerald-500/40 rounded-3xl p-8 sm:p-14 text-center space-y-6 shadow-2xl">
+            <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-emerald-400 mx-auto" />
+            <h2 className="text-3xl sm:text-4xl font-black text-white">Deal Published Live!</h2>
+            <p className="text-slate-300 text-base sm:text-lg max-w-lg mx-auto">
+              Your property and photos are now live with automated Cap Rate and DSCR calculations.
             </p>
-            <div className="pt-2">
+            <div className="pt-4">
               <Link
                 href="/"
-                className="bg-emerald-400 text-slate-950 font-bold px-6 py-3 rounded-xl text-xs hover:bg-emerald-300 transition inline-block shadow-lg shadow-emerald-500/20"
+                className="bg-emerald-400 text-slate-950 font-black px-8 py-4 rounded-2xl text-base hover:bg-emerald-300 transition inline-block shadow-xl shadow-emerald-500/20"
               >
                 View on Marketplace
               </Link>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-[#0b1120] border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+          <form onSubmit={handleSubmit} className="bg-[#0c1222] border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
+            
+            {/* Header Formulaire */}
             <div>
-              <span className="text-emerald-400 text-[10px] font-black uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20 inline-block">
-                Free Wholesaler Submission
+              <span className="text-emerald-400 text-xs sm:text-sm font-black uppercase tracking-wider bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 inline-block">
+                Free Wholesaler &amp; Off-Market Submission
               </span>
-              <h1 className="text-2xl sm:text-3xl font-black text-white mt-2">Submit Your Multi-Family Deal</h1>
-              <p className="text-slate-400 text-xs mt-1">
-                Upload your photos and financial metrics. We format your deal into an institutional presentation for active cash buyers.
+              <h1 className="text-2xl sm:text-4xl font-black text-white mt-3 tracking-tight">
+                Submit Your Multi-Family Deal
+              </h1>
+              <p className="text-slate-400 text-sm sm:text-base mt-2 leading-relaxed">
+                Add your contract or property details. We automatically build institutional metrics (DSCR, Cap Rate) for serious cash buyers.
               </p>
             </div>
 
             {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs p-3 rounded-xl">
+              <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm p-4 rounded-2xl font-medium">
                 {errorMsg}
               </div>
             )}
 
-            {/* SECTION 1: UPLOAD PHOTOS DIRECT */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 border-b border-slate-800 pb-2 flex items-center gap-2">
-                <ImageIcon className="w-4 h-4 text-emerald-400" /> 1. Property Photos (Direct Upload)
+            {/* SECTION 1: UPLOAD PHOTOS */}
+            <div className="space-y-4">
+              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
+                <ImageIcon className="w-5 h-5 text-emerald-400" /> 1. Photos de l&apos;immeuble (Direct Upload)
               </h3>
 
-              {/* Zone Drag & Drop */}
+              {/* Zone Drag & Drop agrandie */}
               <div
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
-                className="border-2 border-dashed border-slate-700 hover:border-emerald-500/60 bg-slate-950/60 rounded-2xl p-6 text-center transition cursor-pointer relative"
+                className="border-2 border-dashed border-slate-700 hover:border-emerald-400/80 bg-slate-950/70 rounded-2xl p-6 sm:p-10 text-center transition cursor-pointer relative"
               >
                 <input
                   type="file"
@@ -242,34 +243,34 @@ export default function SubmitDealPage() {
                   onChange={handleFileChange}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                <div className="flex flex-col items-center justify-center space-y-2">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 shadow-inner">
-                    <UploadCloud className="w-6 h-6" />
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 shadow-lg">
+                    <UploadCloud className="w-8 h-8" />
                   </div>
-                  <p className="text-xs font-bold text-white">
-                    Click to browse or drag &amp; drop photos here
+                  <p className="text-sm sm:text-base font-bold text-white">
+                    Appuyez ici ou glissez vos photos
                   </p>
-                  <p className="text-[11px] text-slate-500">
-                    Supports JPG, PNG or WEBP (up to 5 photos)
+                  <p className="text-xs sm:text-sm text-slate-400">
+                    JPG, PNG ou WEBP (jusqu&apos;à 5 photos)
                   </p>
                 </div>
               </div>
 
-              {/* Prévisualisations des vignettes */}
+              {/* Prévisualisations */}
               {previewUrls.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
                   {previewUrls.map((url, idx) => (
-                    <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-700 bg-slate-950 group">
+                    <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow">
                       <img src={url} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => removeFile(idx)}
-                        className="absolute top-1 right-1 bg-black/80 hover:bg-red-500 text-white p-1 rounded-full transition"
+                        className="absolute top-1.5 right-1.5 bg-black/80 hover:bg-red-500 text-white p-1.5 rounded-full transition cursor-pointer"
                       >
-                        <X className="w-3 h-3" />
+                        <X className="w-4 h-4" />
                       </button>
                       {idx === 0 && (
-                        <span className="absolute bottom-1 left-1 bg-emerald-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded">
+                        <span className="absolute bottom-1.5 left-1.5 bg-emerald-400 text-slate-950 font-black text-[10px] sm:text-xs px-2 py-0.5 rounded">
                           Cover
                         </span>
                       )}
@@ -278,11 +279,11 @@ export default function SubmitDealPage() {
                 </div>
               )}
 
-              {/* Lien Google Drive / Dropbox optionnel */}
-              <div className="pt-2">
-                <label className="text-[11px] font-bold text-slate-400 block mb-1 flex items-center gap-1.5">
-                  <FolderOpen className="w-3.5 h-3.5 text-cyan-400" /> 
-                  Full Photo Album Link (Optional Google Drive or Dropbox)
+              {/* Lien Google Drive Optionnel */}
+              <div className="pt-1">
+                <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5 flex items-center gap-2">
+                  <FolderOpen className="w-4 h-4 text-cyan-400" /> 
+                  Lien dossier photos complet (Google Drive ou Dropbox - Optionnel)
                 </label>
                 <input
                   type="url"
@@ -290,60 +291,68 @@ export default function SubmitDealPage() {
                   placeholder="https://drive.google.com/drive/folders/..."
                   value={formData.cloud_folder_url}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-400"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
                 />
               </div>
             </div>
 
-            {/* SECTION 2: DONNÉES DU BIEN */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 border-b border-slate-800 pb-2 flex items-center gap-2">
-                <Building2 className="w-4 h-4 text-emerald-400" /> 2. Property &amp; Financial Details
+            {/* SECTION 2: DÉTAILS DU BIEN */}
+            <div className="space-y-4 pt-2">
+              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
+                <Building2 className="w-5 h-5 text-emerald-400" /> 2. Propriété &amp; Données Financières
               </h3>
 
               <div>
-                <label className="text-[11px] font-bold text-slate-400 block mb-1">Deal Headline / Title</label>
+                <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                  Titre de l&apos;annonce / Headline
+                </label>
                 <input
                   type="text"
                   name="title"
                   required
-                  placeholder="e.g. Turnkey Cash-Flow Duplex near Cleveland Clinic"
+                  placeholder="ex: Turnkey Duplex - Strong Cash Flow"
                   value={formData.title}
                   onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-400"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base font-medium text-white outline-none focus:border-emerald-400 transition"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div className="sm:col-span-2">
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Street Address</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    Adresse civique
+                  </label>
                   <input
                     type="text"
                     name="address"
                     required
-                    placeholder="e.g. 1428 E 120th St"
+                    placeholder="ex: 1428 E 120th St"
                     value={formData.address}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-400"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">City</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    Ville
+                  </label>
                   <input
                     type="text"
                     name="city"
                     required
-                    placeholder="e.g. Cleveland"
+                    placeholder="ex: Cleveland"
                     value={formData.city}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-400"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Doors / Units</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    Nombre de portes (Units)
+                  </label>
                   <input
                     type="number"
                     name="units"
@@ -351,11 +360,13 @@ export default function SubmitDealPage() {
                     required
                     value={formData.units}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base font-mono text-white outline-none focus:border-emerald-400 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Contract Price ($)</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    Prix demandé ($)
+                  </label>
                   <input
                     type="number"
                     name="price"
@@ -363,56 +374,64 @@ export default function SubmitDealPage() {
                     placeholder="85000"
                     value={formData.price}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-emerald-400 font-mono font-bold"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-emerald-400 font-mono font-bold outline-none focus:border-emerald-400 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Gross Rent ($/mo)</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    Loyers bruts ($/mois)
+                  </label>
                   <input
                     type="number"
                     name="monthly_rent"
                     required
-                    placeholder="1850"
+                    placeholder="1800"
                     value={formData.monthly_rent}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white font-mono outline-none focus:border-emerald-400 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Est. ARV ($)</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    ARV estimé ($)
+                  </label>
                   <input
                     type="number"
                     name="arv"
-                    placeholder="135000"
+                    placeholder="130000"
                     value={formData.arv}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-cyan-300 font-mono"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-cyan-300 font-mono outline-none focus:border-emerald-400 transition"
                   />
                 </div>
               </div>
             </div>
 
-            {/* SECTION 3: CONTACT DISPO / WHOLESALER */}
-            <div className="space-y-3 pt-2">
-              <h3 className="text-xs font-black uppercase tracking-wider text-slate-300 border-b border-slate-800 pb-2 flex items-center gap-2">
-                <User className="w-4 h-4 text-emerald-400" /> 3. Contact &amp; Acquisitions Desk
+            {/* SECTION 3: CONTACT */}
+            <div className="space-y-4 pt-2">
+              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
+                <User className="w-5 h-5 text-emerald-400" /> 3. Vos Coordonnées (Contact Direct)
               </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Your Name / Company</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    Nom / Entreprise
+                  </label>
                   <input
                     type="text"
                     name="wholesaler_name"
                     required
-                    placeholder="e.g. Apex Acquisitions"
+                    placeholder="ex: Apex Acquisitions"
                     value={formData.wholesaler_name}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Phone Number</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    Numéro de téléphone
+                  </label>
                   <input
                     type="text"
                     name="wholesaler_phone"
@@ -420,11 +439,13 @@ export default function SubmitDealPage() {
                     placeholder="(216) 555-0199"
                     value={formData.wholesaler_phone}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
                   />
                 </div>
                 <div>
-                  <label className="text-[11px] font-bold text-slate-400 block mb-1">Email</label>
+                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
+                    Adresse Courriel
+                  </label>
                   <input
                     type="email"
                     name="wholesaler_email"
@@ -432,27 +453,30 @@ export default function SubmitDealPage() {
                     placeholder="deals@acquisitions.com"
                     value={formData.wholesaler_email}
                     onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
                   />
                 </div>
               </div>
             </div>
 
-            {/* BOUTON DE SOUMISSION */}
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black py-4 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 cursor-pointer"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>{uploadProgressText || 'Publishing...'}</span>
-                </>
-              ) : (
-                <span>Publish Deal with Photos (100% Free)</span>
-              )}
-            </button>
+            {/* BOUTON SOUMETTRE */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black py-4 sm:py-5 rounded-2xl text-sm sm:text-base uppercase tracking-wider transition shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span>{uploadProgressText || 'Envoi en cours...'}</span>
+                  </>
+                ) : (
+                  <span>Publier le Deal avec Photos (100% Gratuit)</span>
+                )}
+              </button>
+            </div>
+
           </form>
         )}
 
