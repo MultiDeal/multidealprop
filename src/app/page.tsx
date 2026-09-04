@@ -6,7 +6,6 @@ import {
   Building2, 
   MapPin, 
   Lock, 
-  Unlock, 
   TrendingUp, 
   Sliders, 
   Coins, 
@@ -16,14 +15,17 @@ import {
   ChevronUp, 
   Download, 
   Zap, 
-  PlusCircle,
-  ExternalLink,
-  ShieldCheck,
-  CheckCircle,
-  AlertTriangle,
-  FileCheck2,
+  PlusCircle, 
+  ExternalLink, 
+  ShieldCheck, 
+  CheckCircle, 
+  AlertTriangle, 
+  Award, 
   Sparkles,
-  Award
+  DollarSign,
+  X,
+  Send,
+  Loader2
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -36,7 +38,19 @@ export default function HomePage() {
   const [isCheckingOut, setIsCheckingOut] = useState<boolean>(false);
   const [recentDeals, setRecentDeals] = useState<any[]>([]);
 
-  // Propriété analysée en direct
+  // Modal Financement Lead
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [leadLoading, setLeadLoading] = useState<boolean>(false);
+  const [leadSubmitted, setLeadSubmitted] = useState<boolean>(false);
+  const [leadForm, setLeadForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    creditScore: '700-739',
+    experience: '1-3 Deals'
+  });
+
+  // Propriété
   const [propertyTitle, setPropertyTitle] = useState<string>('Turnkey Cleveland Duplex');
   const [propertyAddress, setPropertyAddress] = useState<string>('1428 E 120th St, Cleveland, OH 44106');
   const [unitsCount, setUnitsCount] = useState<number>(2);
@@ -58,7 +72,7 @@ export default function HomePage() {
   const [otherMonthlyIncome, setOtherMonthlyIncome] = useState<number>(50);
   const [vacancyRate, setVacancyRate] = useState<number>(5);
 
-  // Dépenses annuelles
+  // Dépenses
   const [annualTaxes, setAnnualTaxes] = useState<number>(1420);
   const [annualInsurance, setAnnualInsurance] = useState<number>(850);
   const [managementRate, setManagementRate] = useState<number>(8);
@@ -67,12 +81,8 @@ export default function HomePage() {
   const [annualUtilities, setAnnualUtilities] = useState<number>(780);
 
   // Projections
-  const [holdingPeriodYears, setHoldingPeriodYears] = useState<number>(5);
-  const [exitCapRate, setExitCapRate] = useState<number>(7.5);
-  const [annualAppreciation, setAnnualAppreciation] = useState<number>(3.0);
-  const [annualRentGrowth, setAnnualRentGrowth] = useState<number>(2.5);
+  const [annualAppreciation] = useState<number>(3.0);
   const [marginalTaxRate] = useState<number>(28);
-
   const [showAmortizationTable, setShowAmortizationTable] = useState<boolean>(false);
 
   useEffect(() => {
@@ -101,7 +111,6 @@ export default function HomePage() {
     fetchDeals();
   }, []);
 
-  // Presets 1-Click
   const applyPreset = (presetKey: 'CLEVELAND' | 'DETROIT' | 'SECTION8') => {
     if (presetKey === 'CLEVELAND') {
       setPropertyTitle('Turnkey University Circle Duplex');
@@ -158,7 +167,7 @@ export default function HomePage() {
     window.scrollTo({ top: 480, behavior: 'smooth' });
   };
 
-  // Calculs financiers
+  // Calculs Financiers
   const downPaymentAmount = (purchasePrice * downPercent) / 100;
   const loanAmount = Math.max(0, purchasePrice - downPaymentAmount);
   const closingCostsAmount = loanAmount * 0.025;
@@ -203,11 +212,6 @@ export default function HomePage() {
   const buildingBasis = (purchasePrice + rehabBudget) * 0.80;
   const annualDepreciation = buildingBasis / 27.5;
   const annualTaxSaved = annualDepreciation * (marginalTaxRate / 100);
-
-  // BRRRR
-  const brrrrARV = estimatedARV || purchasePrice * 1.35;
-  const brrrrRefinanceLoan = brrrrARV * 0.75;
-  const brrrrCashLeftInDeal = Math.max(0, (purchasePrice + rehabBudget + closingCostsAmount) - brrrrRefinanceLoan);
 
   // Amortissement
   const amortizationSchedule = [];
@@ -256,11 +260,36 @@ export default function HomePage() {
     }
   };
 
+  const handleLeadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLeadLoading(true);
+    try {
+      const { error } = await supabase.from('financing_leads').insert([
+        {
+          property_address: propertyAddress,
+          requested_loan: loanAmount,
+          estimated_dscr: dscr,
+          investor_name: leadForm.name,
+          investor_email: leadForm.email,
+          investor_phone: leadForm.phone,
+          credit_score_range: leadForm.creditScore,
+          experience_tier: leadForm.experience,
+        }
+      ]);
+      if (error) throw error;
+      setLeadSubmitted(true);
+    } catch (err: any) {
+      alert('Error submitting request. Please try again.');
+    } finally {
+      setLeadLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#04060C] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
       
-      {/* Navigation Header */}
-      <header className="border-b border-slate-800/80 bg-[#04060C]/90 backdrop-blur sticky top-0 z-50 print:hidden">
+      {/* Header */}
+      <header className="border-b border-slate-800/80 bg-[#04060C]/90 backdrop-blur sticky top-0 z-40 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 flex items-center justify-center text-slate-950 font-black text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)]">
@@ -320,28 +349,7 @@ export default function HomePage() {
           Quantitative debt underwriting for 2 to 20-unit properties. Instant DSCR, Cap Rate, T-12 pro-forma audit and IRS 27.5-year tax depreciation reports.
         </p>
 
-        {/* REASSURANCE BAR: NORMES PRÊTEURS / CRÉDIBILITÉ INSTITUTIONNELLE */}
-        <div className="pt-3 pb-2 border-y border-slate-800/60 max-w-4xl mx-auto">
-          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">
-            Standardized Underwriting Covenants Conforming To:
-          </span>
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-bold text-slate-300">
-            <span className="flex items-center gap-1.5 text-slate-200">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Fannie Mae Small Balance
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-200">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Freddie Mac Optigo®
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-200">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> DSCR Lending Guidelines (1.25x Floor)
-            </span>
-            <span className="flex items-center gap-1.5 text-slate-200">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> IRS MACRS § 168(k)
-            </span>
-          </div>
-        </div>
-
-        {/* 1-CLICK QUICK TEST PRESETS */}
+        {/* 1-Click Presets */}
         <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
           <span className="text-xs font-bold text-slate-300 mr-1 flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Quick Load Presets:
@@ -370,19 +378,17 @@ export default function HomePage() {
       {/* Main Workspace */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-8">
         
-        {/* Propriété en cours d'analyse + DEAL SCORE DYNAMIQUE */}
+        {/* Deal Header + Score Dynamique */}
         <div className="bg-gradient-to-b from-slate-900/80 to-slate-950 p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 shadow-2xl">
           <div className="flex-1 w-full space-y-2.5">
-            
-            {/* LIVE SCORE & VERDICT BANCAIRE DYNAMIQUE */}
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-700">
                 Active Underwriting Session
               </span>
 
               {dscrNum >= 1.25 && capRateNum >= 9.0 ? (
-                <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs font-black px-3 py-1 rounded-full animate-pulse">
-                  <Award className="w-3.5 h-3.5" /> PRIME BANKABLE ASSET (Tier 1 Debt Qualified)
+                <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs font-black px-3 py-1 rounded-full">
+                  <Award className="w-3.5 h-3.5" /> PRIME BANKABLE ASSET (Tier 1 Qualified)
                 </span>
               ) : dscrNum >= 1.15 ? (
                 <span className="inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-400 text-xs font-black px-3 py-1 rounded-full">
@@ -407,25 +413,8 @@ export default function HomePage() {
                 type="text"
                 value={propertyAddress}
                 onChange={(e) => setPropertyAddress(e.target.value)}
-                placeholder="Property Address (e.g. Cleveland, OH)"
+                placeholder="Property Address"
                 className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 outline-none focus:border-emerald-400 transition"
-              />
-            </div>
-            <div className="flex items-center gap-3 text-xs text-slate-400 font-bold">
-              <span>Doors:</span>
-              <input
-                type="number"
-                min="1"
-                value={unitsCount}
-                onChange={(e) => setUnitsCount(Math.max(1, Number(e.target.value)))}
-                className="w-16 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-white font-mono text-center"
-              />
-              <span>Year Built:</span>
-              <input
-                type="text"
-                value={yearBuilt}
-                onChange={(e) => setYearBuilt(e.target.value)}
-                className="w-36 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-white text-xs"
               />
             </div>
           </div>
@@ -441,61 +430,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Sélecteur de Stratégie */}
-        <div className="bg-[#0a0f1d] border border-slate-800 rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-xl">
-          <div className="flex-1 space-y-1.5">
-            <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Underwriting Model:
-            </span>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={() => handleStrategyChange('BUY_HOLD')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                  strategy === 'BUY_HOLD' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25' : 'bg-slate-900 text-slate-400 border border-slate-800'
-                }`}
-              >
-                <Building2 className="w-3.5 h-3.5" /> Buy &amp; Hold
-              </button>
-              <button
-                onClick={() => handleStrategyChange('BRRRR')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                  strategy === 'BRRRR' ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/25' : 'bg-slate-900 text-slate-400 border border-slate-800'
-                }`}
-              >
-                <Flame className="w-3.5 h-3.5" /> BRRRR
-              </button>
-              <button
-                onClick={() => handleStrategyChange('FLIP')}
-                className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                  strategy === 'FLIP' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25' : 'bg-slate-900 text-slate-400 border border-slate-800'
-                }`}
-              >
-                <Coins className="w-3.5 h-3.5" /> Fix &amp; Flip
-              </button>
-            </div>
-          </div>
-
-          <div className="md:border-l md:border-slate-800 md:pl-4 flex flex-col justify-center">
-            {isMemoUnlocked ? (
-              <button
-                onClick={() => window.print()}
-                className="bg-gradient-to-r from-emerald-500 to-teal-400 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Download className="w-4 h-4" /> Export Official Memo (PDF)
-              </button>
-            ) : (
-              <button
-                onClick={handleStripeCheckout}
-                disabled={isCheckingOut}
-                className="bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 text-slate-950 font-black text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-pointer"
-              >
-                <Lock className="w-3.5 h-3.5" /> Get Diligence Memo ($9.99)
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* 4 Chiffres Clés avec Glow subtil */}
+        {/* 4 Chiffres Clés */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0a101f] border border-slate-800 p-4 sm:p-5 rounded-2xl text-center shadow-xl">
           <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
             <span className="text-[10px] uppercase font-black text-slate-400 block tracking-wider">CAP RATE</span>
@@ -517,286 +452,35 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* BRRRR Matrix */}
-        {strategy === 'BRRRR' && (
-          <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-5 rounded-3xl shadow-xl">
-            <div className="flex items-center gap-2 mb-3">
-              <Flame className="w-5 h-5 text-cyan-400" />
-              <h3 className="text-sm font-black text-white uppercase tracking-wider">BRRRR Equity &amp; Refinance Matrix</h3>
+        {/* ============================================================ */}
+        {/* BANDEAU FINANCEMENT (LEAD CAPTURE POUR COMMISSIONS 1% PRÊT)  */}
+        {/* ============================================================ */}
+        <div className="bg-gradient-to-r from-emerald-950/50 via-[#0a1428] to-cyan-950/40 border-2 border-emerald-500/40 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-5 shadow-[0_0_30px_rgba(16,185,129,0.15)]">
+          <div className="space-y-1.5 text-left w-full md:w-auto">
+            <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase px-2.5 py-0.5 rounded-md">
+              <CheckCircle className="w-3.5 h-3.5" /> DSCR Lending Qualified Asset
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-              <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                <span className="text-slate-500 block text-[9px] uppercase font-bold">Estimated ARV</span>
-                <input
-                  type="number"
-                  value={estimatedARV}
-                  onChange={(e) => setEstimatedARV(Number(e.target.value))}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-white font-mono text-xs mt-1"
-                />
-              </div>
-              <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                <span className="text-slate-500 block text-[9px] uppercase font-bold">Rehab Capital</span>
-                <strong className="text-amber-400 font-mono text-sm block mt-1">${rehabBudget.toLocaleString()}</strong>
-              </div>
-              <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                <span className="text-slate-500 block text-[9px] uppercase font-bold">75% Refi Loan</span>
-                <strong className="text-cyan-300 font-mono text-sm block mt-1">${Math.round(brrrrRefinanceLoan).toLocaleString()}</strong>
-              </div>
-              <div className="bg-emerald-500/10 p-3 rounded-xl border border-emerald-500/30">
-                <span className="text-emerald-400 block text-[9px] uppercase font-bold">Net Cash Left in Deal</span>
-                <strong className="text-emerald-400 font-mono text-sm block mt-1">${Math.round(brrrrCashLeftInDeal).toLocaleString()}</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PREVIEW SHOWCASE HAUTE FIDÉLITÉ (PAYWALL STRIPE AVEC ARGUMENTS DE RÉASSURANCE) */}
-        <div className="bg-[#0b1222] border-2 border-emerald-500/40 rounded-3xl p-5 sm:p-8 shadow-[0_0_35px_rgba(16,185,129,0.12)] space-y-6">
-          
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
-            <div>
-              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-emerald-400 text-xs font-black uppercase tracking-wider mb-2">
-                <ShieldCheck className="w-3.5 h-3.5" /> Official Bank Deliverable Sample[cite: 1]
-              </div>
-              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Lender Diligence Memorandum (Audit Preview)[cite: 1]
-              </h3>
-              <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl">
-                Commercial real estate underwriting dossier conforming to US DSCR mortgage covenants (T-12 pro-forma audit, 30-year paydown &amp; IRS depreciation)[cite: 1].
-              </p>
-            </div>
-
-            <button
-              onClick={handleStripeCheckout}
-              disabled={isCheckingOut}
-              className="bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl transition shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 cursor-pointer shrink-0 active:scale-95"
-            >
-              <Lock className="w-4 h-4" />
-              <span>Generate for This Deal ($9.99)</span>
-            </button>
+            <h3 className="text-lg sm:text-xl font-black text-white">
+              Need Debt Financing for this Property (${loanAmount.toLocaleString()})?
+            </h3>
+            <p className="text-slate-400 text-xs sm:text-sm max-w-2xl">
+              With a modeled DSCR of <strong className="text-white">{dscr}x</strong>, this deal qualifies for 30-year fixed senior mortgage debt (no W-2 required, based on rental income).
+            </p>
           </div>
 
-          {/* DOCUMENT FORMAT US LETTER BLANCHE HAUTE RÉSOLUTION */}
-          <div className="bg-white text-slate-900 rounded-2xl border border-slate-300 shadow-2xl p-5 sm:p-8 font-sans relative overflow-hidden">
-            
-            {/* Header Officiel */}
-            <div className="bg-[#0b1528] text-white p-4 sm:p-5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div>
-                <div className="font-black text-sm sm:text-base tracking-wide text-white">
-                  MULTIDEALPROP UNDERWRITING SUITE[cite: 1]
-                </div>
-                <div className="text-[10px] sm:text-xs text-emerald-400 font-bold uppercase tracking-wider">
-                  Institutional Lender Diligence Dossier &amp; Senior Debt Audit[cite: 1]
-                </div>
-              </div>
-              <div className="text-left sm:text-right text-[10px] sm:text-xs text-slate-300 font-mono space-y-0.5">
-                <div>MEMO REF: <strong className="text-white">MDP-2026-OH-08412</strong>[cite: 1]</div>
-                <div>VALUATION: <strong className="text-white">September 3, 2026</strong>[cite: 1]</div>
-                <div>STATUS: <strong className="text-emerald-400">AUDITED &amp; VERIFIED</strong></div>
-              </div>
-            </div>
-
-            {/* Fiche Identification */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 my-4 text-xs">
-              <div>
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Property Identification</span>
-                <strong className="text-slate-900 block mt-0.5 truncate">{propertyTitle}</strong>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Jurisdiction</span>
-                <strong className="text-slate-900 block mt-0.5 truncate">{propertyAddress}</strong>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Doors / Structure</span>
-                <strong className="text-slate-900 block mt-0.5">{unitsCount} Units ({yearBuilt})</strong>
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase text-slate-400 block">Audit Occupancy</span>
-                <strong className="text-emerald-700 block mt-0.5">100% Leased (Stabilized)</strong>
-              </div>
-            </div>
-
-            {/* 4 Ratios Covenants Bancaires */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-4 text-center">
-              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
-                <span className="text-[10px] font-bold text-slate-500 block uppercase">CAP RATE</span>
-                <span className="text-xl sm:text-2xl font-black text-emerald-600 font-mono block my-0.5">{capRate}%</span>
-                <span className="text-[9px] text-slate-400">Benchmark: &gt; 8.50%[cite: 1]</span>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
-                <span className="text-[10px] font-bold text-slate-500 block uppercase">DSCR RATIO</span>
-                <span className="text-xl sm:text-2xl font-black text-blue-700 font-mono block my-0.5">{dscr}x</span>
-                <span className="text-[9px] text-blue-600 font-bold">Min Floor: 1.25x (Prime)[cite: 1]</span>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
-                <span className="text-[10px] font-bold text-slate-500 block uppercase">CASH-ON-CASH</span>
-                <span className="text-xl sm:text-2xl font-black text-emerald-600 font-mono block my-0.5">{cashOnCash}%</span>
-                <span className="text-[9px] text-slate-400">Net Yield Year 1</span>
-              </div>
-              <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
-                <span className="text-[10px] font-bold text-slate-500 block uppercase">BREAK-EVEN OCC.</span>
-                <span className="text-xl sm:text-2xl font-black text-amber-600 font-mono block my-0.5">{breakEvenOccupancy}%</span>
-                <span className="text-[9px] text-slate-400">Safe vs Downturn</span>
-              </div>
-            </div>
-
-            {/* TABLEAU T-12 AUDITÉ EN CLAIR */}
-            <div className="my-5">
-              <div className="text-xs font-black uppercase tracking-wider text-slate-900 border-b-2 border-slate-900 pb-1.5 mb-2 flex items-center justify-between">
-                <span>1. Stabilized 12-Month Pro-Forma Cash Flow (Year 1)[cite: 1]</span>
-                <span className="text-[10px] font-mono text-slate-500">Underwritten in USD ($)</span>
-              </div>
-
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs border-collapse font-sans">
-                  <thead>
-                    <tr className="bg-slate-100 border-b border-slate-300 text-slate-700 text-[10px] uppercase font-bold">
-                      <th className="py-2 px-2.5">Line Item Breakdown</th>
-                      <th className="py-2 px-2.5 text-right">Monthly</th>
-                      <th className="py-2 px-2.5 text-right">Annual</th>
-                      <th className="py-2 px-2.5 text-right hidden sm:table-cell">% of Gross</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-mono text-xs text-slate-800">
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans font-bold text-slate-900">Gross Scheduled Rental Income</td>
-                      <td className="py-1.5 px-2.5 text-right">${monthlyRent.toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right">${(monthlyRent * 12).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">97.5%[cite: 1]</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-slate-600">Reimbursements &amp; Utility Recovery</td>
-                      <td className="py-1.5 px-2.5 text-right">${otherMonthlyIncome}</td>
-                      <td className="py-1.5 px-2.5 text-right">${(otherMonthlyIncome * 12).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">2.5%[cite: 1]</td>
-                    </tr>
-                    <tr className="bg-slate-50 font-bold">
-                      <td className="py-1.5 px-2.5 font-sans">Gross Potential Income (GPI)[cite: 1]</td>
-                      <td className="py-1.5 px-2.5 text-right">${(monthlyRent + otherMonthlyIncome).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right">${grossScheduledAnnualRent.toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">100.0%[cite: 1]</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-red-600">Less: Economic Vacancy Escrow ({vacancyRate}%)</td>
-                      <td className="py-1.5 px-2.5 text-right text-red-600">-${Math.round(annualVacancyLoss / 12)}</td>
-                      <td className="py-1.5 px-2.5 text-right text-red-600">-${Math.round(annualVacancyLoss).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-red-400 hidden sm:table-cell">-{vacancyRate}.0%</td>
-                    </tr>
-                    <tr className="bg-emerald-50/80 font-bold text-emerald-950 border-y border-emerald-200">
-                      <td className="py-2 px-2.5 font-sans">EFFECTIVE GROSS INCOME (EGI)[cite: 1]</td>
-                      <td className="py-2 px-2.5 text-right">${Math.round(effectiveGrossIncome / 12).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right">${Math.round(effectiveGrossIncome).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right text-emerald-800 hidden sm:table-cell">95.0%[cite: 1]</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-slate-600">County Taxes (Verified Assessment)</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualTaxes / 12)}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${annualTaxes.toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-5.9%[cite: 1]</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-slate-600">Property Hazard &amp; Flood Insurance</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualInsurance / 12)}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${annualInsurance.toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-3.5%[cite: 1]</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-slate-600">Professional Property Management ({managementRate}%)</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualManagementFee / 12)}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualManagementFee).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-7.6%[cite: 1]</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-slate-600">Turnover &amp; Repairs Escrow ({maintenanceRate}%)</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualMaintenance / 12)}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualMaintenance).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-4.8%[cite: 1]</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-slate-600">Capital Replacement Reserves (CapEx {capexRate}%)</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualCapex / 12)}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualCapex).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-4.8%[cite: 1]</td>
-                    </tr>
-                    <tr className="bg-slate-100 font-bold text-slate-900 border-t border-slate-300">
-                      <td className="py-1.5 px-2.5 font-sans">Total Operating Expenses (OpEx)[cite: 1]</td>
-                      <td className="py-1.5 px-2.5 text-right">-${Math.round(totalOperatingExpenses / 12).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right">-${Math.round(totalOperatingExpenses).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-600 hidden sm:table-cell">-30.0%[cite: 1]</td>
-                    </tr>
-                    <tr className="bg-emerald-100 font-black text-emerald-950 border-y-2 border-emerald-400 text-sm">
-                      <td className="py-2 px-2.5 font-sans">NET OPERATING INCOME (NOI)[cite: 1]</td>
-                      <td className="py-2 px-2.5 text-right font-mono">${Math.round(annualNOI / 12).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right font-mono">${Math.round(annualNOI).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right text-emerald-800 hidden sm:table-cell">65.0%[cite: 1]</td>
-                    </tr>
-                    <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-slate-700">Senior Mortgage Debt Service (P&amp;I)[cite: 1]</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-800">-${Math.round(monthlyMortgage).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-800">-${Math.round(annualDebtService).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-26.8%[cite: 1]</td>
-                    </tr>
-                    <tr className="bg-blue-50 font-black text-blue-950 border-y border-blue-200">
-                      <td className="py-2 px-2.5 font-sans">NET DISTRIBUTABLE CASH FLOW</td>
-                      <td className="py-2 px-2.5 text-right font-mono">+${Math.round(monthlyNetCashFlow).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right font-mono">+${Math.round(annualNetCashFlow).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right text-blue-800 hidden sm:table-cell">38.2%[cite: 1]</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* SECTION 2 : VERROUILLÉE PAR STRIPE AVEC CALL-TO-ACTION ULTRA-PROPRIÉTAIRE */}
-            <div className="relative pt-4 border-t-2 border-slate-200">
-              
-              <div className="select-none filter blur-[3px] opacity-40 space-y-2">
-                <div className="text-xs font-black uppercase text-slate-900">2. Senior Debt 30-Year Amortization &amp; Equity Waterfall</div>
-                <div className="h-6 bg-slate-200 rounded w-full"></div>
-                <div className="h-6 bg-slate-100 rounded w-full"></div>
-                <div className="h-6 bg-slate-100 rounded w-full"></div>
-                <div className="h-16 bg-slate-50 border border-slate-200 rounded-xl mt-4"></div>
-              </div>
-
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent flex flex-col items-center justify-center p-6 text-center rounded-xl">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <h4 className="text-lg sm:text-xl font-black text-white">
-                  Unlock the Complete 2-Page Lender Deal Memo (PDF)
-                </h4>
-                <p className="text-slate-300 text-xs sm:text-sm max-w-lg mt-1 mb-4">
-                  Includes the 30-year amortization schedule, IRS 27.5-year tax shelter breakdown, and dual Sponsor/Lending Officer certification blocks[cite: 1].
-                </p>
-                <button
-                  onClick={handleStripeCheckout}
-                  disabled={isCheckingOut}
-                  className="bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 text-slate-950 font-black text-xs sm:text-sm px-8 py-4 rounded-xl transition shadow-[0_0_30px_rgba(16,185,129,0.4)] flex items-center gap-2 cursor-pointer active:scale-95"
-                >
-                  <Lock className="w-4 h-4" />
-                  <span>{isCheckingOut ? 'Opening Stripe...' : 'Download Official PDF Memo ($9.99)'}</span>
-                </button>
-
-                {/* 3 ARGUMENTS DE RÉASSURANCE SOUS LE BOUTON */}
-                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 mt-3 text-[11px] font-bold text-slate-400">
-                  <span className="flex items-center gap-1">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Instant PDF Download
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> 100% Lender-Compliant Format
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Secure 256-Bit Stripe Checkout
-                  </span>
-                </div>
-              </div>
-
-            </div>
-
-          </div>
+          <button
+            onClick={() => {
+              setLeadSubmitted(false);
+              setIsModalOpen(true);
+            }}
+            className="w-full md:w-auto shrink-0 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider px-6 py-4 rounded-xl transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
+          >
+            <DollarSign className="w-4 h-4" />
+            <span>Get Rate &amp; Term Sheet ↗</span>
+          </button>
         </div>
 
-        {/* Inputs de Financement & Dépenses */}
+        {/* Formulaire Financement & Dépenses */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
             <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
@@ -835,33 +519,12 @@ export default function HomePage() {
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-bold block mb-1">Amortization</label>
-                <select
-                  value={loanTermYears}
-                  onChange={(e) => setLoanTermYears(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold"
-                >
-                  <option value="15">15 Years</option>
-                  <option value="25">25 Years</option>
-                  <option value="30">30 Years</option>
-                </select>
-              </div>
-              <div>
                 <label className="text-slate-400 font-bold block mb-1">Gross Monthly Rent ($)</label>
                 <input 
                   type="number"
                   value={monthlyRent}
                   onChange={(e) => setMonthlyRent(Number(e.target.value))}
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-emerald-400 font-mono font-bold"
-                />
-              </div>
-              <div>
-                <label className="text-slate-400 font-bold block mb-1">Other Income ($/mo)</label>
-                <input 
-                  type="number"
-                  value={otherMonthlyIncome}
-                  onChange={(e) => setOtherMonthlyIncome(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 font-mono"
                 />
               </div>
             </div>
@@ -900,15 +563,6 @@ export default function HomePage() {
                 />
               </div>
               <div>
-                <label className="text-slate-400 font-bold block mb-1">Maintenance (%)</label>
-                <input 
-                  type="number"
-                  value={maintenanceRate}
-                  onChange={(e) => setMaintenanceRate(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 font-mono"
-                />
-              </div>
-              <div>
                 <label className="text-slate-400 font-bold block mb-1">CapEx Reserve (%)</label>
                 <input 
                   type="number"
@@ -917,90 +571,12 @@ export default function HomePage() {
                   className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 font-mono"
                 />
               </div>
-              <div>
-                <label className="text-slate-400 font-bold block mb-1">Utilities ($/yr)</label>
-                <input 
-                  type="number"
-                  value={annualUtilities}
-                  onChange={(e) => setAnnualUtilities(Number(e.target.value))}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-200 font-mono"
-                />
-              </div>
             </div>
           </div>
-        </div>
-
-        {/* Abri Fiscal IRS 27.5 ans */}
-        <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800">
-          <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center justify-between">
-            <span>🏛️ IRS 27.5-Year Tax Depreciation Shelter</span>
-            <span className="text-[10px] text-slate-400 font-mono">Tax Bracket: {marginalTaxRate}%</span>
-          </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div>
-              <span className="text-slate-500 block text-[9px] uppercase font-bold">Depreciable Basis[cite: 1]</span>
-              <strong className="text-white font-mono text-sm block mt-0.5">${Math.round(buildingBasis).toLocaleString()}</strong>
-            </div>
-            <div>
-              <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Depreciation</span>
-              <strong className="text-cyan-300 font-mono text-sm block mt-0.5">${Math.round(annualDepreciation).toLocaleString()} / yr</strong>
-            </div>
-            <div>
-              <span className="text-slate-500 block text-[9px] uppercase font-bold">Annual Tax Shelter</span>
-              <strong className="text-emerald-400 font-mono text-sm block mt-0.5">${Math.round(annualTaxSaved).toLocaleString()} / yr</strong>
-            </div>
-            <div>
-              <span className="text-slate-500 block text-[9px] uppercase font-bold">Cash Protection</span>
-              <strong className="text-emerald-400 font-mono text-sm block mt-0.5">100% Tax Sheltered[cite: 1]</strong>
-            </div>
-          </div>
-        </div>
-
-        {/* Tableau d'Amortissement Dépliable */}
-        <div className="border border-slate-800 rounded-2xl overflow-hidden">
-          <button
-            onClick={() => setShowAmortizationTable(!showAmortizationTable)}
-            className="w-full p-4 bg-slate-950 flex items-center justify-between text-xs font-black uppercase text-slate-300 hover:text-white cursor-pointer"
-          >
-            <span className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-emerald-400" />
-              <span>30-Year Loan Amortization Breakdown</span>
-            </span>
-            {showAmortizationTable ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-
-          {showAmortizationTable && (
-            <div className="p-4 bg-slate-900/90 overflow-x-auto max-h-72 scrollbar-thin">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-slate-800 text-slate-500 text-[10px] uppercase">
-                    <th className="py-2">Year</th>
-                    <th className="py-2">Principal Paid</th>
-                    <th className="py-2">Interest Paid</th>
-                    <th className="py-2">Remaining Loan</th>
-                    <th className="py-2">Property Value</th>
-                    <th className="py-2">Total Equity</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 font-mono text-xs">
-                  {amortizationSchedule.map((row) => (
-                    <tr key={row.year} className="hover:bg-slate-800/50">
-                      <td className="py-2 font-bold text-white">Year {row.year}[cite: 1]</td>
-                      <td className="py-2 text-emerald-400">+${row.principalPaid.toLocaleString()}</td>
-                      <td className="py-2 text-red-400">-${row.interestPaid.toLocaleString()}</td>
-                      <td className="py-2 text-slate-300">${row.remainingBalance.toLocaleString()}</td>
-                      <td className="py-2 text-cyan-300">${row.propertyValue.toLocaleString()}</td>
-                      <td className="py-2 font-bold text-emerald-300">${row.equity.toLocaleString()}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
         {/* Section Inventaire Soumis par les Wholesalers */}
-        <div className="pt-8 space-y-4">
+        <div className="pt-4 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div>
               <h2 className="text-lg font-black text-white flex items-center gap-2">
@@ -1020,7 +596,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {recentDeals.length > 0 ? (
+          {recentDeals.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {recentDeals.map((deal) => (
                 <div 
@@ -1050,24 +626,6 @@ export default function HomePage() {
                       </p>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 text-[11px] font-mono">
-                      <div>
-                        <span className="text-slate-500 block text-[9px]">GROSS RENT</span>
-                        <span className="text-white font-bold">${Number(deal.monthly_rent || 0).toLocaleString()}/mo</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-500 block text-[9px]">EST. ARV</span>
-                        <span className="text-cyan-300 font-bold">${Number(deal.arv || deal.price * 1.3).toLocaleString()}</span>
-                      </div>
-                    </div>
-
-                    {deal.wholesaler_name && (
-                      <div className="text-[10px] text-slate-400 border-t border-slate-800 pt-2 flex items-center justify-between">
-                        <span>Rep: <strong className="text-slate-300">{deal.wholesaler_name}</strong></span>
-                        <span className="font-mono text-emerald-400">{deal.wholesaler_phone}</span>
-                      </div>
-                    )}
-
                     <button
                       onClick={() => loadDealIntoAnalyzer(deal)}
                       className="w-full bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 text-xs font-black py-2 rounded-xl transition cursor-pointer"
@@ -1078,24 +636,148 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="bg-slate-900/40 border border-dashed border-slate-800 rounded-3xl p-8 text-center space-y-2">
-              <Building2 className="w-8 h-8 text-slate-600 mx-auto" />
-              <h3 className="text-sm font-bold text-slate-300">No Wholesaler Inventory Published Yet</h3>
-              <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                Be the first to list your assignment contracts or off-market multi-family plexes.
-              </p>
-              <Link
-                href="/submit-deal"
-                className="inline-block mt-2 bg-emerald-400 text-slate-950 font-bold px-4 py-2 rounded-xl text-xs"
-              >
-                + Submit a Deal Now
-              </Link>
-            </div>
           )}
         </div>
 
       </main>
+
+      {/* ============================================================ */}
+      {/* MODAL DE DEMANDE DE FINANCEMENT (LEAD CAPTURE)              */}
+      {/* ============================================================ */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#0b1222] border-2 border-emerald-500/40 w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative space-y-6">
+            
+            <button
+              onClick={() => setIsModalOpen(false)}
+              className="absolute top-5 right-5 text-slate-400 hover:text-white p-1 rounded-lg bg-slate-900 border border-slate-800 transition"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            {leadSubmitted ? (
+              <div className="text-center py-8 space-y-4">
+                <CheckCircle className="w-16 h-16 text-emerald-400 mx-auto" />
+                <h3 className="text-2xl font-black text-white">Financing Request Received!</h3>
+                <p className="text-slate-300 text-sm max-w-sm mx-auto">
+                  Our DSCR lending desk has received your property metrics for <strong>{propertyAddress}</strong>. A loan officer will provide preliminary rate &amp; terms within 24 hours.
+                </p>
+                <button
+                  onClick={() => setIsModalOpen(false)}
+                  className="bg-emerald-400 text-slate-950 font-black px-6 py-2.5 rounded-xl text-xs uppercase"
+                >
+                  Close
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleLeadSubmit} className="space-y-4">
+                <div>
+                  <span className="text-emerald-400 text-xs font-black uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                    DSCR Senior Debt Matching
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-white mt-2">
+                    Request Loan Quote (${loanAmount.toLocaleString()})
+                  </h3>
+                  <p className="text-slate-400 text-xs mt-1">
+                    Pre-underwritten for <strong>{propertyAddress}</strong> (DSCR: {dscr}x). No tax returns or personal DTI required.
+                  </p>
+                </div>
+
+                <div className="space-y-3 text-xs">
+                  <div>
+                    <label className="text-slate-300 font-bold block mb-1">Full Legal Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="John Doe"
+                      value={leadForm.name}
+                      onChange={(e) => setLeadForm({ ...leadForm, name: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-slate-300 font-bold block mb-1">Email Address</label>
+                      <input
+                        type="email"
+                        required
+                        placeholder="john@example.com"
+                        value={leadForm.email}
+                        onChange={(e) => setLeadForm({ ...leadForm, email: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-slate-300 font-bold block mb-1">Direct Phone Number</label>
+                      <input
+                        type="tel"
+                        required
+                        placeholder="(216) 555-0199"
+                        value={leadForm.phone}
+                        onChange={(e) => setLeadForm({ ...leadForm, phone: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white outline-none focus:border-emerald-400"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-slate-300 font-bold block mb-1">Estimated Credit Score</label>
+                      <select
+                        value={leadForm.creditScore}
+                        onChange={(e) => setLeadForm({ ...leadForm, creditScore: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                      >
+                        <option value="740+">740+ (Best Rates)</option>
+                        <option value="700-739">700 - 739 (Standard)</option>
+                        <option value="660-699">660 - 699 (Tier 2)</option>
+                        <option value="Under 660">Under 660</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-slate-300 font-bold block mb-1">Investment Experience</label>
+                      <select
+                        value={leadForm.experience}
+                        onChange={(e) => setLeadForm({ ...leadForm, experience: e.target.value })}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                      >
+                        <option value="First Deal">First Investment Property</option>
+                        <option value="1-3 Deals">1 to 3 Properties Owned</option>
+                        <option value="4+ Deals">4+ Properties (Experienced)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    type="submit"
+                    disabled={leadLoading}
+                    className="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs uppercase tracking-wider py-3.5 rounded-xl transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    {leadLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Transmitting Dossier...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-4 h-4" />
+                        <span>Submit for Term Sheet Review</span>
+                      </>
+                    )}
+                  </button>
+                  <p className="text-[10px] text-slate-500 text-center mt-2">
+                    🔒 Soft credit pull only. No impact on credit score.
+                  </p>
+                </div>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-slate-800 bg-[#030508] py-8 text-center text-xs text-slate-500 print:hidden">
