@@ -18,7 +18,12 @@ import {
   Zap, 
   PlusCircle,
   ExternalLink,
-  ShieldCheck
+  ShieldCheck,
+  CheckCircle,
+  AlertTriangle,
+  FileCheck2,
+  Sparkles,
+  Award
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -32,10 +37,10 @@ export default function HomePage() {
   const [recentDeals, setRecentDeals] = useState<any[]>([]);
 
   // Propriété analysée en direct
-  const [propertyTitle, setPropertyTitle] = useState<string>('Turnkey Cleveland Duplex (Live Sample)');
+  const [propertyTitle, setPropertyTitle] = useState<string>('Turnkey Cleveland Duplex');
   const [propertyAddress, setPropertyAddress] = useState<string>('1428 E 120th St, Cleveland, OH 44106');
   const [unitsCount, setUnitsCount] = useState<number>(2);
-  const [yearBuilt, setYearBuilt] = useState<string>('1924 (Renovated)');
+  const [yearBuilt, setYearBuilt] = useState<string>('1924 (Renovated 2021)');
 
   // Stratégie
   const [strategy, setStrategy] = useState<'BUY_HOLD' | 'BRRRR' | 'FLIP'>('BUY_HOLD');
@@ -96,6 +101,44 @@ export default function HomePage() {
     fetchDeals();
   }, []);
 
+  // Presets 1-Click
+  const applyPreset = (presetKey: 'CLEVELAND' | 'DETROIT' | 'SECTION8') => {
+    if (presetKey === 'CLEVELAND') {
+      setPropertyTitle('Turnkey University Circle Duplex');
+      setPropertyAddress('1428 E 120th St, Cleveland, OH 44106');
+      setUnitsCount(2);
+      setPurchasePrice(98000);
+      setMonthlyRent(1950);
+      setOtherMonthlyIncome(50);
+      setAnnualTaxes(1420);
+      setAnnualInsurance(850);
+      setRehabBudget(0);
+      setEstimatedARV(145000);
+    } else if (presetKey === 'DETROIT') {
+      setPropertyTitle('Detroit High-Yield 4-Plex Value-Add');
+      setPropertyAddress('3410 W Chicago Blvd, Detroit, MI 48206');
+      setUnitsCount(4);
+      setPurchasePrice(135000);
+      setMonthlyRent(3600);
+      setOtherMonthlyIncome(120);
+      setAnnualTaxes(2100);
+      setAnnualInsurance(1250);
+      setRehabBudget(25000);
+      setEstimatedARV(210000);
+    } else if (presetKey === 'SECTION8') {
+      setPropertyTitle('Midwest Guaranteed Rent Section 8 Triplex');
+      setPropertyAddress('2184 N 49th St, Milwaukee, WI 53208');
+      setUnitsCount(3);
+      setPurchasePrice(165000);
+      setMonthlyRent(3250);
+      setOtherMonthlyIncome(75);
+      setAnnualTaxes(2800);
+      setAnnualInsurance(1100);
+      setRehabBudget(5000);
+      setEstimatedARV(195000);
+    }
+  };
+
   const handleStrategyChange = (newStrategy: 'BUY_HOLD' | 'BRRRR' | 'FLIP') => {
     setStrategy(newStrategy);
     if (newStrategy === 'BUY_HOLD') setRehabBudget(0);
@@ -112,7 +155,7 @@ export default function HomePage() {
     setEstimatedARV(Number(deal.arv) || Math.round(Number(deal.price) * 1.35));
     if (deal.taxes) setAnnualTaxes(Number(deal.taxes));
     if (deal.insurance) setAnnualInsurance(Number(deal.insurance));
-    window.scrollTo({ top: 380, behavior: 'smooth' });
+    window.scrollTo({ top: 480, behavior: 'smooth' });
   };
 
   // Calculs financiers
@@ -140,16 +183,17 @@ export default function HomePage() {
   const totalOperatingExpenses = annualTaxes + annualInsurance + annualManagementFee + annualMaintenance + annualCapex + annualUtilities;
 
   const annualNOI = effectiveGrossIncome - totalOperatingExpenses;
-  const capRate = purchasePrice > 0 ? ((annualNOI / purchasePrice) * 100).toFixed(2) : '0.00';
+  const capRateNum = purchasePrice > 0 ? (annualNOI / purchasePrice) * 100 : 0;
+  const capRate = capRateNum.toFixed(2);
 
   const annualNetCashFlow = annualNOI - annualDebtService;
   const monthlyNetCashFlow = annualNetCashFlow / 12;
 
-  const cashOnCash = totalCashInvested > 0 
-    ? ((annualNetCashFlow / totalCashInvested) * 100).toFixed(2) 
-    : '0.00';
+  const cashOnCashNum = totalCashInvested > 0 ? (annualNetCashFlow / totalCashInvested) * 100 : 0;
+  const cashOnCash = cashOnCashNum.toFixed(2);
 
-  const dscr = annualDebtService > 0 ? (annualNOI / annualDebtService).toFixed(2) : 'N/A';
+  const dscrNum = annualDebtService > 0 ? annualNOI / annualDebtService : 0;
+  const dscr = annualDebtService > 0 ? dscrNum.toFixed(2) : 'N/A';
 
   const totalFixedCostsAnnual = totalOperatingExpenses + annualDebtService;
   const breakEvenOccupancy = grossScheduledAnnualRent > 0 
@@ -213,24 +257,29 @@ export default function HomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#05070E] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
+    <div className="min-h-screen bg-[#04060C] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
       
       {/* Navigation Header */}
-      <header className="border-b border-slate-800/80 bg-[#05070E]/90 backdrop-blur sticky top-0 z-50 print:hidden">
+      <header className="border-b border-slate-800/80 bg-[#04060C]/90 backdrop-blur sticky top-0 z-50 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/20">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 flex items-center justify-center text-slate-950 font-black text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)]">
               MP
             </div>
-            <span className="font-black text-lg tracking-wider text-white">
-              MULTIDEAL<span className="text-emerald-400">PROP</span>
-            </span>
+            <div>
+              <span className="font-black text-lg tracking-wider text-white">
+                MULTIDEAL<span className="text-emerald-400">PROP</span>
+              </span>
+              <span className="hidden sm:inline-block ml-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-l border-slate-700 pl-2">
+                Underwriting Suite
+              </span>
+            </div>
           </Link>
 
           <div className="flex items-center gap-2.5 sm:gap-4">
             <Link
               href="/submit-deal"
-              className="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs sm:text-sm px-3.5 sm:px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+              className="bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold text-xs sm:text-sm px-3 sm:px-4 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Post a Deal (Free)</span>
@@ -239,7 +288,7 @@ export default function HomePage() {
             {isMemoUnlocked ? (
               <button
                 onClick={() => window.print()}
-                className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm px-3.5 py-2 rounded-xl font-bold flex items-center gap-1.5 hover:bg-emerald-500/20 transition cursor-pointer"
+                className="bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs sm:text-sm px-4 py-2 rounded-xl font-bold flex items-center gap-1.5 hover:bg-emerald-500/20 transition cursor-pointer"
               >
                 <Download className="w-4 h-4" /> Print Official Memo
               </button>
@@ -247,52 +296,119 @@ export default function HomePage() {
               <button
                 onClick={handleStripeCheckout}
                 disabled={isCheckingOut}
-                className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs sm:text-sm px-3.5 sm:px-5 py-2 rounded-xl transition shadow-lg shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
+                className="bg-gradient-to-r from-emerald-400 to-teal-400 hover:from-emerald-300 hover:to-teal-300 text-slate-950 font-black text-xs sm:text-sm px-4 sm:px-5 py-2 rounded-xl transition shadow-[0_0_20px_rgba(16,185,129,0.35)] flex items-center gap-1.5 cursor-pointer active:scale-95"
               >
                 <Lock className="w-3.5 h-3.5" />
-                <span>{isCheckingOut ? 'Loading...' : 'Lender Memo ($9.99)'}</span>
+                <span>{isCheckingOut ? 'Opening...' : 'Export Memo ($9.99)'}</span>
               </button>
             )}
           </div>
         </div>
       </header>
 
-      {/* Hero Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 text-center space-y-3">
-        <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-emerald-400 text-xs font-black uppercase tracking-wider">
-          <Zap className="w-3 h-3" /> Institutional Multi-Family Underwriting Engine
+      {/* Hero Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 text-center space-y-4">
+        <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1.5 rounded-full text-emerald-400 text-xs font-black uppercase tracking-wider shadow-inner">
+          <Zap className="w-3.5 h-3.5 text-emerald-400" /> Institutional Real Estate Due Diligence
         </div>
-        <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-          Underwrite Any Multi-Family Deal in <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Seconds</span>
+        
+        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-tight max-w-4xl mx-auto">
+          Lender-Ready Multi-Family Memos in <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-300">Seconds</span>
         </h1>
-        <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
-          Test any duplex, triplex, or commercial apartment building. Pre-calculate DSCR, Cap Rate, BRRRR equity cashout and IRS 27.5-year tax shelter.
+        
+        <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+          Quantitative debt underwriting for 2 to 20-unit properties. Instant DSCR, Cap Rate, T-12 pro-forma audit and IRS 27.5-year tax depreciation reports.
         </p>
+
+        {/* REASSURANCE BAR: NORMES PRÊTEURS / CRÉDIBILITÉ INSTITUTIONNELLE */}
+        <div className="pt-3 pb-2 border-y border-slate-800/60 max-w-4xl mx-auto">
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 block mb-2">
+            Standardized Underwriting Covenants Conforming To:
+          </span>
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-bold text-slate-300">
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Fannie Mae Small Balance
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> Freddie Mac Optigo®
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> DSCR Lending Guidelines (1.25x Floor)
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-200">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /> IRS MACRS § 168(k)
+            </span>
+          </div>
+        </div>
+
+        {/* 1-CLICK QUICK TEST PRESETS */}
+        <div className="pt-2 flex flex-wrap items-center justify-center gap-2">
+          <span className="text-xs font-bold text-slate-300 mr-1 flex items-center gap-1">
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Quick Load Presets:
+          </span>
+          <button
+            onClick={() => applyPreset('CLEVELAND')}
+            className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/50 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg transition"
+          >
+            Cleveland 2-Plex (Turnkey)
+          </button>
+          <button
+            onClick={() => applyPreset('DETROIT')}
+            className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-cyan-500/50 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg transition"
+          >
+            Detroit 4-Plex (Value-Add)
+          </button>
+          <button
+            onClick={() => applyPreset('SECTION8')}
+            className="text-xs font-bold bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-purple-500/50 text-slate-300 hover:text-white px-3 py-1.5 rounded-lg transition"
+          >
+            Section 8 Triplex (High-Yield)
+          </button>
+        </div>
       </div>
 
       {/* Main Workspace */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-8">
         
-        {/* Propriété en cours d'analyse */}
-        <div className="bg-slate-900/60 p-5 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
-          <div className="flex-1 w-full space-y-2">
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400">
-              Live Property Parameters
-            </span>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {/* Propriété en cours d'analyse + DEAL SCORE DYNAMIQUE */}
+        <div className="bg-gradient-to-b from-slate-900/80 to-slate-950 p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 shadow-2xl">
+          <div className="flex-1 w-full space-y-2.5">
+            
+            {/* LIVE SCORE & VERDICT BANCAIRE DYNAMIQUE */}
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-700">
+                Active Underwriting Session
+              </span>
+
+              {dscrNum >= 1.25 && capRateNum >= 9.0 ? (
+                <span className="inline-flex items-center gap-1.5 bg-emerald-500/15 border border-emerald-500/40 text-emerald-400 text-xs font-black px-3 py-1 rounded-full animate-pulse">
+                  <Award className="w-3.5 h-3.5" /> PRIME BANKABLE ASSET (Tier 1 Debt Qualified)
+                </span>
+              ) : dscrNum >= 1.15 ? (
+                <span className="inline-flex items-center gap-1.5 bg-amber-500/15 border border-amber-500/40 text-amber-400 text-xs font-black px-3 py-1 rounded-full">
+                  <AlertTriangle className="w-3.5 h-3.5" /> MODERATE COVERAGE (Requires 25% Down)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 bg-red-500/15 border border-red-500/40 text-red-400 text-xs font-black px-3 py-1 rounded-full">
+                  <AlertTriangle className="w-3.5 h-3.5" /> TIGHT DEBT RATIO (Sub-1.15x Covenant)
+                </span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <input
                 type="text"
                 value={propertyTitle}
                 onChange={(e) => setPropertyTitle(e.target.value)}
                 placeholder="Deal Headline"
-                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm font-bold text-white outline-none focus:border-emerald-400"
+                className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white outline-none focus:border-emerald-400 transition"
               />
               <input
                 type="text"
                 value={propertyAddress}
                 onChange={(e) => setPropertyAddress(e.target.value)}
                 placeholder="Property Address (e.g. Cleveland, OH)"
-                className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-300 outline-none focus:border-emerald-400"
+                className="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-slate-300 outline-none focus:border-emerald-400 transition"
               />
             </div>
             <div className="flex items-center gap-3 text-xs text-slate-400 font-bold">
@@ -309,13 +425,13 @@ export default function HomePage() {
                 type="text"
                 value={yearBuilt}
                 onChange={(e) => setYearBuilt(e.target.value)}
-                className="w-28 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-white text-xs"
+                className="w-36 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-white text-xs"
               />
             </div>
           </div>
 
-          <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 w-full md:w-auto text-left md:text-right">
-            <span className="text-[10px] uppercase font-bold text-slate-500 block">Total Investment Basis</span>
+          <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800 w-full md:w-auto text-left md:text-right shadow-inner">
+            <span className="text-[10px] uppercase font-bold text-slate-500 block tracking-wider">Total Acquisition Basis</span>
             <span className="text-2xl sm:text-3xl font-black text-emerald-400 font-mono">
               ${(purchasePrice + rehabBudget).toLocaleString()}
             </span>
@@ -325,17 +441,17 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Stratégies & Action Bouton */}
-        <div className="bg-[#0c1222] border-2 border-emerald-500/30 rounded-3xl p-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-2xl">
-          <div className="flex-1 space-y-2">
+        {/* Sélecteur de Stratégie */}
+        <div className="bg-[#0a0f1d] border border-slate-800 rounded-3xl p-4 sm:p-5 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-xl">
+          <div className="flex-1 space-y-1.5">
             <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Underwriting Strategy Model:
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" /> Underwriting Model:
             </span>
             <div className="grid grid-cols-3 gap-2">
               <button
                 onClick={() => handleStrategyChange('BUY_HOLD')}
                 className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                  strategy === 'BUY_HOLD' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                  strategy === 'BUY_HOLD' ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25' : 'bg-slate-900 text-slate-400 border border-slate-800'
                 }`}
               >
                 <Building2 className="w-3.5 h-3.5" /> Buy &amp; Hold
@@ -343,7 +459,7 @@ export default function HomePage() {
               <button
                 onClick={() => handleStrategyChange('BRRRR')}
                 className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                  strategy === 'BRRRR' ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/20' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                  strategy === 'BRRRR' ? 'bg-cyan-400 text-slate-950 shadow-lg shadow-cyan-400/25' : 'bg-slate-900 text-slate-400 border border-slate-800'
                 }`}
               >
                 <Flame className="w-3.5 h-3.5" /> BRRRR
@@ -351,7 +467,7 @@ export default function HomePage() {
               <button
                 onClick={() => handleStrategyChange('FLIP')}
                 className={`py-2.5 px-3 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 cursor-pointer ${
-                  strategy === 'FLIP' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/20' : 'bg-slate-900 text-slate-400 border border-slate-800'
+                  strategy === 'FLIP' ? 'bg-purple-500 text-white shadow-lg shadow-purple-500/25' : 'bg-slate-900 text-slate-400 border border-slate-800'
                 }`}
               >
                 <Coins className="w-3.5 h-3.5" /> Fix &amp; Flip
@@ -371,7 +487,7 @@ export default function HomePage() {
               <button
                 onClick={handleStripeCheckout}
                 disabled={isCheckingOut}
-                className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer"
+                className="bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 text-slate-950 font-black text-xs uppercase tracking-wider px-6 py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] cursor-pointer"
               >
                 <Lock className="w-3.5 h-3.5" /> Get Diligence Memo ($9.99)
               </button>
@@ -379,7 +495,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 4 Chiffres Clés */}
+        {/* 4 Chiffres Clés avec Glow subtil */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0a101f] border border-slate-800 p-4 sm:p-5 rounded-2xl text-center shadow-xl">
           <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
             <span className="text-[10px] uppercase font-black text-slate-400 block tracking-wider">CAP RATE</span>
@@ -401,7 +517,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* BRRRR Simulation */}
+        {/* BRRRR Matrix */}
         {strategy === 'BRRRR' && (
           <div className="bg-gradient-to-r from-cyan-950/40 to-slate-900 border border-cyan-500/40 p-5 rounded-3xl shadow-xl">
             <div className="flex items-center gap-2 mb-3">
@@ -434,8 +550,8 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* PREVIEW INSTITUTIONNEL HAUTE FIDÉLITÉ (LENDER MEMO LIVE) */}
-        <div className="bg-[#0c1222] border-2 border-emerald-500/40 rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6">
+        {/* PREVIEW SHOWCASE HAUTE FIDÉLITÉ (PAYWALL STRIPE AVEC ARGUMENTS DE RÉASSURANCE) */}
+        <div className="bg-[#0b1222] border-2 border-emerald-500/40 rounded-3xl p-5 sm:p-8 shadow-[0_0_35px_rgba(16,185,129,0.12)] space-y-6">
           
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5">
             <div>
@@ -446,24 +562,24 @@ export default function HomePage() {
                 Lender Diligence Memorandum (Audit Preview)[cite: 1]
               </h3>
               <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl">
-                This is the exact institutional underwriting package provided to commercial lenders, private equity partners, and DSCR mortgage officers[cite: 1].
+                Commercial real estate underwriting dossier conforming to US DSCR mortgage covenants (T-12 pro-forma audit, 30-year paydown &amp; IRS depreciation)[cite: 1].
               </p>
             </div>
 
             <button
               onClick={handleStripeCheckout}
               disabled={isCheckingOut}
-              className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer shrink-0"
+              className="bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider px-6 py-3.5 rounded-xl transition shadow-[0_0_25px_rgba(16,185,129,0.35)] flex items-center justify-center gap-2 cursor-pointer shrink-0 active:scale-95"
             >
               <Lock className="w-4 h-4" />
               <span>Generate for This Deal ($9.99)</span>
             </button>
           </div>
 
-          {/* FEUILLE OFFICIELLE FORMAT US LETTER BLANCHE */}
+          {/* DOCUMENT FORMAT US LETTER BLANCHE HAUTE RÉSOLUTION */}
           <div className="bg-white text-slate-900 rounded-2xl border border-slate-300 shadow-2xl p-5 sm:p-8 font-sans relative overflow-hidden">
             
-            {/* Bandeau d'en-tête officiel */}
+            {/* Header Officiel */}
             <div className="bg-[#0b1528] text-white p-4 sm:p-5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
               <div>
                 <div className="font-black text-sm sm:text-base tracking-wide text-white">
@@ -480,7 +596,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Identification de l'actif */}
+            {/* Fiche Identification */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 my-4 text-xs">
               <div>
                 <span className="text-[10px] font-bold uppercase text-slate-400 block">Property Identification</span>
@@ -524,7 +640,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* TABLEAU T-12 AUDITÉ EN CLAIR (NON FLOUTÉ) */}
+            {/* TABLEAU T-12 AUDITÉ EN CLAIR */}
             <div className="my-5">
               <div className="text-xs font-black uppercase tracking-wider text-slate-900 border-b-2 border-slate-900 pb-1.5 mb-2 flex items-center justify-between">
                 <span>1. Stabilized 12-Month Pro-Forma Cash Flow (Year 1)[cite: 1]</span>
@@ -631,7 +747,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* PARTIE 2 : SECTION SIGNATURES ET AMORTISSEMENT (VERROUILLÉE PAR STRIPE) */}
+            {/* SECTION 2 : VERROUILLÉE PAR STRIPE AVEC CALL-TO-ACTION ULTRA-PROPRIÉTAIRE */}
             <div className="relative pt-4 border-t-2 border-slate-200">
               
               <div className="select-none filter blur-[3px] opacity-40 space-y-2">
@@ -642,7 +758,7 @@ export default function HomePage() {
                 <div className="h-16 bg-slate-50 border border-slate-200 rounded-xl mt-4"></div>
               </div>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/80 to-transparent flex flex-col items-center justify-center p-6 text-center rounded-xl">
+              <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent flex flex-col items-center justify-center p-6 text-center rounded-xl">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg">
                   <Lock className="w-6 h-6" />
                 </div>
@@ -655,11 +771,24 @@ export default function HomePage() {
                 <button
                   onClick={handleStripeCheckout}
                   disabled={isCheckingOut}
-                  className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs sm:text-sm px-8 py-4 rounded-xl transition shadow-xl shadow-emerald-500/30 flex items-center gap-2 cursor-pointer"
+                  className="bg-gradient-to-r from-emerald-400 to-teal-300 hover:from-emerald-300 hover:to-teal-200 text-slate-950 font-black text-xs sm:text-sm px-8 py-4 rounded-xl transition shadow-[0_0_30px_rgba(16,185,129,0.4)] flex items-center gap-2 cursor-pointer active:scale-95"
                 >
                   <Lock className="w-4 h-4" />
                   <span>{isCheckingOut ? 'Opening Stripe...' : 'Download Official PDF Memo ($9.99)'}</span>
                 </button>
+
+                {/* 3 ARGUMENTS DE RÉASSURANCE SOUS LE BOUTON */}
+                <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 mt-3 text-[11px] font-bold text-slate-400">
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Instant PDF Download
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> 100% Lender-Compliant Format
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Secure 256-Bit Stripe Checkout
+                  </span>
+                </div>
               </div>
 
             </div>
@@ -667,7 +796,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Formulaire Financement & Dépenses */}
+        {/* Inputs de Financement & Dépenses */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
             <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
