@@ -3,16 +3,17 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { 
-  ArrowLeft, 
   Building2, 
-  CheckCircle2, 
-  UploadCloud, 
-  X, 
-  ImageIcon,
-  FolderOpen,
-  User,
+  MapPin, 
+  DollarSign, 
+  Home, 
+  Send, 
+  CheckCircle, 
+  ArrowLeft, 
+  Sparkles, 
   Loader2,
-  DollarSign
+  Copy,
+  Code
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -21,466 +22,358 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 export default function SubmitDealPage() {
-  const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [uploadProgressText, setUploadProgressText] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
-
-  // Fichiers sélectionnés localement
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [copySuccess, setCopySuccess] = useState('');
 
   const [formData, setFormData] = useState({
     title: '',
     address: '',
-    city: '',
-    state: 'OH',
-    units: 2,
     price: '',
-    arv: '',
     monthly_rent: '',
-    rehab: '',
-    cloud_folder_url: '',
-    wholesaler_name: '',
-    wholesaler_phone: '',
-    wholesaler_email: '',
+    units: '2',
+    arv: '',
+    image_url: '',
+    description: '',
+    contact_name: '',
+    contact_email: '',
+    contact_phone: ''
   });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const filesArray = Array.from(e.target.files);
-      addFiles(filesArray);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    if (e.dataTransfer.files) {
-      const filesArray = Array.from(e.dataTransfer.files).filter(file => file.type.startsWith('image/'));
-      addFiles(filesArray);
-    }
-  };
-
-  const addFiles = (files: File[]) => {
-    const combinedFiles = [...selectedFiles, ...files].slice(0, 5);
-    setSelectedFiles(combinedFiles);
-    const newPreviews = combinedFiles.map(file => URL.createObjectURL(file));
-    setPreviewUrls(newPreviews);
-  };
-
-  const removeFile = (index: number) => {
-    const updatedFiles = selectedFiles.filter((_, i) => i !== index);
-    const updatedPreviews = previewUrls.filter((_, i) => i !== index);
-    setSelectedFiles(updatedFiles);
-    setPreviewUrls(updatedPreviews);
-  };
-
-  const uploadImagesToStorage = async (dealId: string): Promise<string[]> => {
-    const uploadedUrls: string[] = [];
-
-    for (let i = 0; i < selectedFiles.length; i++) {
-      const file = selectedFiles[i];
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${dealId}_${Date.now()}_${i}.${fileExt}`;
-      const filePath = `deals/${fileName}`;
-
-      setUploadProgressText(`Uploading image ${i + 1} of ${selectedFiles.length}...`);
-
-      const { error: uploadError } = await supabase.storage
-        .from('deal-images')
-        .upload(filePath, file, { cacheControl: '3600', upsert: false });
-
-      if (uploadError) {
-        console.warn(`Storage note:`, uploadError.message);
-        continue;
-      }
-
-      const { data: publicUrlData } = supabase.storage
-        .from('deal-images')
-        .getPublicUrl(filePath);
-
-      if (publicUrlData?.publicUrl) {
-        uploadedUrls.push(publicUrlData.publicUrl);
-      }
-    }
-
-    return uploadedUrls;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setErrorMsg('');
 
     try {
-      const dealId = 'deal_' + Math.random().toString(36).substring(2, 9);
-      let mainImageUrl = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
-
-      if (selectedFiles.length > 0) {
-        const urls = await uploadImagesToStorage(dealId);
-        if (urls.length > 0) {
-          mainImageUrl = urls[0];
-        }
-      }
-
-      setUploadProgressText('Publishing deal data to marketplace...');
-
-      const price = Number(formData.price) || 0;
-      const units = Number(formData.units) || 2;
-      const rent = Number(formData.monthly_rent) || 0;
-      const arv = Number(formData.arv) || Math.round(price * 1.3);
-      const fullAddress = `${formData.address}, ${formData.city}, ${formData.state}`;
-
       const { error } = await supabase.from('deals').insert([
         {
-          id: dealId,
-          listing_id: dealId,
-          title: formData.title || `${units}-Unit Multi-Family Plex`,
-          location: `${formData.city}, ${formData.state}`,
-          address: fullAddress,
-          formatted_address: fullAddress,
-          property_type: units >= 5 ? 'Apartment' : 'Multi-Family',
-          units: units,
-          price: price,
-          arv: arv,
-          monthly_rent: rent,
-          other_income: units * 35,
-          vacancy_rate: 5,
-          taxes: Math.round(price * 0.018),
-          insurance: Math.round(price * 0.009),
-          management_rate: 8,
-          maintenance_rate: 5,
-          capex_rate: 5,
-          water_sewer: units * 60 * 12,
-          image_url: mainImageUrl,
-          wholesaler_name: formData.wholesaler_name,
-          wholesaler_phone: formData.wholesaler_phone,
-          wholesaler_email: formData.wholesaler_email,
-          created_at: new Date().toISOString(),
+          title: formData.title,
+          formatted_address: formData.address,
+          price: Number(formData.price),
+          monthly_rent: Number(formData.monthly_rent),
+          units: Number(formData.units),
+          arv: formData.arv ? Number(formData.arv) : null,
+          image_url: formData.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+          description: formData.description,
+          contact_name: formData.contact_name,
+          contact_email: formData.contact_email,
+          contact_phone: formData.contact_phone
         }
       ]);
 
       if (error) throw error;
-      setSubmitted(true);
+      setIsSubmitted(true);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error submitting deal. Please verify connection.');
+      alert('Error submitting deal: ' + err.message);
     } finally {
       setLoading(false);
-      setUploadProgressText('');
     }
   };
 
-  return (
-    <div className="min-h-screen bg-[#05070E] text-slate-100 font-sans antialiased px-4 py-6 sm:py-10">
-      <div className="max-w-3xl mx-auto space-y-6 sm:space-y-8">
-        
-        {/* Lien Retour */}
-        <Link 
-          href="/" 
-          className="inline-flex items-center gap-2.5 text-sm sm:text-base font-bold text-slate-400 hover:text-emerald-400 transition"
-        >
-          <ArrowLeft className="w-5 h-5" /> Back to MultiDealProp
-        </Link>
+  const handleCopy = (text: string, type: string) => {
+    navigator.clipboard.writeText(text);
+    setCopySuccess(type);
+    setTimeout(() => setCopySuccess(''), 2500);
+  };
 
-        {submitted ? (
-          <div className="bg-slate-900 border-2 border-emerald-500/40 rounded-3xl p-8 sm:p-14 text-center space-y-6 shadow-2xl">
-            <CheckCircle2 className="w-16 h-16 sm:w-20 sm:h-20 text-emerald-400 mx-auto" />
-            <h2 className="text-3xl sm:text-4xl font-black text-white">Deal Published Live!</h2>
-            <p className="text-slate-300 text-base sm:text-lg max-w-lg mx-auto">
-              Your property and photos are now live with automated Cap Rate and DSCR calculations.
-            </p>
-            <div className="pt-4">
+  return (
+    <div className="min-h-screen bg-[#04060C] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
+      
+      {/* Navigation Header */}
+      <header className="border-b border-slate-800/80 bg-[#04060C]/90 backdrop-blur sticky top-0 z-40">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white text-xs sm:text-sm font-bold transition">
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Underwriter</span>
+          </Link>
+          <div className="text-right">
+            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Deal Portal</span>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+        
+        {isSubmitted ? (
+          /* ============================================================ */
+          /* ÉCRAN DE SUCCÈS & GÉNÉRATEUR DE BACKLINKS                    */
+          /* ============================================================ */
+          <div className="bg-[#0b1222] border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 text-center space-y-6 shadow-2xl animate-in fade-in duration-300">
+            <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
+              <CheckCircle className="w-8 h-8" />
+            </div>
+
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white">Deal Published &amp; Underwritten!</h2>
+              <p className="text-slate-400 text-xs sm:text-sm mt-1">
+                Your property is now live and featured on the MultiDealProp deal feed.
+              </p>
+            </div>
+
+            {/* OUTIL 1 : Le Pitch 1-Clic pour Groupes Facebook & BiggerPockets */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Instant Share Post (Facebook &amp; BiggerPockets)
+                </span>
+                <button
+                  onClick={() => handleCopy(
+                    `🔥 Off-Market Deal: ${formData.title} (${formData.address})\n` +
+                    `• Asking Price: $${Number(formData.price).toLocaleString()}\n` +
+                    `• Units: ${formData.units} Doors\n` +
+                    `• Gross Rent: $${Number(formData.monthly_rent).toLocaleString()}/mo\n` +
+                    `• Complete Underwriting & Lender DSCR Audit: ${window.location.origin}/?address=${encodeURIComponent(formData.address)}`,
+                    'pitch'
+                  )}
+                  className="text-xs font-bold bg-emerald-400 hover:bg-emerald-300 text-slate-950 px-3 py-1.5 rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>{copySuccess === 'pitch' ? 'Copied!' : 'Copy Post'}</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-300 font-mono bg-slate-900/90 p-3.5 rounded-xl border border-slate-800/80 select-all leading-relaxed">
+                🔥 Off-Market Deal: {formData.title} ({formData.address})<br />
+                • Asking Price: ${Number(formData.price).toLocaleString()}<br />
+                • Units: {formData.units} Doors<br />
+                • Gross Rent: ${Number(formData.monthly_rent).toLocaleString()}/mo<br />
+                • Complete Underwriting &amp; Lender DSCR Audit: {typeof window !== 'undefined' ? window.location.origin : 'multidealprop.com'}/?address={encodeURIComponent(formData.address)}
+              </p>
+            </div>
+
+            {/* OUTIL 2 : Le Badge HTML Embeddable pour leur site web (Backlink Dofollow) */}
+            <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+                  <Code className="w-3.5 h-3.5 text-cyan-400" /> Website Embed Badge (Verified Backlink)
+                </span>
+                <button
+                  onClick={() => handleCopy(
+                    `<a href="${window.location.origin}" target="_blank" rel="noopener">\n` +
+                    `  <img src="${window.location.origin}/badge-underwritten.svg" alt="Underwritten by MultiDealProp" width="220" />\n` +
+                    `</a>`,
+                    'badge'
+                  )}
+                  className="text-xs font-bold bg-cyan-400 hover:bg-cyan-300 text-slate-950 px-3 py-1.5 rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95"
+                >
+                  <Copy className="w-3 h-3" />
+                  <span>{copySuccess === 'badge' ? 'Copied HTML!' : 'Copy HTML'}</span>
+                </button>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                Paste this badge on your website or blog to display an institutional verification checkmark for your buyers.
+              </p>
+              <code className="text-[11px] text-emerald-300 block font-mono bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/80 truncate">
+                {`<a href="${typeof window !== 'undefined' ? window.location.origin : 'multidealprop.com'}" target="_blank">...</a>`}
+              </code>
+            </div>
+
+            <div className="pt-2 flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={() => {
+                  setIsSubmitted(false);
+                  setFormData({
+                    title: '',
+                    address: '',
+                    price: '',
+                    monthly_rent: '',
+                    units: '2',
+                    arv: '',
+                    image_url: '',
+                    description: '',
+                    contact_name: '',
+                    contact_email: '',
+                    contact_phone: ''
+                  });
+                }}
+                className="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition"
+              >
+                Post Another Deal
+              </button>
               <Link
                 href="/"
-                className="bg-emerald-400 text-slate-950 font-black px-8 py-4 rounded-2xl text-base hover:bg-emerald-300 transition inline-block shadow-xl shadow-emerald-500/20"
+                className="flex-1 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black py-3.5 rounded-xl text-xs uppercase tracking-wider transition text-center shadow-lg shadow-emerald-500/20"
               >
-                View on Marketplace
+                Go to Underwriter
               </Link>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-[#0c1222] border border-slate-800 rounded-3xl p-6 sm:p-10 shadow-2xl space-y-8">
-            
-            {/* Header Formulaire */}
+          /* ============================================================ */
+          /* FORMULAIRE DE SOUMISSION DU DEAL                             */
+          /* ============================================================ */
+          <div className="space-y-6">
             <div>
-              <span className="text-emerald-400 text-xs sm:text-sm font-black uppercase tracking-wider bg-emerald-500/10 px-3 py-1.5 rounded-lg border border-emerald-500/20 inline-block">
-                Free Wholesaler &amp; Off-Market Submission
+              <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+                100% Free Listing
               </span>
-              <h1 className="text-2xl sm:text-4xl font-black text-white mt-3 tracking-tight">
-                Submit Your Multi-Family Deal
+              <h1 className="text-2xl sm:text-3xl font-black text-white mt-2">
+                List Your Multi-Family Deal
               </h1>
-              <p className="text-slate-400 text-sm sm:text-base mt-2 leading-relaxed">
-                Add your contract or property details. We automatically build institutional metrics (DSCR, Cap Rate) for serious cash buyers.
+              <p className="text-slate-400 text-xs sm:text-sm mt-1">
+                Reach active cash buyers and provide automatic lender-ready DSCR underwriting.
               </p>
             </div>
 
-            {errorMsg && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-300 text-sm p-4 rounded-2xl font-medium">
-                {errorMsg}
-              </div>
-            )}
+            <form onSubmit={handleSubmit} className="bg-[#0b1222] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
+              
+              {/* Infos Propriété */}
+              <div className="space-y-4">
+                <h2 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+                  <Building2 className="w-4 h-4" /> 1. Property Details
+                </h2>
 
-            {/* SECTION 1: UPLOAD PHOTOS */}
-            <div className="space-y-4">
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
-                <ImageIcon className="w-5 h-5 text-emerald-400" /> 1. Photos de l&apos;immeuble (Direct Upload)
-              </h3>
-
-              {/* Zone Drag & Drop agrandie */}
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                className="border-2 border-dashed border-slate-700 hover:border-emerald-400/80 bg-slate-950/70 rounded-2xl p-6 sm:p-10 text-center transition cursor-pointer relative"
-              >
-                <input
-                  type="file"
-                  multiple
-                  accept="image/png, image/jpeg, image/webp"
-                  onChange={handleFileChange}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
-                <div className="flex flex-col items-center justify-center space-y-3">
-                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-emerald-400 shadow-lg">
-                    <UploadCloud className="w-8 h-8" />
-                  </div>
-                  <p className="text-sm sm:text-base font-bold text-white">
-                    Appuyez ici ou glissez vos photos
-                  </p>
-                  <p className="text-xs sm:text-sm text-slate-400">
-                    JPG, PNG ou WEBP (jusqu&apos;à 5 photos)
-                  </p>
-                </div>
-              </div>
-
-              {/* Prévisualisations */}
-              {previewUrls.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 pt-2">
-                  {previewUrls.map((url, idx) => (
-                    <div key={idx} className="relative aspect-video rounded-xl overflow-hidden border border-slate-700 bg-slate-950 shadow">
-                      <img src={url} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => removeFile(idx)}
-                        className="absolute top-1.5 right-1.5 bg-black/80 hover:bg-red-500 text-white p-1.5 rounded-full transition cursor-pointer"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                      {idx === 0 && (
-                        <span className="absolute bottom-1.5 left-1.5 bg-emerald-400 text-slate-950 font-black text-[10px] sm:text-xs px-2 py-0.5 rounded">
-                          Cover
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {/* Lien Google Drive Optionnel */}
-              <div className="pt-1">
-                <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5 flex items-center gap-2">
-                  <FolderOpen className="w-4 h-4 text-cyan-400" /> 
-                  Lien dossier photos complet (Google Drive ou Dropbox - Optionnel)
-                </label>
-                <input
-                  type="url"
-                  name="cloud_folder_url"
-                  placeholder="https://drive.google.com/drive/folders/..."
-                  value={formData.cloud_folder_url}
-                  onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
-                />
-              </div>
-            </div>
-
-            {/* SECTION 2: DÉTAILS DU BIEN */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-emerald-400" /> 2. Propriété &amp; Données Financières
-              </h3>
-
-              <div>
-                <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                  Titre de l&apos;annonce / Headline
-                </label>
-                <input
-                  type="text"
-                  name="title"
-                  required
-                  placeholder="ex: Turnkey Duplex - Strong Cash Flow"
-                  value={formData.title}
-                  onChange={handleChange}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base font-medium text-white outline-none focus:border-emerald-400 transition"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                <div className="sm:col-span-2">
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    Adresse civique
-                  </label>
+                <div>
+                  <label className="text-slate-300 text-xs font-bold block mb-1">Deal Headline / Title *</label>
                   <input
                     type="text"
-                    name="address"
                     required
-                    placeholder="ex: 1428 E 120th St"
+                    placeholder="e.g. Turnkey University Circle Duplex"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-300 text-xs font-bold block mb-1">Physical Address *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. 1428 E 120th St, Cleveland, OH 44106"
                     value={formData.address}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
+                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
                   />
                 </div>
-                <div>
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    Ville
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    required
-                    placeholder="ex: Cleveland"
-                    value={formData.city}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Asking Price ($) *</label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="98000"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Total Monthly Rent ($) *</label>
+                    <input
+                      type="number"
+                      required
+                      placeholder="1950"
+                      value={formData.monthly_rent}
+                      onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-mono outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Units (Doors) *</label>
+                    <select
+                      value={formData.units}
+                      onChange={(e) => setFormData({ ...formData, units: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                    >
+                      <option value="2">2 Units (Duplex)</option>
+                      <option value="3">3 Units (Triplex)</option>
+                      <option value="4">4 Units (Fourplex)</option>
+                      <option value="5">5-8 Units</option>
+                      <option value="9">9+ Units</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Estimated ARV ($) (Optional)</label>
+                    <input
+                      type="number"
+                      placeholder="145000"
+                      value={formData.arv}
+                      onChange={(e) => setFormData({ ...formData, arv: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Image URL (Façade photo)</label>
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={formData.image_url}
+                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-                <div>
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    Nombre de portes (Units)
-                  </label>
-                  <input
-                    type="number"
-                    name="units"
-                    min="2"
-                    required
-                    value={formData.units}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base font-mono text-white outline-none focus:border-emerald-400 transition"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    Prix demandé ($)
-                  </label>
-                  <input
-                    type="number"
-                    name="price"
-                    required
-                    placeholder="85000"
-                    value={formData.price}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-emerald-400 font-mono font-bold outline-none focus:border-emerald-400 transition"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    Loyers bruts ($/mois)
-                  </label>
-                  <input
-                    type="number"
-                    name="monthly_rent"
-                    required
-                    placeholder="1800"
-                    value={formData.monthly_rent}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white font-mono outline-none focus:border-emerald-400 transition"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    ARV estimé ($)
-                  </label>
-                  <input
-                    type="number"
-                    name="arv"
-                    placeholder="130000"
-                    value={formData.arv}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-cyan-300 font-mono outline-none focus:border-emerald-400 transition"
-                  />
+              {/* Contact Grossiste */}
+              <div className="space-y-4">
+                <h2 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
+                  <Home className="w-4 h-4" /> 2. Seller / Wholesaler Info
+                </h2>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Your Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="Alex Smith"
+                      value={formData.contact_name}
+                      onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Email *</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="alex@acquisitions.com"
+                      value={formData.contact_email}
+                      onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      placeholder="(216) 555-0182"
+                      value={formData.contact_phone}
+                      onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                    />
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* SECTION 3: CONTACT */}
-            <div className="space-y-4 pt-2">
-              <h3 className="text-sm sm:text-base font-black uppercase tracking-wider text-slate-200 border-b border-slate-800 pb-3 flex items-center gap-2">
-                <User className="w-5 h-5 text-emerald-400" /> 3. Vos Coordonnées (Contact Direct)
-              </h3>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-                <div>
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    Nom / Entreprise
-                  </label>
-                  <input
-                    type="text"
-                    name="wholesaler_name"
-                    required
-                    placeholder="ex: Apex Acquisitions"
-                    value={formData.wholesaler_name}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    Numéro de téléphone
-                  </label>
-                  <input
-                    type="text"
-                    name="wholesaler_phone"
-                    required
-                    placeholder="(216) 555-0199"
-                    value={formData.wholesaler_phone}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs sm:text-sm font-bold text-slate-300 block mb-1.5">
-                    Adresse Courriel
-                  </label>
-                  <input
-                    type="email"
-                    name="wholesaler_email"
-                    required
-                    placeholder="deals@acquisitions.com"
-                    value={formData.wholesaler_email}
-                    onChange={handleChange}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3.5 text-sm sm:text-base text-white outline-none focus:border-emerald-400 transition"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* BOUTON SOUMETTRE */}
-            <div className="pt-2">
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black py-4 sm:py-5 rounded-2xl text-sm sm:text-base uppercase tracking-wider transition shadow-xl shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-[0.99]"
+                className="w-full bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs uppercase tracking-wider py-4 rounded-xl transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    <span>{uploadProgressText || 'Envoi en cours...'}</span>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Publishing Deal...</span>
                   </>
                 ) : (
-                  <span>Publier le Deal avec Photos (100% Gratuit)</span>
+                  <>
+                    <Send className="w-4 h-4" />
+                    <span>Publish Deal &amp; Get Diligence Link</span>
+                  </>
                 )}
               </button>
-            </div>
-
-          </form>
+            </form>
+          </div>
         )}
 
-      </div>
+      </main>
+
     </div>
   );
 }
