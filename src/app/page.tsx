@@ -25,7 +25,8 @@ import {
   DollarSign,
   X,
   Send,
-  Loader2
+  Loader2,
+  Share2
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -83,7 +84,6 @@ export default function HomePage() {
   // Projections
   const [annualAppreciation] = useState<number>(3.0);
   const [marginalTaxRate] = useState<number>(28);
-  const [showAmortizationTable, setShowAmortizationTable] = useState<boolean>(false);
 
   // Chargement initial des deals & vérification de retour Stripe
   useEffect(() => {
@@ -174,13 +174,6 @@ export default function HomePage() {
     }
   };
 
-  const handleStrategyChange = (newStrategy: 'BUY_HOLD' | 'BRRRR' | 'FLIP') => {
-    setStrategy(newStrategy);
-    if (newStrategy === 'BUY_HOLD') setRehabBudget(0);
-    if (newStrategy === 'BRRRR') setRehabBudget(30000);
-    if (newStrategy === 'FLIP') setRehabBudget(40000);
-  };
-
   const loadDealIntoAnalyzer = (deal: any) => {
     setPropertyTitle(deal.title || 'Multi-Family Deal');
     setPropertyAddress(deal.formatted_address || deal.address || 'Address on file');
@@ -234,10 +227,6 @@ export default function HomePage() {
   const breakEvenOccupancy = grossScheduledAnnualRent > 0 
     ? Math.min(100, Math.round((totalFixedCostsAnnual / grossScheduledAnnualRent) * 100))
     : 0;
-
-  const buildingBasis = (purchasePrice + rehabBudget) * 0.80;
-  const annualDepreciation = buildingBasis / 27.5;
-  const annualTaxSaved = annualDepreciation * (marginalTaxRate / 100);
 
   // Amortissement
   const amortizationSchedule = [];
@@ -530,9 +519,7 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* ============================================================ */}
-        {/* LE LENDER DEAL MEMO : SEULE SECTION IMPRIMÉE                 */}
-        {/* ============================================================ */}
+        {/* LE LENDER DEAL MEMO : SEULE SECTION IMPRIMÉE */}
         <div className="bg-[#0b1222] border-2 border-emerald-500/40 rounded-3xl p-5 sm:p-8 shadow-[0_0_35px_rgba(16,185,129,0.12)] space-y-6 print:border-none print:p-0 print:m-0 print:shadow-none print:bg-white print:block">
           
           {/* En-tête web */}
@@ -569,7 +556,7 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* FEUILLE BLANCHE OFFICIELLE DU RAPPORT */}
+          {/* FEUILLE BLANCHE DU DOCUMENT OFFICIEL */}
           <div className="bg-white text-slate-900 rounded-2xl border border-slate-300 shadow-2xl p-5 sm:p-8 font-sans relative overflow-hidden print:border-none print:shadow-none print:p-0 print:rounded-none">
             
             {/* Header Officiel */}
@@ -797,7 +784,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Paywall Overlay : Texte aligné sur 5 ans */}
+              {/* Paywall Overlay */}
               {!isMemoUnlocked && (
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent flex flex-col items-center justify-center p-6 text-center rounded-xl print:hidden">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg">
@@ -932,7 +919,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Section Inventaire des Wholesalers */}
+        {/* Section Inventaire des Wholesalers AVEC BOUTON DE PARTAGE SUR CHAQUE DEAL */}
         <div className="pt-4 space-y-4 print:hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div>
@@ -983,12 +970,28 @@ export default function HomePage() {
                       </p>
                     </div>
 
-                    <button
-                      onClick={() => loadDealIntoAnalyzer(deal)}
-                      className="w-full bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 text-xs font-black py-2 rounded-xl transition cursor-pointer"
-                    >
-                      Underwrite this Deal ↗
-                    </button>
+                    {/* BOUTONS : ANALYSER + PARTAGE RÉSEAUX SOCIAUX */}
+                    <div className="flex items-center gap-2 pt-1">
+                      <button
+                        onClick={() => loadDealIntoAnalyzer(deal)}
+                        className="flex-1 bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 text-xs font-black py-2.5 rounded-xl transition cursor-pointer text-center"
+                      >
+                        Underwrite Deal ↗
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          const dealAddr = deal.formatted_address || deal.title;
+                          const shareText = `🔥 Multi-Family Deal: ${deal.title} - $${Number(deal.price).toLocaleString()} (${deal.units || 2} Doors). View live DSCR Underwriting & Memo: ${window.location.origin}/?address=${encodeURIComponent(dealAddr)}`;
+                          navigator.clipboard.writeText(shareText);
+                          alert('Deal pitch copied to clipboard! Ready to paste into Facebook groups or LinkedIn.');
+                        }}
+                        title="Copy deal post for Facebook / Socials"
+                        className="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 p-2.5 rounded-xl transition flex items-center justify-center cursor-pointer active:scale-95"
+                      >
+                        <Share2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
