@@ -504,13 +504,13 @@ export default function HomePage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5 print:hidden">
             <div>
               <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-emerald-400 text-xs font-black uppercase tracking-wider mb-2">
-                <ShieldCheck className="w-3.5 h-3.5" /> Official Bank Deliverable Sample[cite: 1]
+                <ShieldCheck className="w-3.5 h-3.5" /> Official Bank Deliverable Sample
               </div>
               <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Lender Diligence Memorandum (Audit Dossier)[cite: 1]
+                Lender Diligence Memorandum (Audit Dossier)
               </h3>
               <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-xl">
-                Commercial real estate underwriting dossier conforming to US DSCR mortgage covenants[cite: 1].
+                Commercial real estate underwriting dossier conforming to US DSCR mortgage covenants.
               </p>
             </div>
 
@@ -541,14 +541,14 @@ export default function HomePage() {
             <div className="bg-[#0b1528] text-white p-4 sm:p-5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 print:rounded-none">
               <div>
                 <div className="font-black text-sm sm:text-base tracking-wide text-white">
-                  MULTIDEALPROP UNDERWRITING SUITE[cite: 1]
+                  MULTIDEALPROP UNDERWRITING SUITE
                 </div>
                 <div className="text-[10px] sm:text-xs text-emerald-400 font-bold uppercase tracking-wider">
-                  Institutional Lender Diligence Dossier &amp; Senior Debt Audit[cite: 1]
+                  Institutional Lender Diligence Dossier &amp; Senior Debt Audit
                 </div>
               </div>
               <div className="text-left sm:text-right text-[10px] sm:text-xs text-slate-300 font-mono space-y-0.5">
-                <div>MEMO REF: <strong className="text-white">MDP-2026-OH-08412</strong>[cite: 1]</div>
+                <div>MEMO REF: <strong className="text-white">MDP-2026-OH-08412</strong></div>
                 <div>VALUATION: <strong className="text-white">September 5, 2026</strong></div>
                 <div>STATUS: <strong className="text-emerald-400">AUDITED &amp; VERIFIED</strong></div>
               </div>
@@ -579,12 +579,12 @@ export default function HomePage() {
               <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase">CAP RATE</span>
                 <span className="text-xl sm:text-2xl font-black text-emerald-600 font-mono block my-0.5">{capRate}%</span>
-                <span className="text-[9px] text-slate-400">Benchmark: &gt; 8.50%[cite: 1]</span>
+                <span className="text-[9px] text-slate-400">Benchmark: &gt; 8.50%</span>
               </div>
               <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase">DSCR RATIO</span>
                 <span className="text-xl sm:text-2xl font-black text-blue-700 font-mono block my-0.5">{dscr}x</span>
-                <span className="text-[9px] text-blue-600 font-bold">Min Floor: 1.25x (Prime)[cite: 1]</span>
+                <span className="text-[9px] text-blue-600 font-bold">Min Floor: 1.25x (Prime)</span>
               </div>
               <div className="bg-slate-50 border border-slate-200 p-3 rounded-xl">
                 <span className="text-[10px] font-bold text-slate-500 block uppercase">CASH-ON-CASH</span>
@@ -601,7 +601,7 @@ export default function HomePage() {
             {/* TABLEAU T-12 AUDITÉ EN CLAIR */}
             <div className="my-5">
               <div className="text-xs font-black uppercase tracking-wider text-slate-900 border-b-2 border-slate-900 pb-1.5 mb-2 flex items-center justify-between">
-                <span>1. Stabilized 12-Month Pro-Forma Cash Flow (Year 1)[cite: 1]</span>
+                <span>1. Stabilized 12-Month Pro-Forma Cash Flow (Year 1)</span>
                 <span className="text-[10px] font-mono text-slate-500">Underwritten in USD ($)</span>
               </div>
 
@@ -620,19 +620,19 @@ export default function HomePage() {
                       <td className="py-1.5 px-2.5 font-sans font-bold text-slate-900">Gross Scheduled Rental Income</td>
                       <td className="py-1.5 px-2.5 text-right">${monthlyRent.toLocaleString()}</td>
                       <td className="py-1.5 px-2.5 text-right">${(monthlyRent * 12).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">97.5%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">97.5%</td>
                     </tr>
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-slate-600">Reimbursements &amp; Utility Recovery</td>
                       <td className="py-1.5 px-2.5 text-right">${otherMonthlyIncome}</td>
                       <td className="py-1.5 px-2.5 text-right">${(otherMonthlyIncome * 12).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">2.5%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">2.5%</td>
                     </tr>
                     <tr className="bg-slate-50 font-bold">
-                      <td className="py-1.5 px-2.5 font-sans">Gross Potential Income (GPI)[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 font-sans">Gross Potential Income (GPI)</td>
                       <td className="py-1.5 px-2.5 text-right">${(monthlyRent + otherMonthlyIncome).toLocaleString()}</td>
                       <td className="py-1.5 px-2.5 text-right">${grossScheduledAnnualRent.toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">100.0%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">100.0%</td>
                     </tr>
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-red-600">Less: Economic Vacancy Escrow ({vacancyRate}%)</td>
@@ -641,64 +641,64 @@ export default function HomePage() {
                       <td className="py-1.5 px-2.5 text-right text-red-400 hidden sm:table-cell">-{vacancyRate}.0%</td>
                     </tr>
                     <tr className="bg-emerald-50/80 font-bold text-emerald-950 border-y border-emerald-200">
-                      <td className="py-2 px-2.5 font-sans">EFFECTIVE GROSS INCOME (EGI)[cite: 1]</td>
+                      <td className="py-2 px-2.5 font-sans">EFFECTIVE GROSS INCOME (EGI)</td>
                       <td className="py-2 px-2.5 text-right">${Math.round(effectiveGrossIncome / 12).toLocaleString()}</td>
                       <td className="py-2 px-2.5 text-right">${Math.round(effectiveGrossIncome).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right text-emerald-800 hidden sm:table-cell">95.0%[cite: 1]</td>
+                      <td className="py-2 px-2.5 text-right text-emerald-800 hidden sm:table-cell">95.0%</td>
                     </tr>
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-slate-600">County Taxes (Verified Assessment)</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualTaxes / 12)}</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${annualTaxes.toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-5.9%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-5.9%</td>
                     </tr>
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-slate-600">Property Hazard &amp; Flood Insurance</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualInsurance / 12)}</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${annualInsurance.toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-3.5%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-3.5%</td>
                     </tr>
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-slate-600">Professional Property Management ({managementRate}%)</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualManagementFee / 12)}</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualManagementFee).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-7.6%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-7.6%</td>
                     </tr>
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-slate-600">Turnover &amp; Repairs Escrow ({maintenanceRate}%)</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualMaintenance / 12)}</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualMaintenance).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-4.8%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-4.8%</td>
                     </tr>
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-slate-600">Capital Replacement Reserves (CapEx {capexRate}%)</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualCapex / 12)}</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-700">-${Math.round(annualCapex).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-4.8%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-4.8%</td>
                     </tr>
                     <tr className="bg-slate-100 font-bold text-slate-900 border-t border-slate-300">
-                      <td className="py-1.5 px-2.5 font-sans">Total Operating Expenses (OpEx)[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 font-sans">Total Operating Expenses (OpEx)</td>
                       <td className="py-1.5 px-2.5 text-right">-${Math.round(totalOperatingExpenses / 12).toLocaleString()}</td>
                       <td className="py-1.5 px-2.5 text-right">-${Math.round(totalOperatingExpenses).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-600 hidden sm:table-cell">-30.0%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-600 hidden sm:table-cell">-30.0%</td>
                     </tr>
                     <tr className="bg-emerald-100 font-black text-emerald-950 border-y-2 border-emerald-400 text-sm">
-                      <td className="py-2 px-2.5 font-sans">NET OPERATING INCOME (NOI)[cite: 1]</td>
+                      <td className="py-2 px-2.5 font-sans">NET OPERATING INCOME (NOI)</td>
                       <td className="py-2 px-2.5 text-right font-mono">${Math.round(annualNOI / 12).toLocaleString()}</td>
                       <td className="py-2 px-2.5 text-right font-mono">${Math.round(annualNOI).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right text-emerald-800 hidden sm:table-cell">65.0%[cite: 1]</td>
+                      <td className="py-2 px-2.5 text-right text-emerald-800 hidden sm:table-cell">65.0%</td>
                     </tr>
                     <tr>
-                      <td className="py-1.5 px-2.5 font-sans text-slate-700">Senior Mortgage Debt Service (P&amp;I)[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 font-sans text-slate-700">Senior Mortgage Debt Service (P&amp;I)</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-800">-${Math.round(monthlyMortgage).toLocaleString()}</td>
                       <td className="py-1.5 px-2.5 text-right text-slate-800">-${Math.round(annualDebtService).toLocaleString()}</td>
-                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-26.8%[cite: 1]</td>
+                      <td className="py-1.5 px-2.5 text-right text-slate-400 hidden sm:table-cell">-26.8%</td>
                     </tr>
                     <tr className="bg-blue-50 font-black text-blue-950 border-y border-blue-200">
                       <td className="py-2 px-2.5 font-sans">NET DISTRIBUTABLE CASH FLOW</td>
                       <td className="py-2 px-2.5 text-right font-mono">+${Math.round(monthlyNetCashFlow).toLocaleString()}</td>
                       <td className="py-2 px-2.5 text-right font-mono">+${Math.round(annualNetCashFlow).toLocaleString()}</td>
-                      <td className="py-2 px-2.5 text-right text-blue-800 hidden sm:table-cell">38.2%[cite: 1]</td>
+                      <td className="py-2 px-2.5 text-right text-blue-800 hidden sm:table-cell">38.2%</td>
                     </tr>
                   </tbody>
                 </table>
@@ -711,7 +711,7 @@ export default function HomePage() {
               {/* Le contenu officiel débloqué */}
               <div className={`${!isMemoUnlocked ? 'select-none filter blur-[3px] opacity-40' : ''} space-y-4`}>
                 <div className="text-xs font-black uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
-                  2. Senior Debt Paydown &amp; Equity Buildup Schedule (Years 1–5)[cite: 1]
+                  2. Senior Debt Paydown &amp; Equity Buildup Schedule (Years 1–5)
                 </div>
                 
                 <table className="w-full text-left text-xs font-sans">
@@ -728,7 +728,7 @@ export default function HomePage() {
                   <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
                     {amortizationSchedule.slice(0, 5).map((row) => (
                       <tr key={row.year}>
-                        <td className="p-1.5 font-bold text-slate-900">Year {row.year}[cite: 1]</td>
+                        <td className="p-1.5 font-bold text-slate-900">Year {row.year}</td>
                         <td className="p-1.5 text-right text-slate-700">${row.remainingBalance.toLocaleString()}</td>
                         <td className="p-1.5 text-right text-emerald-700">+${row.principalPaid.toLocaleString()}</td>
                         <td className="p-1.5 text-right text-slate-500">${row.interestPaid.toLocaleString()}</td>
@@ -739,7 +739,7 @@ export default function HomePage() {
                   </tbody>
                 </table>
 
-                {/* Section Signatures Banquiers et Emprunteurs */}
+                {/* Section Signatures Modifiée : Plus de responsabilité du site */}
                 <div className="pt-6 border-t border-slate-200 grid grid-cols-2 gap-8 text-[10px] text-slate-600">
                   <div>
                     <strong className="block text-slate-900 mb-1">BORROWER / SPONSOR CERTIFICATION:</strong>
@@ -751,12 +751,12 @@ export default function HomePage() {
                   </div>
 
                   <div>
-                    <strong className="block text-slate-900 mb-1">SENIOR UNDERWRITER DILIGENCE:</strong>
+                    <strong className="block text-slate-900 mb-1">LENDING OFFICER DILIGENCE:</strong>
                     <p className="leading-tight text-slate-500">
-                      Underwritten via MultiDealProp Engine. Asset satisfies covenant guidelines for Senior DSCR placement.
+                      Calculated via MultiDealProp Engine. Subject to formal appraisal, title search, and lender underwriting sign-off.
                     </p>
                     <div className="mt-8 border-b border-slate-400 w-4/5"></div>
-                    <span className="block mt-1 text-slate-400">Lending Officer Verification &amp; Date</span>
+                    <span className="block mt-1 text-slate-400">Underwriter / Loan Officer Signature &amp; Date</span>
                   </div>
                 </div>
               </div>
@@ -771,7 +771,7 @@ export default function HomePage() {
                     Unlock the Complete 2-Page Lender Deal Memo (PDF)
                   </h4>
                   <p className="text-slate-300 text-xs sm:text-sm max-w-lg mt-1 mb-4">
-                    Includes the 30-year amortization schedule, IRS 27.5-year tax shelter breakdown, and dual Sponsor/Lending Officer certification blocks[cite: 1].
+                    Includes the 30-year amortization schedule, IRS 27.5-year tax shelter breakdown, and dual Sponsor/Lending Officer certification blocks.
                   </p>
                   <button
                     onClick={handleStripeCheckout}
