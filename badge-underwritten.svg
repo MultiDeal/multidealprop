@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="50" viewBox="0 0 240 50" fill="none">
+  <rect width="240" height="50" rx="10" fill="#0B132B" stroke="#10B981" stroke-width="2"/>
+  <circle cx="26" cy="25" r="12" fill="#10B981" fill-opacity="0.2"/>
+  <path d="M21 25L24.5 28.5L31 22" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="48" y="21" fill="#94A3B8" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="700" letter-spacing="1">INSTITUTIONAL AUDIT</text>
+  <text x="48" y="36" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="900" letter-spacing="0.5">MULTIDEAL<tspan fill="#10B981">PROP</tspan> VERIFIED</text>
+</svg>
