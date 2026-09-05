@@ -85,13 +85,25 @@ export default function HomePage() {
   const [marginalTaxRate] = useState<number>(28);
   const [showAmortizationTable, setShowAmortizationTable] = useState<boolean>(false);
 
+  // Chargement initial des deals & vérification de retour Stripe
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('memo_paid') === 'true') {
+    const paid = params.get('memo_paid') === 'true';
+
+    if (paid) {
+      // Stocke l'adresse exacte payée en minuscules
+      const currentNormalized = propertyAddress.trim().toLowerCase();
+      try {
+        const stored = JSON.parse(localStorage.getItem('unlocked_addresses') || '[]');
+        if (!stored.includes(currentNormalized)) {
+          stored.push(currentNormalized);
+          localStorage.setItem('unlocked_addresses', JSON.stringify(stored));
+        }
+      } catch (e) {
+        localStorage.setItem('unlocked_addresses', JSON.stringify([currentNormalized]));
+      }
       setIsMemoUnlocked(true);
-      localStorage.setItem('multideal_memo_unlocked', 'true');
-    } else if (localStorage.getItem('multideal_memo_unlocked') === 'true') {
-      setIsMemoUnlocked(true);
+      window.history.replaceState({}, '', window.location.pathname);
     }
 
     async function fetchDeals() {
@@ -110,6 +122,21 @@ export default function HomePage() {
     }
     fetchDeals();
   }, []);
+
+  // Vérification dynamique du verrou dès que l'adresse change
+  useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem('unlocked_addresses') || '[]');
+      const currentNormalized = propertyAddress.trim().toLowerCase();
+      if (stored.includes(currentNormalized)) {
+        setIsMemoUnlocked(true);
+      } else {
+        setIsMemoUnlocked(false);
+      }
+    } catch (e) {
+      setIsMemoUnlocked(false);
+    }
+  }, [propertyAddress]);
 
   const applyPreset = (presetKey: 'CLEVELAND' | 'DETROIT' | 'SECTION8') => {
     if (presetKey === 'CLEVELAND') {
@@ -504,7 +531,9 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* LE LENDER DEAL MEMO : SEULE SECTION IMPRIMÉE */}
+        {/* ============================================================ */}
+        {/* LE LENDER DEAL MEMO : SEULE SECTION IMPRIMÉE                 */}
+        {/* ============================================================ */}
         <div className="bg-[#0b1222] border-2 border-emerald-500/40 rounded-3xl p-5 sm:p-8 shadow-[0_0_35px_rgba(16,185,129,0.12)] space-y-6 print:border-none print:p-0 print:m-0 print:shadow-none print:bg-white print:block">
           
           {/* En-tête web */}
@@ -557,11 +586,13 @@ export default function HomePage() {
               <div className="text-left sm:text-right text-[10px] sm:text-xs text-slate-300 font-mono space-y-0.5">
                 <div>MEMO REF: <strong className="text-white">MDP-2026-OH-08412</strong></div>
                 <div>VALUATION: <strong className="text-white">September 5, 2026</strong></div>
-                <div>STATUS: <strong className="text-emerald-400">AUDITED &amp; VERIFIED</strong></div>
+                <div>STATUS: <strong className={isMemoUnlocked ? 'text-emerald-400' : 'text-slate-400'}>
+                  {isMemoUnlocked ? 'AUDITED & UNLOCKED' : 'PREVIEW ONLY'}
+                </strong></div>
               </div>
             </div>
 
-            {/* Fiche identification */}
+            {/* Fiche d'identification */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 my-4 text-xs">
               <div>
                 <span className="text-[10px] font-bold uppercase text-slate-400 block">Property Identification</span>
@@ -605,7 +636,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* TABLEAU T-12 AUDITÉ EN CLAIR */}
+            {/* TABLEAU T-12 AUDITÉ */}
             <div className="my-5">
               <div className="text-xs font-black uppercase tracking-wider text-slate-900 border-b-2 border-slate-900 pb-1.5 mb-2 flex items-center justify-between">
                 <span>1. Stabilized 12-Month Pro-Forma Cash Flow (Year 1)</span>
@@ -644,7 +675,7 @@ export default function HomePage() {
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-red-600">Less: Economic Vacancy Escrow ({vacancyRate}%)</td>
                       <td className="py-1.5 px-2.5 text-right text-red-600">-${Math.round(annualVacancyLoss / 12)}</td>
-                      <td className="py-1.5 px-2.5 text-red-600 text-right">-${Math.round(annualVacancyLoss).toLocaleString()}</td>
+                      <td className="py-1.5 px-2.5 text-right text-red-600">-${Math.round(annualVacancyLoss).toLocaleString()}</td>
                       <td className="py-1.5 px-2.5 text-right text-red-400 hidden sm:table-cell">-{vacancyRate}.0%</td>
                     </tr>
                     <tr className="bg-emerald-50/80 font-bold text-emerald-950 border-y border-emerald-200">
@@ -767,7 +798,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Masque Paywall sombre : UNIQUEMENT si non payé */}
+              {/* Paywall Overlay : Masqué uniquement si cette adresse est payée */}
               {!isMemoUnlocked && (
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent flex flex-col items-center justify-center p-6 text-center rounded-xl print:hidden">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg">
@@ -1052,7 +1083,7 @@ export default function HomePage() {
                       <select
                         value={leadForm.creditScore}
                         onChange={(e) => setLeadForm({ ...leadForm, creditScore: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
                       >
                         <option value="740+">740+ (Best Rates)</option>
                         <option value="700-739">700 - 739 (Standard)</option>
@@ -1065,7 +1096,7 @@ export default function HomePage() {
                       <select
                         value={leadForm.experience}
                         onChange={(e) => setLeadForm({ ...leadForm, experience: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
                       >
                         <option value="First Deal">First Investment Property</option>
                         <option value="1-3 Deals">1 to 3 Properties Owned</option>
