@@ -13,7 +13,9 @@ import {
   Sparkles, 
   Loader2,
   Copy,
-  Code
+  Code,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -25,6 +27,7 @@ export default function SubmitDealPage() {
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [copySuccess, setCopySuccess] = useState('');
+  const [previewImage, setPreviewImage] = useState<string>('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -39,6 +42,24 @@ export default function SubmitDealPage() {
     contact_email: '',
     contact_phone: ''
   });
+
+  // Gestion du téléversement d'image direct depuis ordinateur / smartphone
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 4 * 1024 * 1024) {
+        alert('Image size should be less than 4MB');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const base64Data = reader.result as string;
+        setPreviewImage(base64Data);
+        setFormData((prev) => ({ ...prev, image_url: base64Data }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,9 +116,7 @@ export default function SubmitDealPage() {
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
         
         {isSubmitted ? (
-          /* ============================================================ */
-          /* ÉCRAN DE SUCCÈS & GÉNÉRATEUR DE BACKLINKS                    */
-          /* ============================================================ */
+          /* ÉCRAN DE SUCCÈS & GÉNÉRATEUR DE BACKLINKS */
           <div className="bg-[#0b1222] border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 text-center space-y-6 shadow-2xl animate-in fade-in duration-300">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
               <CheckCircle className="w-8 h-8" />
@@ -110,7 +129,7 @@ export default function SubmitDealPage() {
               </p>
             </div>
 
-            {/* OUTIL 1 : Le Pitch 1-Clic pour Groupes Facebook & BiggerPockets */}
+            {/* OUTIL 1 : Le Pitch 1-Clic pour Groupes Facebook */}
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
@@ -140,7 +159,7 @@ export default function SubmitDealPage() {
               </p>
             </div>
 
-            {/* OUTIL 2 : Le Badge HTML Embeddable pour leur site web (Backlink Dofollow) */}
+            {/* OUTIL 2 : Le Badge HTML Embeddable pour leur site web */}
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
@@ -171,6 +190,7 @@ export default function SubmitDealPage() {
               <button
                 onClick={() => {
                   setIsSubmitted(false);
+                  setPreviewImage('');
                   setFormData({
                     title: '',
                     address: '',
@@ -198,9 +218,7 @@ export default function SubmitDealPage() {
             </div>
           </div>
         ) : (
-          /* ============================================================ */
-          /* FORMULAIRE DE SOUMISSION DU DEAL                             */
-          /* ============================================================ */
+          /* FORMULAIRE DE SOUMISSION DU DEAL */
           <div className="space-y-6">
             <div>
               <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
@@ -285,26 +303,51 @@ export default function SubmitDealPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-slate-300 text-xs font-bold block mb-1">Estimated ARV ($) (Optional)</label>
-                    <input
-                      type="number"
-                      placeholder="145000"
-                      value={formData.arv}
-                      onChange={(e) => setFormData({ ...formData, arv: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-400"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-slate-300 text-xs font-bold block mb-1">Image URL (Façade photo)</label>
-                    <input
-                      type="url"
-                      placeholder="https://..."
-                      value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
-                    />
+                {/* SÉLECTEUR DE PHOTO AVEC UPLOAD FICHIER DIRECT */}
+                <div className="space-y-2 pt-1">
+                  <label className="text-slate-300 text-xs font-bold block">Property Façade Photo</label>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
+                    {/* Option Téléversement direct */}
+                    <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950 rounded-2xl p-4 cursor-pointer transition group text-center">
+                      <Upload className="w-5 h-5 text-slate-400 group-hover:text-emerald-400 mb-1 transition" />
+                      <span className="text-xs font-bold text-slate-300 group-hover:text-white">Choose from Computer / Phone</span>
+                      <span className="text-[10px] text-slate-500 mt-0.5">JPG, PNG, WebP up to 4MB</span>
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        onChange={handleFileChange}
+                        className="hidden" 
+                      />
+                    </label>
+
+                    {/* Aperçu ou URL manuelle */}
+                    {previewImage ? (
+                      <div className="relative h-24 rounded-2xl overflow-hidden border border-emerald-500/40">
+                        <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewImage('');
+                            setFormData((prev) => ({ ...prev, image_url: '' }));
+                          }}
+                          className="absolute top-1.5 right-1.5 bg-black/70 text-white rounded-lg p-1 text-[10px]"
+                        >
+                          Change
+                        </button>
+                      </div>
+                    ) : (
+                      <input
+                        type="url"
+                        placeholder="Or paste an image URL (https://...)"
+                        value={formData.image_url}
+                        onChange={(e) => {
+                          setFormData({ ...formData, image_url: e.target.value });
+                          setPreviewImage(e.target.value);
+                        }}
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white outline-none focus:border-emerald-400"
+                      />
+                    )}
                   </div>
                 </div>
               </div>
