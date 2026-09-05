@@ -15,7 +15,8 @@ import {
   Copy,
   Code,
   Upload,
-  Image as ImageIcon
+  X,
+  Plus
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -27,7 +28,10 @@ export default function SubmitDealPage() {
   const [loading, setLoading] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [copySuccess, setCopySuccess] = useState('');
-  const [previewImage, setPreviewImage] = useState<string>('');
+  
+  // Tableau pour supporter plusieurs images
+  const [imagesList, setImagesList] = useState<string[]>([]);
+  const [urlInput, setUrlInput] = useState<string>('');
 
   const [formData, setFormData] = useState({
     title: '',
@@ -36,29 +40,43 @@ export default function SubmitDealPage() {
     monthly_rent: '',
     units: '2',
     arv: '',
-    image_url: '',
     description: '',
     contact_name: '',
     contact_email: '',
     contact_phone: ''
   });
 
-  // Gestion du téléversement d'image direct depuis ordinateur / smartphone
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 4 * 1024 * 1024) {
-        alert('Image size should be less than 4MB');
-        return;
-      }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64Data = reader.result as string;
-        setPreviewImage(base64Data);
-        setFormData((prev) => ({ ...prev, image_url: base64Data }));
-      };
-      reader.readAsDataURL(file);
+  // Gestion de l'ajout de plusieurs fichiers locaux
+  const handleMultipleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file) => {
+        if (file.size > 5 * 1024 * 1024) {
+          alert(`File ${file.name} is too large (> 5MB)`);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            setImagesList((prev) => [...prev, reader.result as string]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
     }
+  };
+
+  // Ajout d'image par URL
+  const handleAddUrlImage = () => {
+    if (urlInput.trim()) {
+      setImagesList((prev) => [...prev, urlInput.trim()]);
+      setUrlInput('');
+    }
+  };
+
+  // Suppression d'une image de la sélection
+  const removeImage = (indexToRemove: number) => {
+    setImagesList((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,6 +84,11 @@ export default function SubmitDealPage() {
     setLoading(true);
 
     try {
+      // Image principale (la 1ère de la liste) ou fallback
+      const primaryImage = imagesList.length > 0 
+        ? imagesList[0] 
+        : 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
+
       const { error } = await supabase.from('deals').insert([
         {
           title: formData.title,
@@ -74,7 +97,8 @@ export default function SubmitDealPage() {
           monthly_rent: Number(formData.monthly_rent),
           units: Number(formData.units),
           arv: formData.arv ? Number(formData.arv) : null,
-          image_url: formData.image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+          image_url: primaryImage,
+          images: imagesList,
           description: formData.description,
           contact_name: formData.contact_name,
           contact_email: formData.contact_email,
@@ -125,7 +149,7 @@ export default function SubmitDealPage() {
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-white">Deal Published &amp; Underwritten!</h2>
               <p className="text-slate-400 text-xs sm:text-sm mt-1">
-                Your property is now live and featured on the MultiDealProp deal feed.
+                Your property is now live with {imagesList.length} uploaded photo{imagesList.length > 1 ? 's' : ''}.
               </p>
             </div>
 
@@ -179,7 +203,7 @@ export default function SubmitDealPage() {
                 </button>
               </div>
               <p className="text-[11px] text-slate-400 leading-relaxed">
-                Paste this badge on your website or blog to display an institutional verification checkmark for your buyers.
+                Paste this badge on your website to display an institutional verification checkmark for your buyers.
               </p>
               <code className="text-[11px] text-emerald-300 block font-mono bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/80 truncate">
                 {`<a href="${typeof window !== 'undefined' ? window.location.origin : 'multidealprop.com'}" target="_blank">...</a>`}
@@ -190,7 +214,7 @@ export default function SubmitDealPage() {
               <button
                 onClick={() => {
                   setIsSubmitted(false);
-                  setPreviewImage('');
+                  setImagesList([]);
                   setFormData({
                     title: '',
                     address: '',
@@ -198,7 +222,6 @@ export default function SubmitDealPage() {
                     monthly_rent: '',
                     units: '2',
                     arv: '',
-                    image_url: '',
                     description: '',
                     contact_name: '',
                     contact_email: '',
@@ -292,7 +315,7 @@ export default function SubmitDealPage() {
                     <select
                       value={formData.units}
                       onChange={(e) => setFormData({ ...formData, units: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
                     >
                       <option value="2">2 Units (Duplex)</option>
                       <option value="3">3 Units (Triplex)</option>
@@ -303,53 +326,89 @@ export default function SubmitDealPage() {
                   </div>
                 </div>
 
-                {/* SÉLECTEUR DE PHOTO AVEC UPLOAD FICHIER DIRECT */}
-                <div className="space-y-2 pt-1">
-                  <label className="text-slate-300 text-xs font-bold block">Property Façade Photo</label>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-center">
-                    {/* Option Téléversement direct */}
+                <div>
+                  <label className="text-slate-300 text-xs font-bold block mb-1">Estimated ARV ($) (Optional)</label>
+                  <input
+                    type="number"
+                    placeholder="145000"
+                    value={formData.arv}
+                    onChange={(e) => setFormData({ ...formData, arv: e.target.value })}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                {/* SÉLECTEUR DE PLUSIEURS PHOTOS */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 text-xs font-bold">
+                      Property Photos ({imagesList.length} added)
+                    </label>
+                    <span className="text-[10px] text-slate-500">First photo will be the main cover</span>
+                  </div>
+
+                  {/* Galerie d'aperçu des photos sélectionnées */}
+                  {imagesList.length > 0 && (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2.5 p-3 bg-slate-950 rounded-2xl border border-slate-800">
+                      {imagesList.map((imgUrl, index) => (
+                        <div key={index} className="relative aspect-square rounded-xl overflow-hidden border border-slate-700 group">
+                          <img src={imgUrl} alt={`deal-${index}`} className="w-full h-full object-cover" />
+                          {index === 0 && (
+                            <span className="absolute bottom-1 left-1 bg-emerald-500 text-slate-950 text-[9px] font-black px-1.5 py-0.5 rounded shadow">
+                              Cover
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-600 hover:bg-red-500 text-white rounded-full p-1 opacity-90 group-hover:opacity-100 transition shadow"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Zone de glisser-déposer / sélection multiple */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950 rounded-2xl p-4 cursor-pointer transition group text-center">
                       <Upload className="w-5 h-5 text-slate-400 group-hover:text-emerald-400 mb-1 transition" />
-                      <span className="text-xs font-bold text-slate-300 group-hover:text-white">Choose from Computer / Phone</span>
-                      <span className="text-[10px] text-slate-500 mt-0.5">JPG, PNG, WebP up to 4MB</span>
+                      <span className="text-xs font-bold text-slate-300 group-hover:text-white">
+                        Upload Photos (Select Multiple)
+                      </span>
+                      <span className="text-[10px] text-slate-500 mt-0.5">JPG, PNG, WebP</span>
                       <input 
                         type="file" 
                         accept="image/*" 
-                        onChange={handleFileChange}
+                        multiple 
+                        onChange={handleMultipleFiles}
                         className="hidden" 
                       />
                     </label>
 
-                    {/* Aperçu ou URL manuelle */}
-                    {previewImage ? (
-                      <div className="relative h-24 rounded-2xl overflow-hidden border border-emerald-500/40">
-                        <img src={previewImage} alt="Preview" className="w-full h-full object-cover" />
+                    {/* Ajout par URL */}
+                    <div className="flex flex-col justify-center space-y-2 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
+                      <span className="text-[11px] font-bold text-slate-400">Or add via Image Web Link:</span>
+                      <div className="flex gap-2">
+                        <input
+                          type="url"
+                          placeholder="https://images.site.com/photo.jpg"
+                          value={urlInput}
+                          onChange={(e) => setUrlInput(e.target.value)}
+                          className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none focus:border-emerald-400"
+                        />
                         <button
                           type="button"
-                          onClick={() => {
-                            setPreviewImage('');
-                            setFormData((prev) => ({ ...prev, image_url: '' }));
-                          }}
-                          className="absolute top-1.5 right-1.5 bg-black/70 text-white rounded-lg p-1 text-[10px]"
+                          onClick={handleAddUrlImage}
+                          className="bg-slate-800 hover:bg-emerald-500 hover:text-slate-950 text-slate-200 px-3 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1"
                         >
-                          Change
+                          <Plus className="w-3.5 h-3.5" /> Add
                         </button>
                       </div>
-                    ) : (
-                      <input
-                        type="url"
-                        placeholder="Or paste an image URL (https://...)"
-                        value={formData.image_url}
-                        onChange={(e) => {
-                          setFormData({ ...formData, image_url: e.target.value });
-                          setPreviewImage(e.target.value);
-                        }}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-3 text-xs text-white outline-none focus:border-emerald-400"
-                      />
-                    )}
+                    </div>
                   </div>
                 </div>
+
               </div>
 
               {/* Contact Grossiste */}
