@@ -288,15 +288,24 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#04060C] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black print:bg-white print:text-black">
       
-      {/* Navigation Header (Masqué à l'impression) */}
+      {/* Navigation Header */}
       <header className="border-b border-slate-800/80 bg-[#04060C]/90 backdrop-blur sticky top-0 z-40 print:hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 flex items-center justify-center text-slate-950 font-black text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+          <Link 
+            href="/" 
+            onClick={(e) => {
+              if (window.location.pathname === '/') {
+                e.preventDefault();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }
+            }}
+            className="flex items-center gap-2.5 cursor-pointer group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 via-teal-400 to-cyan-400 flex items-center justify-center text-slate-950 font-black text-sm shadow-[0_0_15px_rgba(16,185,129,0.3)] group-hover:scale-105 transition duration-200">
               MP
             </div>
             <div>
-              <span className="font-black text-lg tracking-wider text-white">
+              <span className="font-black text-lg tracking-wider text-white group-hover:text-emerald-300 transition duration-200">
                 MULTIDEAL<span className="text-emerald-400">PROP</span>
               </span>
               <span className="hidden sm:inline-block ml-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest border-l border-slate-700 pl-2">
@@ -335,7 +344,7 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero Section (Masqué à l'impression) */}
+      {/* Hero Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-6 text-center space-y-4 print:hidden">
         <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/30 px-3.5 py-1.5 rounded-full text-emerald-400 text-xs font-black uppercase tracking-wider shadow-inner">
           <Zap className="w-3.5 h-3.5 text-emerald-400" /> Institutional Real Estate Due Diligence
@@ -378,7 +387,7 @@ export default function HomePage() {
       {/* Main Workspace */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20 space-y-8 print:p-0 print:m-0 print:max-w-none">
         
-        {/* Deal Parameters & Inputs (Masqués à l'impression) */}
+        {/* Deal Parameters & Inputs */}
         <div className="bg-gradient-to-b from-slate-900/80 to-slate-950 p-6 rounded-3xl border border-slate-800 flex flex-col md:flex-row justify-between items-start md:items-center gap-5 shadow-2xl print:hidden">
           <div className="flex-1 w-full space-y-2.5">
             <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -447,7 +456,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* 4 Chiffres Clés (Masqués à l'impression) */}
+        {/* 4 Chiffres Clés */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-[#0a101f] border border-slate-800 p-4 sm:p-5 rounded-2xl text-center shadow-xl print:hidden">
           <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800/80">
             <span className="text-[10px] uppercase font-black text-slate-400 block tracking-wider">CAP RATE</span>
@@ -469,7 +478,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Bandeau Financement Lead (Masqué à l'impression) */}
+        {/* Bandeau Financement Lead */}
         <div className="bg-gradient-to-r from-emerald-950/50 via-[#0a1428] to-cyan-950/40 border-2 border-emerald-500/40 rounded-3xl p-6 flex flex-col md:flex-row items-center justify-between gap-5 shadow-[0_0_30px_rgba(16,185,129,0.15)] print:hidden">
           <div className="space-y-1.5 text-left w-full md:w-auto">
             <div className="inline-flex items-center gap-1.5 bg-emerald-500/20 text-emerald-300 text-xs font-black uppercase px-2.5 py-0.5 rounded-md">
@@ -495,12 +504,10 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* ============================================================ */}
-        {/* LE LENDER DEAL MEMO : SEULE SECTION IMPRIMÉE                 */}
-        {/* ============================================================ */}
+        {/* LE LENDER DEAL MEMO : SEULE SECTION IMPRIMÉE */}
         <div className="bg-[#0b1222] border-2 border-emerald-500/40 rounded-3xl p-5 sm:p-8 shadow-[0_0_35px_rgba(16,185,129,0.12)] space-y-6 print:border-none print:p-0 print:m-0 print:shadow-none print:bg-white print:block">
           
-          {/* En-tête web (Masqué à l'impression) */}
+          {/* En-tête web */}
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-5 print:hidden">
             <div>
               <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full text-emerald-400 text-xs font-black uppercase tracking-wider mb-2">
@@ -537,7 +544,7 @@ export default function HomePage() {
           {/* FEUILLE BLANCHE OFFICIELLE DU RAPPORT */}
           <div className="bg-white text-slate-900 rounded-2xl border border-slate-300 shadow-2xl p-5 sm:p-8 font-sans relative overflow-hidden print:border-none print:shadow-none print:p-0 print:rounded-none">
             
-            {/* Header Officiel Institutionnel */}
+            {/* Header Officiel */}
             <div className="bg-[#0b1528] text-white p-4 sm:p-5 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 print:rounded-none">
               <div>
                 <div className="font-black text-sm sm:text-base tracking-wide text-white">
@@ -554,7 +561,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Fiche d'identification de l'actif */}
+            {/* Fiche identification */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 rounded-xl p-3 sm:p-4 my-4 text-xs">
               <div>
                 <span className="text-[10px] font-bold uppercase text-slate-400 block">Property Identification</span>
@@ -637,7 +644,7 @@ export default function HomePage() {
                     <tr>
                       <td className="py-1.5 px-2.5 font-sans text-red-600">Less: Economic Vacancy Escrow ({vacancyRate}%)</td>
                       <td className="py-1.5 px-2.5 text-right text-red-600">-${Math.round(annualVacancyLoss / 12)}</td>
-                      <td className="py-1.5 px-2.5 text-right text-red-600">-${Math.round(annualVacancyLoss).toLocaleString()}</td>
+                      <td className="py-1.5 px-2.5 text-red-600 text-right">-${Math.round(annualVacancyLoss).toLocaleString()}</td>
                       <td className="py-1.5 px-2.5 text-right text-red-400 hidden sm:table-cell">-{vacancyRate}.0%</td>
                     </tr>
                     <tr className="bg-emerald-50/80 font-bold text-emerald-950 border-y border-emerald-200">
@@ -708,7 +715,6 @@ export default function HomePage() {
             {/* SECTION 2 : AMORTISSEMENT & SIGNATURES */}
             <div className="relative pt-4 border-t-2 border-slate-200">
               
-              {/* Le contenu officiel débloqué */}
               <div className={`${!isMemoUnlocked ? 'select-none filter blur-[3px] opacity-40' : ''} space-y-4`}>
                 <div className="text-xs font-black uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
                   2. Senior Debt Paydown &amp; Equity Buildup Schedule (Years 1–5)
@@ -739,7 +745,7 @@ export default function HomePage() {
                   </tbody>
                 </table>
 
-                {/* Section Signatures Modifiée : Plus de responsabilité du site */}
+                {/* Section Signatures */}
                 <div className="pt-6 border-t border-slate-200 grid grid-cols-2 gap-8 text-[10px] text-slate-600">
                   <div>
                     <strong className="block text-slate-900 mb-1">BORROWER / SPONSOR CERTIFICATION:</strong>
@@ -761,7 +767,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Masque Paywall sombre : Affiché UNIQUEMENT si non payé (Masqué à l'impression) */}
+              {/* Masque Paywall sombre : UNIQUEMENT si non payé */}
               {!isMemoUnlocked && (
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/85 to-transparent flex flex-col items-center justify-center p-6 text-center rounded-xl print:hidden">
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-2 shadow-lg">
@@ -801,7 +807,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Inputs Financement & Dépenses (Masqués à l'impression) */}
+        {/* Inputs Financement & Dépenses */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:hidden">
           <div className="bg-[#0b1120] border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
             <h4 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5 border-b border-slate-800 pb-2">
@@ -896,7 +902,7 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Section Inventaire des Wholesalers (Masquée à l'impression) */}
+        {/* Section Inventaire des Wholesalers */}
         <div className="pt-4 space-y-4 print:hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
             <div>
@@ -962,7 +968,7 @@ export default function HomePage() {
 
       </main>
 
-      {/* Modal Lead Capture (Masquée à l'impression) */}
+      {/* Modal Lead Capture */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm print:hidden">
           <div className="bg-[#0b1222] border-2 border-emerald-500/40 w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl relative space-y-6">
@@ -1046,7 +1052,7 @@ export default function HomePage() {
                       <select
                         value={leadForm.creditScore}
                         onChange={(e) => setLeadForm({ ...leadForm, creditScore: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white"
                       >
                         <option value="740+">740+ (Best Rates)</option>
                         <option value="700-739">700 - 739 (Standard)</option>
@@ -1059,7 +1065,7 @@ export default function HomePage() {
                       <select
                         value={leadForm.experience}
                         onChange={(e) => setLeadForm({ ...leadForm, experience: e.target.value })}
-                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-white"
+                        className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-white"
                       >
                         <option value="First Deal">First Investment Property</option>
                         <option value="1-3 Deals">1 to 3 Properties Owned</option>
@@ -1098,7 +1104,7 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* Footer (Masqué à l'impression) */}
+      {/* Footer */}
       <footer className="border-t border-slate-800 bg-[#030508] py-8 text-center text-xs text-slate-500 print:hidden">
         <p>&copy; 2026 MultiDealProp. Institutional Underwriting &amp; Multi-Family Financial Modeling.</p>
       </footer>
