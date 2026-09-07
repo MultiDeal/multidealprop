@@ -20,7 +20,9 @@ import {
   Download,
   PlusCircle,
   LayoutDashboard,
-  Calculator
+  Calculator,
+  ShieldCheck,
+  Zap
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -134,7 +136,6 @@ export default function SubmitDealPage() {
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         const filePath = `uploads/${fileName}`;
 
-        // Envoi dans le bucket deal-images
         const { error: uploadError } = await supabase.storage
           .from('deal-images')
           .upload(filePath, file);
@@ -145,7 +146,6 @@ export default function SubmitDealPage() {
           continue;
         }
 
-        // Obtention de l'URL publique HTTPS lue par Facebook
         const { data: { publicUrl } } = supabase.storage
           .from('deal-images')
           .getPublicUrl(filePath);
@@ -182,7 +182,7 @@ export default function SubmitDealPage() {
 
       const primaryImage = imagesList.length > 0 
         ? imagesList[0] 
-        : 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
+        : 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80';
 
       const { data: insertedDeal, error } = await supabase.from('deals').insert([
         {
@@ -317,7 +317,7 @@ export default function SubmitDealPage() {
         maintenance: deal.maintenance,
         management_rate: 8,
         vacancy_rate: 5,
-        image_url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
+        image_url: 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?auto=format&fit=crop&w=1200&q=80',
         contact_name: csvContact.contact_name,
         contact_email: csvContact.contact_email,
         contact_phone: csvContact.contact_phone
@@ -505,8 +505,8 @@ export default function SubmitDealPage() {
             
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
-                  100% Free Listing
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 inline-flex items-center gap-1.5">
+                  <Zap className="w-3 h-3 text-emerald-400" /> 100% Free Self-Service Listing
                 </span>
                 <h1 className="text-2xl sm:text-3xl font-black text-white mt-2">
                   List Multi-Family Properties
@@ -537,6 +537,19 @@ export default function SubmitDealPage() {
                   <FileSpreadsheet className="w-3.5 h-3.5" />
                   <span>Bulk CSV (Portfolio)</span>
                 </button>
+              </div>
+            </div>
+
+            {/* BANDEAU DE RÉASSURANCE POUR GROSSISTES (Zéro appel / 100% Digital) */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/40 via-[#0a1224] to-cyan-950/30 border border-emerald-500/30 text-xs text-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+              <div className="flex items-center gap-2.5">
+                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span>
+                  <strong className="text-white">100% Free • Direct Buyer Inquiries • No Broker Fees • Instant Lender Memo Generated</strong>
+                  <span className="block text-[11px] text-slate-400 mt-0.5">
+                    No phone calls required. Buyers see your verified contact info directly on the memo.
+                  </span>
+                </span>
               </div>
             </div>
 
@@ -675,7 +688,7 @@ export default function SubmitDealPage() {
                           placeholder="8"
                           value={formData.management_rate}
                           onChange={(e) => setFormData({ ...formData, management_rate: e.target.value })}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
                         />
                       </div>
                       <div>
@@ -685,7 +698,7 @@ export default function SubmitDealPage() {
                           placeholder="5"
                           value={formData.vacancy_rate}
                           onChange={(e) => setFormData({ ...formData, vacancy_rate: e.target.value })}
-                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
                         />
                       </div>
                     </div>
@@ -777,8 +790,8 @@ export default function SubmitDealPage() {
                           type="file" 
                           accept="image/*" 
                           multiple 
-                          disabled={uploadingImage}
-                          onChange={handleMultipleFiles}
+                          disabled={uploadingImage} 
+                          onChange={handleMultipleFiles} 
                           className="hidden" 
                         />
                       </label>
@@ -810,12 +823,12 @@ export default function SubmitDealPage() {
                 {/* Coordonnées vendeur */}
                 <div className="space-y-4">
                   <h2 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
-                    <Home className="w-4 h-4" /> 2. Seller / Wholesaler Info
+                    <Home className="w-4 h-4" /> 2. Seller / Wholesaler Info (Direct Inquiries)
                   </h2>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
-                      <label className="text-slate-300 text-xs font-bold block mb-1">Your Name *</label>
+                      <label className="text-slate-300 text-xs font-bold block mb-1">Your Name / Entity *</label>
                       <input
                         type="text"
                         required
@@ -826,7 +839,7 @@ export default function SubmitDealPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-slate-300 text-xs font-bold block mb-1">Email *</label>
+                      <label className="text-slate-300 text-xs font-bold block mb-1">Direct Email *</label>
                       <input
                         type="email"
                         required
