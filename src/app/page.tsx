@@ -734,34 +734,140 @@ export default function HomePage() {
               
               <div className={`${!isMemoUnlocked ? 'select-none filter blur-[3px] opacity-40' : ''} space-y-4`}>
                 <div className="text-xs font-black uppercase tracking-wider text-slate-900 border-b border-slate-200 pb-1">
-                  2. Senior Debt Paydown &amp; Equity Buildup Schedule (Years 1–5)[cite: 1]
-                </div>
-                
-                <table className="w-full text-left text-xs font-sans">
-                  <thead>
-                    <tr className="bg-slate-100 text-[10px] font-bold text-slate-700">
-                      <th className="p-1.5">Period</th>
-                      <th className="p-1.5 text-right">Remaining Principal</th>
-                      <th className="p-1.5 text-right">Principal Paid</th>
-                      <th className="p-1.5 text-right">Interest Paid</th>
-                      <th className="p-1.5 text-right">Property Value</th>
-                      <th className="p-1.5 text-right">Sponsor Net Equity</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
-                    {amortizationSchedule.slice(0, 5).map((row) => (
-                      <tr key={row.year}>
-                        <td className="p-1.5 font-bold text-slate-900">Year {row.year}[cite: 1]</td>
-                        <td className="p-1.5 text-right text-slate-700">${row.remainingBalance.toLocaleString()}</td>
-                        <td className="p-1.5 text-right text-emerald-700">+${row.principalPaid.toLocaleString()}</td>
-                        <td className="p-1.5 text-right text-slate-500">${row.interestPaid.toLocaleString()}</td>
-                        <td className="p-1.5 text-right text-slate-800">${row.propertyValue.toLocaleString()}</td>
-                        <td className="p-1.5 text-right font-bold text-emerald-800">${row.equity.toLocaleString()}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+               2. Senior Debt Paydown &amp; Equity Buildup Schedule (Years 1-5)
+        </div>
 
+        <table className="w-full text-left text-xs font-sans">
+          <thead>
+            <tr className="bg-slate-100 text-[10px] font-bold text-slate-700">
+              <th className="p-1.5">Period</th>
+              <th className="p-1.5 text-right">Remaining Principal</th>
+              <th className="p-1.5 text-right">Principal Paid</th>
+              <th className="p-1.5 text-right">Interest Paid</th>
+              <th className="p-1.5 text-right">Property Value</th>
+              <th className="p-1.5 text-right">Sponsor Net Equity</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+            {amortizationSchedule.slice(0, 5).map((row) => (
+              <tr key={row.year}>
+                <td className="p-1.5 font-bold text-slate-900">Year {row.year}</td>
+                <td className="p-1.5 text-right text-slate-700">${row.remainingBalance.toLocaleString()}</td>
+                <td className="p-1.5 text-right text-emerald-700">+${row.principalPaid.toLocaleString()}</td>
+                <td className="p-1.5 text-right text-slate-500">${row.interestPaid.toLocaleString()}</td>
+                <td className="p-1.5 text-right text-slate-800">${row.propertyValue.toLocaleString()}</td>
+                <td className="p-1.5 text-right font-bold text-emerald-800">${row.equity.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        {/* 3. IRS 27.5-YEAR DEPRECIATION & TAX SHELTER SCHEDULE */}
+        <div className="mt-4 pt-3 border-t border-slate-200">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-900">
+              3. IRS 27.5-Year Depreciation &amp; Passive Tax Shield (Residential MACRS)
+            </span>
+            <span className="text-[10px] font-mono text-slate-500">
+              Assumed Tax Bracket: 28.0%
+            </span>
+          </div>
+
+          <div className="grid grid-cols-4 gap-2.5 p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+            <div>
+              <span className="text-[9px] uppercase font-bold text-slate-500 block">
+                Depreciable Basis (80%)
+              </span>
+              <span className="text-sm font-mono font-bold text-slate-900 block mt-0.5">
+                ${Math.round((purchasePrice || 98000) * 0.80).toLocaleString()}
+              </span>
+              <span className="text-[9px] text-slate-400 block mt-0.5">Excludes 20% Land Allocation</span>
+            </div>
+
+            <div>
+              <span className="text-[9px] uppercase font-bold text-slate-500 block">
+                Annual Depreciation
+              </span>
+              <span className="text-sm font-mono font-bold text-cyan-800 block mt-0.5">
+                ${Math.round(((purchasePrice || 98000) * 0.80) / 27.5).toLocaleString()} / yr
+              </span>
+              <span className="text-[9px] text-slate-400 block mt-0.5">Straight-Line Paper Loss</span>
+            </div>
+
+            <div>
+              <span className="text-[9px] uppercase font-bold text-slate-500 block">
+                Annual Tax Shield
+              </span>
+              <span className="text-sm font-mono font-bold text-emerald-700 block mt-0.5">
+                ${Math.round((((purchasePrice || 98000) * 0.80) / 27.5) * 0.28).toLocaleString()} / yr
+              </span>
+              <span className="text-[9px] text-slate-400 block mt-0.5">Direct Cash Saved</span>
+            </div>
+
+            <div>
+              <span className="text-[9px] uppercase font-bold text-slate-500 block">
+                Effective Tax Rate
+              </span>
+              <span className="text-sm font-mono font-black text-emerald-700 block mt-0.5">
+                0.0% (Sheltered)
+              </span>
+              <span className="text-[9px] text-slate-400 block mt-0.5">Cash Flow 100% Tax-Free</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Section Signatures */}
+  <div className="flex items-center justify-between mb-3">
+    <h3 className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white print:text-black">
+      3. IRS 27.5-Year Depreciation &amp; Passive Tax Shield (Residential MACRS)
+    </h3>
+    <span className="text-[10px] font-mono text-slate-500 print:text-slate-700">
+      Assumed Tax Bracket: 28.0%
+    </span>
+  </div>
+
+  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-950/60 dark:bg-slate-950 border border-slate-800 rounded-xl print:bg-slate-50 print:border-slate-300 text-xs">
+    <div>
+      <span className="text-[9px] uppercase font-bold text-slate-400 print:text-slate-600 block">
+        Depreciable Basis (80%)
+      </span>
+      <span className="text-sm font-mono font-bold text-white print:text-black block mt-0.5">
+        ${Math.round((purchasePrice || 98000) * 0.80).toLocaleString()}
+      </span>
+      <span className="text-[9px] text-slate-500 block mt-0.5">Excludes 20% Land Allocation</span>
+    </div>
+
+    <div>
+      <span className="text-[9px] uppercase font-bold text-slate-400 print:text-slate-600 block">
+        Annual Depreciation
+      </span>
+      <span className="text-sm font-mono font-bold text-cyan-400 print:text-cyan-800 block mt-0.5">
+        ${Math.round(((purchasePrice || 98000) * 0.80) / 27.5).toLocaleString()} / yr
+      </span>
+      <span className="text-[9px] text-slate-500 block mt-0.5">Straight-Line Paper Loss</span>
+    </div>
+
+    <div>
+      <span className="text-[9px] uppercase font-bold text-slate-400 print:text-slate-600 block">
+        Annual Tax Shield
+      </span>
+      <span className="text-sm font-mono font-bold text-emerald-400 print:text-emerald-700 block mt-0.5">
+        ${Math.round((((purchasePrice || 98000) * 0.80) / 27.5) * 0.28).toLocaleString()} / yr
+      </span>
+      <span className="text-[9px] text-slate-500 block mt-0.5">Direct Cash Saved</span>
+    </div>
+
+    <div>
+      <span className="text-[9px] uppercase font-bold text-slate-400 print:text-slate-600 block">
+        Effective Tax Rate
+      </span>
+      <span className="text-sm font-mono font-black text-emerald-400 print:text-emerald-700 block mt-0.5">
+        0.0% (Sheltered)
+      </span>
+      <span className="text-[9px] text-slate-500 block mt-0.5">Cash Flow 100% Tax-Free</span>
+    </div>
+  </div>
+</div>
                 {/* Section Signatures */}
                 <div className="pt-6 border-t border-slate-200 grid grid-cols-2 gap-8 text-[10px] text-slate-600">
                   <div>
