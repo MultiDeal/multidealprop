@@ -927,8 +927,8 @@ export default function HomePage() {
 
             </div>
 
-          </div>
-        </div>
+          
+      
 
         {/* Inputs Financement & Dépenses */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 print:hidden">
