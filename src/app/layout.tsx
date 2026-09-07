@@ -21,6 +21,17 @@ export const metadata: Metadata = {
     canonical: 'https://multidealprop.com',
   },
   openGraph: {
+  ...
+  images: [
+    {
+      url: 'https://multidealprop.com/og-image.jpg',
+      width: 1200,
+      height: 630,
+      alt: 'MultiDealProp Underwriting Suite',
+    },
+  ],
+},
+  openGraph: {
     title: 'MultiDealProp | Multi-Family Underwriting Suite',
     description: 'Instant debt underwriting, DSCR validation, and 1-click lender memo generation.',
     url: 'https://multidealprop.com',
