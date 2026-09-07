@@ -4,7 +4,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Building2, 
-  MapPin, 
   DollarSign, 
   Home, 
   Send, 
@@ -21,8 +20,7 @@ import {
   Download,
   PlusCircle,
   LayoutDashboard,
-  Calculator,
-  ShieldCheck
+  Calculator
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -37,6 +35,9 @@ export default function SubmitDealPage() {
   const [batchCount, setBatchCount] = useState<number>(0);
   const [copySuccess, setCopySuccess] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Stocke l'ID du deal fraîchement inséré pour le lien SEO
+  const [createdDealId, setCreatedDealId] = useState<string | number | null>(null);
 
   // Vérification de session au chargement
   useEffect(() => {
@@ -85,7 +86,7 @@ export default function SubmitDealPage() {
     contact_phone: ''
   });
 
-  // Calculs financiers en temps réel pour validation immédiate
+  // Calculs financiers en direct
   const metrics = useMemo(() => {
     const p = Number(formData.price) || 0;
     const rent = Number(formData.monthly_rent) || 0;
@@ -101,7 +102,6 @@ export default function SubmitDealPage() {
     const effectiveNOI = Math.max(0, grossAnnual - totalOpEx);
     const capRate = p > 0 ? (effectiveNOI / p) * 100 : 0;
 
-    // Simulation de dette senior (75% LTV, 7% taux, 30 ans amortissement)
     const loanAmount = p * 0.75;
     const monthlyRate = 0.07 / 12;
     const nPayments = 360;
@@ -112,8 +112,6 @@ export default function SubmitDealPage() {
     const dscr = annualDebt > 0 ? effectiveNOI / annualDebt : 0;
 
     return {
-      grossAnnual,
-      totalOpEx,
       effectiveNOI,
       capRate: capRate.toFixed(2),
       dscr: dscr.toFixed(2)
@@ -163,7 +161,7 @@ export default function SubmitDealPage() {
         ? imagesList[0] 
         : 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
 
-      const { error } = await supabase.from('deals').insert([
+      const { data: insertedDeal, error } = await supabase.from('deals').insert([
         {
           user_id: user?.id ?? null,
           title: formData.title,
@@ -184,9 +182,15 @@ export default function SubmitDealPage() {
           contact_email: formData.contact_email,
           contact_phone: formData.contact_phone
         }
-      ]);
+      ])
+      .select('id')
+      .single();
 
       if (error) throw error;
+
+      if (insertedDeal) {
+        setCreatedDealId(insertedDeal.id);
+      }
 
       if (chainMode) {
         setFormData((prev) => ({
@@ -230,7 +234,7 @@ export default function SubmitDealPage() {
     document.body.removeChild(link);
   };
 
-  // Parsing CSV étendu
+  // Parsing CSV
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -298,8 +302,12 @@ export default function SubmitDealPage() {
         contact_phone: csvContact.contact_phone
       }));
 
-      const { error } = await supabase.from('deals').insert(dealsToInsert);
+      const { data, error } = await supabase.from('deals').insert(dealsToInsert).select('id');
       if (error) throw error;
+
+      if (data && data.length > 0) {
+        setCreatedDealId(data[0].id);
+      }
 
       setBatchCount(parsedDeals.length);
       setIsSubmitted(true);
@@ -315,6 +323,11 @@ export default function SubmitDealPage() {
     setCopySuccess(type);
     setTimeout(() => setCopySuccess(''), 2500);
   };
+
+  // URL canonique spécifique du deal pour les réseaux sociaux
+  const canonicalDealUrl = typeof window !== 'undefined' && createdDealId
+    ? `${window.location.origin}/deals/${createdDealId}`
+    : 'https://www.multidealprop.com/deals';
 
   return (
     <div className="min-h-screen bg-[#04060C] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
@@ -349,7 +362,6 @@ export default function SubmitDealPage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
 
-        {/* Bannière utilisateur invité */}
         {!currentUser && (
           <div className="mb-6 p-4 rounded-2xl bg-[#0b1222] border border-slate-800 flex items-center justify-between gap-4">
             <div className="text-xs text-slate-400">
@@ -366,7 +378,7 @@ export default function SubmitDealPage() {
         )}
         
         {isSubmitted ? (
-          /* ÉCRAN DE SUCCÈS & BACKLINKS */
+          /* ÉCRAN DE SUCCÈS & PARTAGE SOCIAL AVEC URL SEO PROPRE */
           <div className="bg-[#0b1222] border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 text-center space-y-6 shadow-2xl animate-in fade-in duration-300">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
               <CheckCircle className="w-8 h-8" />
@@ -381,7 +393,7 @@ export default function SubmitDealPage() {
               </p>
             </div>
 
-            {/* Post 1-Clic Facebook & BiggerPockets */}
+            {/* Post 1-Clic Facebook & BiggerPockets avec le lien canonique /deals/[id] */}
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
@@ -389,9 +401,8 @@ export default function SubmitDealPage() {
                 </span>
                 <button
                   onClick={() => handleCopy(
-                    `🔥 Multi-Family Deals Available:\n` +
-                    `• Verified Cash Flow Portfolio Listings\n` +
-                    `• Complete Underwriting & Lender DSCR Audit: ${window.location.origin}`,
+                    `🔥 Multi-Family Deal: ${formData.title || 'Turnkey Opportunity'} - $${Number(formData.price || 0).toLocaleString()} (${formData.units} Doors).\n` +
+                    `View live DSCR Underwriting & Memo:\n${canonicalDealUrl}`,
                     'pitch'
                   )}
                   className="text-xs font-bold bg-emerald-400 hover:bg-emerald-300 text-slate-950 px-3 py-1.5 rounded-lg transition flex items-center gap-1 cursor-pointer active:scale-95"
@@ -401,9 +412,9 @@ export default function SubmitDealPage() {
                 </button>
               </div>
               <p className="text-[11px] text-slate-300 font-mono bg-slate-900/90 p-3.5 rounded-xl border border-slate-800/80 select-all leading-relaxed">
-                🔥 Multi-Family Deals Available<br />
-                • Verified Cash Flow Portfolio Listings<br />
-                • Complete Underwriting &amp; Lender DSCR Audit: {typeof window !== 'undefined' ? window.location.origin : 'multidealprop.com'}
+                🔥 Multi-Family Deal: {formData.title || 'Turnkey Opportunity'} - ${Number(formData.price || 0).toLocaleString()} ({formData.units} Doors)<br />
+                View live DSCR Underwriting &amp; Memo:<br />
+                <span className="text-emerald-400 font-bold underline">{canonicalDealUrl}</span>
               </p>
             </div>
 
@@ -415,7 +426,7 @@ export default function SubmitDealPage() {
                 </span>
                 <button
                   onClick={() => handleCopy(
-                    `<a href="${window.location.origin}" target="_blank" rel="noopener">\n` +
+                    `<a href="${canonicalDealUrl}" target="_blank" rel="noopener">\n` +
                     `  <img src="${window.location.origin}/badge-underwritten.svg" alt="Underwritten by MultiDealProp" width="220" />\n` +
                     `</a>`,
                     'badge'
@@ -440,12 +451,21 @@ export default function SubmitDealPage() {
                   View in My Listings
                 </Link>
               )}
+              {createdDealId && (
+                <Link
+                  href={`/deals/${createdDealId}`}
+                  className="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-cyan-400 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition text-center"
+                >
+                  View Deal Page
+                </Link>
+              )}
               <button
                 onClick={() => {
                   setIsSubmitted(false);
                   setParsedDeals([]);
                   setCsvFile(null);
                   setImagesList([]);
+                  setCreatedDealId(null);
                 }}
                 className="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition"
               >
@@ -500,9 +520,7 @@ export default function SubmitDealPage() {
               </div>
             </div>
 
-            {/* ============================================================ */}
-            {/* ONGLET 1 : FORMULAIRE MANUEL AVEC OPEX DÉTAILLÉES            */}
-            {/* ============================================================ */}
+            {/* ONGLET 1 : FORMULAIRE MANUEL */}
             {activeTab === 'single' ? (
               <form onSubmit={(e) => handleSingleSubmit(e, false)} className="bg-[#0b1222] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
                 
@@ -586,7 +604,7 @@ export default function SubmitDealPage() {
                     />
                   </div>
 
-                  {/* 1.1 Operating Expenses (OpEx) détaillées */}
+                  {/* 1.1 Operating Expenses (OpEx) */}
                   <div className="space-y-3 pt-3 border-t border-slate-800/80">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
@@ -683,7 +701,7 @@ export default function SubmitDealPage() {
                     <label className="text-slate-300 text-xs font-bold block mb-1">Deal Description &amp; Highlights</label>
                     <textarea
                       rows={3}
-                      placeholder="e.g. Turnkey duplex with separate utilities, new roof in 2021, fully occupied by long-term paying tenants..."
+                      placeholder="e.g. Turnkey duplex with separate utilities, fully occupied by long-term paying tenants..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
@@ -738,7 +756,7 @@ export default function SubmitDealPage() {
                       </label>
 
                       <div className="flex flex-col justify-center space-y-2 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
-                        <span className="text-[11px] font-bold text-slate-400">Or add via Image Web Link:</span>
+                        <span className="text-[11px] font-bold text-slate-400">Or add via Public Image Web Link (Best for Facebook):</span>
                         <div className="flex gap-2">
                           <input
                             type="url"
@@ -803,7 +821,7 @@ export default function SubmitDealPage() {
                   </div>
                 </div>
 
-                {/* Boutons d'action */}
+                {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     type="button"
@@ -835,9 +853,7 @@ export default function SubmitDealPage() {
                 </div>
               </form>
             ) : (
-              /* ============================================================ */
-              /* ONGLET 2 : BULK CSV PORTFOLIO IMPORT                        */
-              /* ============================================================ */
+              /* ONGLET 2 : BULK CSV */
               <form onSubmit={handleBulkSubmit} className="bg-[#0b1222] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
                 
                 <div className="space-y-4">
