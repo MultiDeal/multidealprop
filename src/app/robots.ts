@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/api/'],
     },
-    sitemap: 'https://votredomaine.com/sitemap.xml',
+    sitemap: 'https://multidealprop.com/sitemap.xml',
   };
 }
