@@ -31,15 +31,15 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 export default function SubmitDealPage() {
   const [activeTab, setActiveTab] = useState<'single' | 'bulk'>('single');
   const [loading, setLoading] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [batchCount, setBatchCount] = useState<number>(0);
   const [copySuccess, setCopySuccess] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Stocke l'ID du deal fraîchement inséré pour le lien SEO
+  // Stocke l'ID généré pour le lien direct /deals/[id]
   const [createdDealId, setCreatedDealId] = useState<string | number | null>(null);
 
-  // Vérification de session au chargement
   useEffect(() => {
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser();
@@ -54,11 +54,10 @@ export default function SubmitDealPage() {
     checkAuth();
   }, []);
 
-  // Images du formulaire manuel
+  // Photos réelles stockées en URLs Supabase Storage
   const [imagesList, setImagesList] = useState<string[]>([]);
   const [urlInput, setUrlInput] = useState<string>('');
 
-  // Données du formulaire manuel (avec Operating Expenses)
   const [formData, setFormData] = useState({
     title: '',
     address: '',
@@ -77,7 +76,6 @@ export default function SubmitDealPage() {
     contact_phone: ''
   });
 
-  // États pour Bulk CSV
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [parsedDeals, setParsedDeals] = useState<any[]>([]);
   const [csvContact, setCsvContact] = useState({
@@ -86,7 +84,7 @@ export default function SubmitDealPage() {
     contact_phone: ''
   });
 
-  // Calculs financiers en direct
+  // Calculs financiers instantanés
   const metrics = useMemo(() => {
     const p = Number(formData.price) || 0;
     const rent = Number(formData.monthly_rent) || 0;
@@ -118,23 +116,48 @@ export default function SubmitDealPage() {
     };
   }, [formData]);
 
-  // Gestion des images
-  const handleMultipleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Upload automatique et transparent vers le bucket existant "deal-images"
+  const handleMultipleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files.length > 0) {
-      Array.from(files).forEach((file) => {
-        if (file.size > 5 * 1024 * 1024) {
-          alert(`File ${file.name} is too large (> 5MB)`);
-          return;
+    if (!files || files.length === 0) return;
+
+    setUploadingImage(true);
+
+    try {
+      for (const file of Array.from(files)) {
+        if (file.size > 10 * 1024 * 1024) {
+          alert(`File ${file.name} is too large (> 10MB)`);
+          continue;
         }
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          if (reader.result) {
-            setImagesList((prev) => [...prev, reader.result as string]);
-          }
-        };
-        reader.readAsDataURL(file);
-      });
+
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const filePath = `uploads/${fileName}`;
+
+        // Envoi dans le bucket deal-images
+        const { error: uploadError } = await supabase.storage
+          .from('deal-images')
+          .upload(filePath, file);
+
+        if (uploadError) {
+          console.error("Storage upload error:", uploadError);
+          alert("Storage upload failed: " + uploadError.message);
+          continue;
+        }
+
+        // Obtention de l'URL publique HTTPS lue par Facebook
+        const { data: { publicUrl } } = supabase.storage
+          .from('deal-images')
+          .getPublicUrl(filePath);
+
+        if (publicUrl) {
+          setImagesList((prev) => [...prev, publicUrl]);
+        }
+      }
+    } catch (err: any) {
+      alert("Error uploading image: " + err.message);
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -149,7 +172,7 @@ export default function SubmitDealPage() {
     setImagesList((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // Envoi d'un deal individuel
+  // Envoi du deal
   const handleSingleSubmit = async (e: React.FormEvent, chainMode: boolean = false) => {
     e.preventDefault();
     setLoading(true);
@@ -219,7 +242,7 @@ export default function SubmitDealPage() {
     }
   };
 
-  // Télécharger le modèle CSV
+  // Modèle CSV
   const downloadCsvTemplate = () => {
     const headers = 'title,address,price,monthly_rent,units,arv,taxes,insurance,maintenance\n';
     const sample1 = '"Turnkey 4-Plex Portfolio 1","3410 W Chicago Blvd, Detroit, MI 48206",135000,3600,4,210000,1850,950,1200\n';
@@ -234,7 +257,6 @@ export default function SubmitDealPage() {
     document.body.removeChild(link);
   };
 
-  // Parsing CSV
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -271,7 +293,6 @@ export default function SubmitDealPage() {
     reader.readAsText(file);
   };
 
-  // Soumission en masse (Bulk CSV)
   const handleBulkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (parsedDeals.length === 0) {
@@ -324,7 +345,7 @@ export default function SubmitDealPage() {
     setTimeout(() => setCopySuccess(''), 2500);
   };
 
-  // URL canonique spécifique du deal pour les réseaux sociaux
+  // URL propre SEO directe pour Facebook
   const canonicalDealUrl = typeof window !== 'undefined' && createdDealId
     ? `${window.location.origin}/deals/${createdDealId}`
     : 'https://www.multidealprop.com/deals';
@@ -332,7 +353,7 @@ export default function SubmitDealPage() {
   return (
     <div className="min-h-screen bg-[#04060C] text-slate-100 font-sans antialiased selection:bg-emerald-500 selection:text-black">
       
-      {/* Navigation Header */}
+      {/* En-tête */}
       <header className="border-b border-slate-800/80 bg-[#04060C]/90 backdrop-blur sticky top-0 z-40">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white text-xs sm:text-sm font-bold transition">
@@ -378,7 +399,7 @@ export default function SubmitDealPage() {
         )}
         
         {isSubmitted ? (
-          /* ÉCRAN DE SUCCÈS & PARTAGE SOCIAL AVEC URL SEO PROPRE */
+          /* ÉCRAN DE SUCCÈS & PARTAGE FACEBOOK */
           <div className="bg-[#0b1222] border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 text-center space-y-6 shadow-2xl animate-in fade-in duration-300">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
               <CheckCircle className="w-8 h-8" />
@@ -393,7 +414,7 @@ export default function SubmitDealPage() {
               </p>
             </div>
 
-            {/* Post 1-Clic Facebook & BiggerPockets avec le lien canonique /deals/[id] */}
+            {/* Post 1-Clic Facebook avec URL SEO /deals/[id] */}
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
@@ -418,7 +439,7 @@ export default function SubmitDealPage() {
               </p>
             </div>
 
-            {/* Badge HTML Backlink */}
+            {/* Badge Embed */}
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
@@ -482,7 +503,6 @@ export default function SubmitDealPage() {
         ) : (
           <div className="space-y-6">
             
-            {/* Header & Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
@@ -520,11 +540,10 @@ export default function SubmitDealPage() {
               </div>
             </div>
 
-            {/* ONGLET 1 : FORMULAIRE MANUEL */}
+            {/* ONGLET 1 : FORMULAIRE UNIQUE */}
             {activeTab === 'single' ? (
               <form onSubmit={(e) => handleSingleSubmit(e, false)} className="bg-[#0b1222] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
                 
-                {/* 1. Propriété de base */}
                 <div className="space-y-4">
                   <h2 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
                     <Building2 className="w-4 h-4" /> 1. Property Details
@@ -604,7 +623,7 @@ export default function SubmitDealPage() {
                     />
                   </div>
 
-                  {/* 1.1 Operating Expenses (OpEx) */}
+                  {/* Operating Expenses (OpEx) */}
                   <div className="space-y-3 pt-3 border-t border-slate-800/80">
                     <div className="flex items-center justify-between">
                       <label className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
@@ -671,7 +690,6 @@ export default function SubmitDealPage() {
                       </div>
                     </div>
 
-                    {/* Live Underwriting Audit Box */}
                     {Number(formData.price) > 0 && Number(formData.monthly_rent) > 0 && (
                       <div className="p-3.5 bg-slate-950 border border-emerald-500/20 rounded-2xl flex flex-wrap items-center justify-between gap-4 mt-2">
                         <div className="flex items-center gap-2">
@@ -701,14 +719,14 @@ export default function SubmitDealPage() {
                     <label className="text-slate-300 text-xs font-bold block mb-1">Deal Description &amp; Highlights</label>
                     <textarea
                       rows={3}
-                      placeholder="e.g. Turnkey duplex with separate utilities, fully occupied by long-term paying tenants..."
+                      placeholder="e.g. Turnkey duplex with separate utilities, fully occupied by paying tenants..."
                       value={formData.description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
                     />
                   </div>
 
-                  {/* Photos */}
+                  {/* Photos : Upload Direct vers deal-images */}
                   <div className="space-y-3 pt-2">
                     <div className="flex items-center justify-between">
                       <label className="text-slate-300 text-xs font-bold">
@@ -741,22 +759,32 @@ export default function SubmitDealPage() {
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-800 hover:border-emerald-500/50 bg-slate-950 rounded-2xl p-4 cursor-pointer transition group text-center">
-                        <Upload className="w-5 h-5 text-slate-400 group-hover:text-emerald-400 mb-1 transition" />
-                        <span className="text-xs font-bold text-slate-300 group-hover:text-white">
-                          Upload Photos (Select Multiple)
-                        </span>
-                        <span className="text-[10px] text-slate-500 mt-0.5">JPG, PNG, WebP</span>
+                        {uploadingImage ? (
+                          <>
+                            <Loader2 className="w-5 h-5 text-emerald-400 animate-spin mb-1" />
+                            <span className="text-xs font-bold text-emerald-400">Uploading to storage...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-5 h-5 text-slate-400 group-hover:text-emerald-400 mb-1 transition" />
+                            <span className="text-xs font-bold text-slate-300 group-hover:text-white">
+                              Upload Photos (Select Multiple)
+                            </span>
+                            <span className="text-[10px] text-slate-500 mt-0.5">JPG, PNG, WebP</span>
+                          </>
+                        )}
                         <input 
                           type="file" 
                           accept="image/*" 
                           multiple 
+                          disabled={uploadingImage}
                           onChange={handleMultipleFiles}
                           className="hidden" 
                         />
                       </label>
 
                       <div className="flex flex-col justify-center space-y-2 bg-slate-950 p-3.5 rounded-2xl border border-slate-800">
-                        <span className="text-[11px] font-bold text-slate-400">Or add via Public Image Web Link (Best for Facebook):</span>
+                        <span className="text-[11px] font-bold text-slate-400">Or add via Image Web Link:</span>
                         <div className="flex gap-2">
                           <input
                             type="url"
@@ -779,7 +807,7 @@ export default function SubmitDealPage() {
 
                 </div>
 
-                {/* 2. Coordonnées vendeur */}
+                {/* Coordonnées vendeur */}
                 <div className="space-y-4">
                   <h2 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
                     <Home className="w-4 h-4" /> 2. Seller / Wholesaler Info
@@ -821,11 +849,10 @@ export default function SubmitDealPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     type="button"
-                    disabled={loading}
+                    disabled={loading || uploadingImage}
                     onClick={(e) => handleSingleSubmit(e, true)}
                     className="flex-1 bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 font-bold py-4 rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                   >
@@ -835,7 +862,7 @@ export default function SubmitDealPage() {
 
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || uploadingImage}
                     className="flex-1 bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs uppercase tracking-wider py-4 rounded-xl transition shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                   >
                     {loading ? (
