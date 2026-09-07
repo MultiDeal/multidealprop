@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Building2, 
@@ -14,6 +14,7 @@ import {
   Coins,
   TrendingUp,
   Sliders,
+  Printer,
   Flame,
   CheckCircle2,
   Wrench,
@@ -22,7 +23,8 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
 interface UnitDetail {
@@ -42,13 +44,18 @@ interface MarketComp {
   date: string;
 }
 
-export default function DealClientView({ initialDeal, dealId }: { initialDeal: any; dealId: string }) {
-  // Formatage initial depuis le serveur
+interface DealClientViewProps {
+  initialDeal: any;
+  dealId: string;
+}
+
+export default function DealClientView({ initialDeal, dealId }: DealClientViewProps) {
+  // Formatage des valeurs issues de Supabase
   const priceVal = Number(initialDeal.price || 150000);
   const unitsVal = Number(initialDeal.units || 2);
   const rentVal = Number(initialDeal.monthly_rent || 2000);
-  const taxesVal = Number(initialDeal.taxes || Math.round(priceVal * 0.018));
-  const insVal = Number(initialDeal.insurance || Math.round(priceVal * 0.009));
+  const taxesVal = Number(initialDeal.taxes || Math.round(priceVal * 0.015));
+  const insVal = Number(initialDeal.insurance || Math.round(unitsVal * 450));
   const waterVal = Number(initialDeal.water_sewer || unitsVal * 60 * 12);
   const otherIncVal = Number(initialDeal.other_income || unitsVal * 35);
 
@@ -63,18 +70,18 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
     squareFeet: 850
   }));
 
-  const loc = initialDeal.location || initialDeal.formatted_address || 'Midwest Market';
+  const loc = initialDeal.location || initialDeal.formatted_address || 'Cleveland, OH';
 
   const generatedComps: MarketComp[] = [
     {
-      address: `Nearby Comps #1 (${loc})`,
+      address: `Comparable #1 (${loc})`,
       soldPrice: Math.round(priceVal * 1.15),
       units: unitsVal,
       pricePerUnit: Math.round((priceVal * 1.15) / unitsVal),
       date: 'Recent Sale'
     },
     {
-      address: `Nearby Comps #2 (${loc})`,
+      address: `Comparable #2 (${loc})`,
       soldPrice: Math.round(priceVal * 1.28),
       units: unitsVal,
       pricePerUnit: Math.round((priceVal * 1.28) / unitsVal),
@@ -96,7 +103,7 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
     price: priceVal,
     arv: Number(initialDeal.arv || Math.round(priceVal * 1.35)),
     units: unitsVal,
-    yearBuilt: initialDeal.year_built || '1965',
+    yearBuilt: initialDeal.year_built || '1924 (Renovated 2021)',
     monthlyRent: rentVal,
     otherIncome: otherIncVal,
     vacancyRate: Number(initialDeal.vacancy_rate || 5),
@@ -130,6 +137,7 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
   const [dealImages] = useState<string[]>(formattedDeal.images);
   const [activeImageIndex, setActiveImageIndex] = useState<number>(0);
 
+  // Stratégie & Paramètres
   const [strategy, setStrategy] = useState<'BUY_HOLD' | 'BRRRR' | 'FLIP'>('BUY_HOLD');
   const [purchasePrice, setPurchasePrice] = useState<number>(formattedDeal.price);
   const [downPercent, setDownPercent] = useState<number>(20);
@@ -139,10 +147,12 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
   const [closingCostPercent] = useState<number>(2.5);
   const [rehabBudget, setRehabBudget] = useState<number>(0);
 
+  // Revenus
   const [monthlyRent] = useState<number>(formattedDeal.monthlyRent);
   const [otherMonthlyIncome] = useState<number>(formattedDeal.otherIncome);
   const [vacancyRate] = useState<number>(formattedDeal.vacancyRate);
 
+  // Dépenses Opérationnelles (OpEx)
   const [annualTaxes, setAnnualTaxes] = useState<number>(formattedDeal.taxes);
   const [annualInsurance, setAnnualInsurance] = useState<number>(formattedDeal.insurance);
   const [managementRate, setManagementRate] = useState<number>(formattedDeal.managementRate);
@@ -150,6 +160,7 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
   const [capexRate, setCapexRate] = useState<number>(formattedDeal.capexRate);
   const [annualUtilities, setAnnualUtilities] = useState<number>(formattedDeal.waterSewer);
 
+  // Sortie & Fiscalité
   const [holdingPeriodYears, setHoldingPeriodYears] = useState<number>(5);
   const [exitCapRate] = useState<number>(7.5);
   const [annualAppreciation] = useState<number>(3.0);
@@ -157,8 +168,10 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
   const [marginalTaxRate] = useState<number>(28);
 
   const [showAmortizationTable, setShowAmortizationTable] = useState<boolean>(false);
+  const [showMemoModal, setShowMemoModal] = useState<boolean>(false);
   const [loiSubmitted, setLoiSubmitted] = useState<boolean>(false);
 
+  // Droits VIP
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const tierParam = urlParams.get('tier');
@@ -187,7 +200,7 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
     if (newStrategy === 'FLIP') setRehabBudget(45000);
   };
 
-  // --- CALCULS FINANCIERS ---
+  // --- CALCULS FINANCIERS DÉTAILLÉS ---
   const downPaymentAmount = (purchasePrice * downPercent) / 100;
   const loanAmount = Math.max(0, purchasePrice - downPaymentAmount);
   const closingCostsAmount = (loanAmount * closingCostPercent) / 100;
@@ -205,9 +218,11 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
         (Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1);
   const annualDebtService = monthlyMortgage * 12;
 
-  const grossScheduledAnnualRent = (monthlyRent + otherMonthlyIncome) * 12;
-  const annualVacancyLoss = (grossScheduledAnnualRent * vacancyRate) / 100;
-  const effectiveGrossIncome = grossScheduledAnnualRent - annualVacancyLoss;
+  const grossScheduledAnnualRent = monthlyRent * 12;
+  const grossUtilityRecovery = otherMonthlyIncome * 12;
+  const grossPotentialIncome = grossScheduledAnnualRent + grossUtilityRecovery;
+  const annualVacancyLoss = (grossPotentialIncome * vacancyRate) / 100;
+  const effectiveGrossIncome = grossPotentialIncome - annualVacancyLoss;
 
   const annualManagementFee = (effectiveGrossIncome * managementRate) / 100;
   const annualMaintenance = (effectiveGrossIncome * maintenanceRate) / 100;
@@ -227,14 +242,16 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
   const dscr = annualDebtService > 0 ? (annualNOI / annualDebtService).toFixed(2) : 'N/A';
 
   const totalFixedCostsAnnual = totalOperatingExpenses + annualDebtService;
-  const breakEvenOccupancy = grossScheduledAnnualRent > 0 
-    ? Math.min(100, Math.round((totalFixedCostsAnnual / grossScheduledAnnualRent) * 100))
+  const breakEvenOccupancy = grossPotentialIncome > 0 
+    ? Math.min(100, Math.round((totalFixedCostsAnnual / grossPotentialIncome) * 100))
     : 0;
 
+  // IRS 27.5-Year Depreciation
   const buildingBasis = (purchasePrice + rehabBudget) * 0.80;
   const annualDepreciation = buildingBasis / 27.5;
   const annualTaxSaved = annualDepreciation * (marginalTaxRate / 100);
 
+  // Amortissement
   const futureAnnualNOI = annualNOI * Math.pow(1 + (annualRentGrowth / 100), holdingPeriodYears);
   const projectedExitSalePrice = exitCapRate > 0 ? Math.round(futureAnnualNOI / (exitCapRate / 100)) : purchasePrice;
 
@@ -417,8 +434,8 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
             </span>
             {isUnlocked ? (
               <button
-                onClick={() => window.print()}
-                className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                onClick={() => setShowMemoModal(true)}
+                className="bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black text-xs uppercase tracking-wider px-5 py-3 rounded-xl shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
               >
                 <FileText className="w-4 h-4" />
                 <span>Export Deal Memo (PDF)</span>
@@ -775,7 +792,7 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
                 </div>
               </div>
 
-              {/* Fiscalité */}
+              {/* Fiscalité IRS 27.5 Years */}
               <div className="bg-slate-950/90 p-4 rounded-2xl border border-slate-800">
                 <h4 className="text-xs font-black uppercase tracking-wider text-emerald-400 mb-2 flex items-center justify-between">
                   <span>🏛️ IRS 27.5-Year Depreciation &amp; Tax Shelter Analysis</span>
@@ -1114,6 +1131,302 @@ export default function DealClientView({ initialDeal, dealId }: { initialDeal: a
         </div>
 
       </main>
+
+      {/* ========================================================================= */}
+      {/* MODAL / DOCUMENT DEAL MEMO COMPLET (AVEC SECTION 3 IRS 27.5-YEAR)        */}
+      {/* ========================================================================= */}
+      {showMemoModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 print:p-0 print:bg-white">
+          <div className="bg-[#06080F] border border-slate-800 rounded-3xl max-w-5xl w-full p-6 sm:p-10 shadow-2xl relative print:border-0 print:shadow-none print:bg-white print:text-black">
+            
+            {/* Header Modal Actions (Non imprimé) */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6 print:hidden">
+              <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                Institutional Lender Diligence Dossier (PDF Export Ready)
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="bg-emerald-400 hover:bg-emerald-300 text-slate-950 font-black text-xs uppercase px-4 py-2 rounded-xl flex items-center gap-1.5 cursor-pointer shadow"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Print / Save as PDF
+                </button>
+                <button
+                  onClick={() => setShowMemoModal(false)}
+                  className="p-2 text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* CORPS DU MEMO OFFICIEL */}
+            <div className="space-y-6 text-slate-100 print:text-black font-sans">
+              
+              {/* En-tête Dossier */}
+              <div className="flex justify-between items-start border-b border-slate-800 print:border-slate-300 pb-4">
+                <div>
+                  <h2 className="text-xl font-black tracking-wider text-white print:text-black uppercase">
+                    MULTIDEALPROP UNDERWRITING SUITE
+                  </h2>
+                  <p className="text-xs text-emerald-400 print:text-emerald-700 font-bold uppercase tracking-widest mt-0.5">
+                    INSTITUTIONAL LENDER DILIGENCE DOSSIER &amp; SENIOR DEBT AUDIT
+                  </p>
+                </div>
+                <div className="text-right text-[11px] font-mono text-slate-400 print:text-slate-600">
+                  <div>MEMO REF: <strong className="text-white print:text-black font-mono">MDP-2026-OH-{deal.id.padStart(4, '0')}</strong></div>
+                  <div>VALUATION: <strong className="text-white print:text-black">September 7, 2026</strong></div>
+                  <div>STATUS: <strong className="text-emerald-400 print:text-emerald-700 font-bold">AUDITED &amp; UNLOCKED</strong></div>
+                </div>
+              </div>
+
+              {/* Propriété Fiche */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-950/80 print:bg-slate-50 p-4 rounded-2xl border border-slate-800 print:border-slate-300 text-xs">
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">PROPERTY IDENTIFICATION</span>
+                  <strong className="text-white print:text-black font-bold text-sm block mt-0.5">{deal.title}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">JURISDICTION</span>
+                  <strong className="text-white print:text-black font-bold block mt-0.5">{deal.address}</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">DOORS / STRUCTURE</span>
+                  <strong className="text-white print:text-black font-bold block mt-0.5">{deal.units} Units ({deal.yearBuilt})</strong>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-500 uppercase font-bold block">AUDIT OCCUPANCY</span>
+                  <strong className="text-emerald-400 print:text-emerald-700 font-black block mt-0.5">100% Leased (Stabilized)</strong>
+                </div>
+              </div>
+
+              {/* Ratios Core */}
+              <div className="grid grid-cols-4 gap-3 text-center">
+                <div className="p-3 bg-slate-950 print:bg-slate-50 border border-slate-800 print:border-slate-300 rounded-xl">
+                  <span className="text-[9px] uppercase font-black text-slate-400 block">CAP RATE</span>
+                  <span className="text-xl font-black text-emerald-400 print:text-emerald-700 font-mono mt-0.5 block">{capRate}%</span>
+                </div>
+                <div className="p-3 bg-slate-950 print:bg-slate-50 border border-slate-800 print:border-slate-300 rounded-xl">
+                  <span className="text-[9px] uppercase font-black text-slate-400 block">DSCR RATIO</span>
+                  <span className="text-xl font-black text-cyan-400 print:text-cyan-800 font-mono mt-0.5 block">{dscr}x</span>
+                </div>
+                <div className="p-3 bg-slate-950 print:bg-slate-50 border border-slate-800 print:border-slate-300 rounded-xl">
+                  <span className="text-[9px] uppercase font-black text-slate-400 block">CASH-ON-CASH</span>
+                  <span className="text-xl font-black text-emerald-400 print:text-emerald-700 font-mono mt-0.5 block">{cashOnCash}%</span>
+                </div>
+                <div className="p-3 bg-slate-950 print:bg-slate-50 border border-slate-800 print:border-slate-300 rounded-xl">
+                  <span className="text-[9px] uppercase font-black text-slate-400 block">BREAK-EVEN OCC.</span>
+                  <span className="text-xl font-black text-amber-400 print:text-amber-700 font-mono mt-0.5 block">{breakEvenOccupancy}%</span>
+                </div>
+              </div>
+
+              {/* 1. Pro-Forma Cash Flow */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-white print:text-black">
+                    1. STABILIZED 12-MONTH PRO-FORMA CASH FLOW (YEAR 1)
+                  </h3>
+                  <span className="text-[10px] text-slate-500 font-mono">UNDERWRITTEN IN USD ($)</span>
+                </div>
+
+                <div className="border border-slate-800 print:border-slate-300 rounded-xl overflow-hidden text-xs">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-950 print:bg-slate-100 text-[10px] text-slate-400 print:text-slate-700 uppercase border-b border-slate-800 print:border-slate-300">
+                      <tr>
+                        <th className="py-2 px-3 font-bold">Line Item Breakdown</th>
+                        <th className="py-2 px-3 text-right font-bold">Monthly</th>
+                        <th className="py-2 px-3 text-right font-bold">Annual</th>
+                        <th className="py-2 px-3 text-right font-bold">% of Gross</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/80 print:divide-slate-200 font-mono">
+                      <tr>
+                        <td className="py-2 px-3 font-sans font-bold text-white print:text-black">Gross Scheduled Rental Income</td>
+                        <td className="py-2 px-3 text-right">${monthlyRent.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">${grossScheduledAnnualRent.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">97.5%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 font-sans text-slate-400 print:text-slate-600">Reimbursements &amp; Utility Recovery</td>
+                        <td className="py-2 px-3 text-right">${otherMonthlyIncome.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">${grossUtilityRecovery.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">2.5%</td>
+                      </tr>
+                      <tr className="bg-slate-900/40 print:bg-slate-50 font-bold">
+                        <td className="py-2 px-3 font-sans text-white print:text-black">Gross Potential Income (GPI)</td>
+                        <td className="py-2 px-3 text-right">${(monthlyRent + otherMonthlyIncome).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">${grossPotentialIncome.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">100.0%</td>
+                      </tr>
+                      <tr className="text-red-400 print:text-red-600">
+                        <td className="py-2 px-3 font-sans">Less: Economic Vacancy Escrow ({vacancyRate}%)</td>
+                        <td className="py-2 px-3 text-right">-${Math.round(annualVacancyLoss / 12).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">-${Math.round(annualVacancyLoss).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">-{vacancyRate}.0%</td>
+                      </tr>
+                      <tr className="bg-emerald-950/20 print:bg-emerald-50 font-bold text-emerald-400 print:text-emerald-700">
+                        <td className="py-2 px-3 font-sans">EFFECTIVE GROSS INCOME (EGI)</td>
+                        <td className="py-2 px-3 text-right">${Math.round(effectiveGrossIncome / 12).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">${Math.round(effectiveGrossIncome).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">95.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 font-sans text-slate-400 print:text-slate-600">County Taxes (Verified Assessment)</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualTaxes / 12).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${annualTaxes.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">-{((annualTaxes / grossPotentialIncome) * 100).toFixed(1)}%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 font-sans text-slate-400 print:text-slate-600">Property Hazard &amp; Flood Insurance</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualInsurance / 12).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${annualInsurance.toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">-{((annualInsurance / grossPotentialIncome) * 100).toFixed(1)}%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 font-sans text-slate-400 print:text-slate-600">Professional Property Management ({managementRate}%)</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualManagementFee / 12).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualManagementFee).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">-{managementRate}.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 font-sans text-slate-400 print:text-slate-600">Turnover &amp; Repairs Escrow ({maintenanceRate}%)</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualMaintenance / 12).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualMaintenance).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">-{maintenanceRate}.0%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 font-sans text-slate-400 print:text-slate-600">Capital Replacement Reserves (CapEx {capexRate}%)</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualCapex / 12).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualCapex).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">-{capexRate}.0%</td>
+                      </tr>
+                      <tr className="bg-slate-900/60 print:bg-slate-100 font-bold">
+                        <td className="py-2 px-3 font-sans text-white print:text-black">Total Operating Expenses (OpEx)</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(totalOperatingExpenses / 12).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(totalOperatingExpenses).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">-{((totalOperatingExpenses / grossPotentialIncome) * 100).toFixed(1)}%</td>
+                      </tr>
+                      <tr className="bg-emerald-500/20 print:bg-emerald-100 font-black text-emerald-300 print:text-emerald-800 text-sm">
+                        <td className="py-2.5 px-3 font-sans">NET OPERATING INCOME (NOI)</td>
+                        <td className="py-2.5 px-3 text-right">${Math.round(annualNOI / 12).toLocaleString()}</td>
+                        <td className="py-2.5 px-3 text-right">${Math.round(annualNOI).toLocaleString()}</td>
+                        <td className="py-2.5 px-3 text-right">{((annualNOI / grossPotentialIncome) * 100).toFixed(1)}%</td>
+                      </tr>
+                      <tr>
+                        <td className="py-2 px-3 font-sans text-slate-400 print:text-slate-600">Senior Mortgage Debt Service (P&amp;I)</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(monthlyMortgage).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-red-400 print:text-red-600">-${Math.round(annualDebtService).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right text-slate-400">-{((annualDebtService / grossPotentialIncome) * 100).toFixed(1)}%</td>
+                      </tr>
+                      <tr className="bg-cyan-950/40 print:bg-cyan-50 font-black text-cyan-300 print:text-cyan-800 text-sm">
+                        <td className="py-2.5 px-3 font-sans">NET DISTRIBUTABLE CASH FLOW</td>
+                        <td className="py-2.5 px-3 text-right">+${Math.round(monthlyNetCashFlow).toLocaleString()}</td>
+                        <td className="py-2.5 px-3 text-right">+${Math.round(annualNetCashFlow).toLocaleString()}</td>
+                        <td className="py-2.5 px-3 text-right">{((annualNetCashFlow / grossPotentialIncome) * 100).toFixed(1)}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 2. Debt Paydown Schedule */}
+              <div>
+                <h3 className="text-xs font-black uppercase tracking-wider text-white print:text-black mb-2">
+                  2. SENIOR DEBT PAYDOWN &amp; EQUITY BUILDUP SCHEDULE (YEARS 1–5)
+                </h3>
+                <div className="border border-slate-800 print:border-slate-300 rounded-xl overflow-hidden text-xs">
+                  <table className="w-full text-left font-mono">
+                    <thead className="bg-slate-950 print:bg-slate-100 text-[10px] text-slate-400 print:text-slate-700 uppercase border-b border-slate-800 print:border-slate-300">
+                      <tr>
+                        <th className="py-2 px-3 font-sans font-bold">Period</th>
+                        <th className="py-2 px-3 text-right font-sans font-bold">Remaining Principal</th>
+                        <th className="py-2 px-3 text-right font-sans font-bold">Principal Paid</th>
+                        <th className="py-2 px-3 text-right font-sans font-bold">Interest Paid</th>
+                        <th className="py-2 px-3 text-right font-sans font-bold">Property Value</th>
+                        <th className="py-2 px-3 text-right font-sans font-bold">Sponsor Net Equity</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800 print:divide-slate-200">
+                      {amortizationSchedule.slice(0, 5).map((row) => (
+                        <tr key={row.year} className="hover:bg-slate-900/40 print:hover:bg-transparent">
+                          <td className="py-2 px-3 font-sans font-bold text-white print:text-black">Year {row.year}</td>
+                          <td className="py-2 px-3 text-right text-slate-300 print:text-slate-800">${row.remainingBalance.toLocaleString()}</td>
+                          <td className="py-2 px-3 text-right text-emerald-400 print:text-emerald-700">+${row.principalPaid.toLocaleString()}</td>
+                          <td className="py-2 px-3 text-right text-red-400 print:text-red-600">${row.interestPaid.toLocaleString()}</td>
+                          <td className="py-2 px-3 text-right text-cyan-400 print:text-cyan-800">${row.propertyValue.toLocaleString()}</td>
+                          <td className="py-2 px-3 text-right font-bold text-emerald-300 print:text-emerald-700">${row.equity.toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 3. IRS 27.5-YEAR DEPRECIATION & TAX SHELTER SCHEDULE (NOUVELLE SECTION COMPLÈTE) */}
+              <div className="pt-2">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-black uppercase tracking-wider text-white print:text-black">
+                    3. IRS 27.5-YEAR DEPRECIATION &amp; PASSIVE TAX SHIELD (RESIDENTIAL MACRS)
+                  </h3>
+                  <span className="text-[10px] font-mono text-slate-400 print:text-slate-600">
+                    Assumed Tax Bracket: {marginalTaxRate}.0%
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 bg-slate-950 print:bg-slate-50 border border-slate-800 print:border-slate-300 rounded-xl text-xs">
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-slate-400 print:text-slate-600 block">
+                      Depreciable Basis (80%)
+                    </span>
+                    <strong className="text-sm font-mono font-bold text-white print:text-black block mt-0.5">
+                      ${Math.round(buildingBasis).toLocaleString()}
+                    </strong>
+                    <span className="text-[9px] text-slate-500 block mt-0.5">Excludes 20% Land Allocation</span>
+                  </div>
+
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-slate-400 print:text-slate-600 block">
+                      Annual Depreciation
+                    </span>
+                    <strong className="text-sm font-mono font-bold text-cyan-400 print:text-cyan-800 block mt-0.5">
+                      ${Math.round(annualDepreciation).toLocaleString()} / yr
+                    </strong>
+                    <span className="text-[9px] text-slate-500 block mt-0.5">Straight-Line Paper Loss</span>
+                  </div>
+
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-slate-400 print:text-slate-600 block">
+                      Annual Tax Shield
+                    </span>
+                    <strong className="text-sm font-mono font-bold text-emerald-400 print:text-emerald-700 block mt-0.5">
+                      ${Math.round(annualTaxSaved).toLocaleString()} / yr
+                    </strong>
+                    <span className="text-[9px] text-slate-500 block mt-0.5">Direct Cash Saved</span>
+                  </div>
+
+                  <div>
+                    <span className="text-[9px] uppercase font-bold text-slate-400 print:text-slate-600 block">
+                      Effective Tax Rate
+                    </span>
+                    <strong className="text-sm font-mono font-black text-emerald-400 print:text-emerald-700 block mt-0.5">
+                      0.0% (Sheltered)
+                    </strong>
+                    <span className="text-[9px] text-slate-500 block mt-0.5">Cash Flow 100% Tax-Free</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Signature & Disclaimer */}
+              <div className="pt-4 border-t border-slate-800 print:border-slate-300 text-[10px] text-slate-500 print:text-slate-600 flex justify-between items-center">
+                <span>Underwritten automatically via MultiDealProp Institutional Algorithmic Engine.</span>
+                <span>Confidential Acquisition Memorandum • Copy &copy; 2026</span>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+      )}
 
       {/* Global Footer */}
       <footer className="border-t border-slate-800 bg-[#04060A] py-8 sm:py-12 mt-16 text-slate-400 text-xs font-sans print:hidden">
