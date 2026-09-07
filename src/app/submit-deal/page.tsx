@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { 
   Building2, 
@@ -21,7 +21,8 @@ import {
   Download,
   PlusCircle,
   LayoutDashboard,
-  UserCheck
+  Calculator,
+  ShieldCheck
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -37,13 +38,12 @@ export default function SubmitDealPage() {
   const [copySuccess, setCopySuccess] = useState('');
   const [currentUser, setCurrentUser] = useState<any>(null);
 
-  // Vérifier la session active à l'arrivée sur la page
+  // Vérification de session au chargement
   useEffect(() => {
     async function checkAuth() {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setCurrentUser(user);
-        // Préremplir automatiquement l'email s'il est disponible
         if (user.email) {
           setFormData((prev) => ({ ...prev, contact_email: prev.contact_email || user.email! }));
           setCsvContact((prev) => ({ ...prev, contact_email: prev.contact_email || user.email! }));
@@ -52,12 +52,12 @@ export default function SubmitDealPage() {
     }
     checkAuth();
   }, []);
-  
-  // Images formulaire manuel
+
+  // Images du formulaire manuel
   const [imagesList, setImagesList] = useState<string[]>([]);
   const [urlInput, setUrlInput] = useState<string>('');
 
-  // Données formulaire manuel
+  // Données du formulaire manuel (avec Operating Expenses)
   const [formData, setFormData] = useState({
     title: '',
     address: '',
@@ -65,13 +65,18 @@ export default function SubmitDealPage() {
     monthly_rent: '',
     units: '2',
     arv: '',
+    taxes: '',
+    insurance: '',
+    maintenance: '',
+    management_rate: '8',
+    vacancy_rate: '5',
     description: '',
     contact_name: '',
     contact_email: '',
     contact_phone: ''
   });
 
-  // États pour l'Option 1 : Bulk CSV
+  // États pour Bulk CSV
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [parsedDeals, setParsedDeals] = useState<any[]>([]);
   const [csvContact, setCsvContact] = useState({
@@ -80,7 +85,42 @@ export default function SubmitDealPage() {
     contact_phone: ''
   });
 
-  // Gestion des images locales
+  // Calculs financiers en temps réel pour validation immédiate
+  const metrics = useMemo(() => {
+    const p = Number(formData.price) || 0;
+    const rent = Number(formData.monthly_rent) || 0;
+    const grossAnnual = rent * 12;
+
+    const taxes = formData.taxes !== '' ? Number(formData.taxes) : (p * 0.015);
+    const insurance = formData.insurance !== '' ? Number(formData.insurance) : (Number(formData.units) * 450);
+    const maintenance = formData.maintenance !== '' ? Number(formData.maintenance) : (grossAnnual * 0.05);
+    const mgmt = grossAnnual * ((Number(formData.management_rate) || 0) / 100);
+    const vac = grossAnnual * ((Number(formData.vacancy_rate) || 0) / 100);
+
+    const totalOpEx = taxes + insurance + maintenance + mgmt + vac;
+    const effectiveNOI = Math.max(0, grossAnnual - totalOpEx);
+    const capRate = p > 0 ? (effectiveNOI / p) * 100 : 0;
+
+    // Simulation de dette senior (75% LTV, 7% taux, 30 ans amortissement)
+    const loanAmount = p * 0.75;
+    const monthlyRate = 0.07 / 12;
+    const nPayments = 360;
+    const monthlyDebt = loanAmount > 0 
+      ? (loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, nPayments))) / (Math.pow(1 + monthlyRate, nPayments) - 1)
+      : 0;
+    const annualDebt = monthlyDebt * 12;
+    const dscr = annualDebt > 0 ? effectiveNOI / annualDebt : 0;
+
+    return {
+      grossAnnual,
+      totalOpEx,
+      effectiveNOI,
+      capRate: capRate.toFixed(2),
+      dscr: dscr.toFixed(2)
+    };
+  }, [formData]);
+
+  // Gestion des images
   const handleMultipleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
@@ -111,13 +151,12 @@ export default function SubmitDealPage() {
     setImagesList((prev) => prev.filter((_, idx) => idx !== indexToRemove));
   };
 
-  // Envoi d'un deal individuel (avec option saisie en chaîne)
+  // Envoi d'un deal individuel
   const handleSingleSubmit = async (e: React.FormEvent, chainMode: boolean = false) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Récupération de l'utilisateur connecté s'il existe
       const { data: { user } } = await supabase.auth.getUser();
 
       const primaryImage = imagesList.length > 0 
@@ -126,13 +165,18 @@ export default function SubmitDealPage() {
 
       const { error } = await supabase.from('deals').insert([
         {
-          user_id: user?.id ?? null, // <-- Attaché au compte de l'utilisateur
+          user_id: user?.id ?? null,
           title: formData.title,
           formatted_address: formData.address,
           price: Number(formData.price),
           monthly_rent: Number(formData.monthly_rent),
           units: Number(formData.units),
           arv: formData.arv ? Number(formData.arv) : null,
+          taxes: formData.taxes ? Number(formData.taxes) : null,
+          insurance: formData.insurance ? Number(formData.insurance) : null,
+          maintenance: formData.maintenance ? Number(formData.maintenance) : null,
+          management_rate: formData.management_rate ? Number(formData.management_rate) : 8,
+          vacancy_rate: formData.vacancy_rate ? Number(formData.vacancy_rate) : 5,
           image_url: primaryImage,
           images: imagesList,
           description: formData.description,
@@ -153,6 +197,9 @@ export default function SubmitDealPage() {
           monthly_rent: '',
           units: '2',
           arv: '',
+          taxes: '',
+          insurance: '',
+          maintenance: '',
           description: ''
         }));
         setImagesList([]);
@@ -168,11 +215,11 @@ export default function SubmitDealPage() {
     }
   };
 
-  // Télécharger le modèle CSV officiel
+  // Télécharger le modèle CSV
   const downloadCsvTemplate = () => {
-    const headers = 'title,address,price,monthly_rent,units,arv\n';
-    const sample1 = '"Turnkey 4-Plex Portfolio 1","3410 W Chicago Blvd, Detroit, MI 48206",135000,3600,4,210000\n';
-    const sample2 = '"High Cash Flow Duplex","1428 E 120th St, Cleveland, OH 44106",98000,1950,2,145000\n';
+    const headers = 'title,address,price,monthly_rent,units,arv,taxes,insurance,maintenance\n';
+    const sample1 = '"Turnkey 4-Plex Portfolio 1","3410 W Chicago Blvd, Detroit, MI 48206",135000,3600,4,210000,1850,950,1200\n';
+    const sample2 = '"High Cash Flow Duplex","1428 E 120th St, Cleveland, OH 44106",98000,1950,2,145000,1450,850,1000\n';
     const blob = new Blob([headers + sample1 + sample2], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -183,7 +230,7 @@ export default function SubmitDealPage() {
     document.body.removeChild(link);
   };
 
-  // Lecture et parsing du fichier CSV
+  // Parsing CSV étendu
   const handleCsvUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -208,7 +255,10 @@ export default function SubmitDealPage() {
             price: Number(row[2]?.replace(/[^0-9.]/g, '')) || 0,
             monthly_rent: Number(row[3]?.replace(/[^0-9.]/g, '')) || 0,
             units: Number(row[4]?.replace(/[^0-9.]/g, '')) || 2,
-            arv: row[5] ? Number(row[5]?.replace(/[^0-9.]/g, '')) : null
+            arv: row[5] ? Number(row[5]?.replace(/[^0-9.]/g, '')) : null,
+            taxes: row[6] ? Number(row[6]?.replace(/[^0-9.]/g, '')) : null,
+            insurance: row[7] ? Number(row[7]?.replace(/[^0-9.]/g, '')) : null,
+            maintenance: row[8] ? Number(row[8]?.replace(/[^0-9.]/g, '')) : null
           });
         }
       }
@@ -217,7 +267,7 @@ export default function SubmitDealPage() {
     reader.readAsText(file);
   };
 
-  // Soumission en masse (Bulk Upload)
+  // Soumission en masse (Bulk CSV)
   const handleBulkSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (parsedDeals.length === 0) {
@@ -230,13 +280,18 @@ export default function SubmitDealPage() {
       const { data: { user } } = await supabase.auth.getUser();
 
       const dealsToInsert = parsedDeals.map((deal) => ({
-        user_id: user?.id ?? null, // <-- Attaché au compte de l'utilisateur
+        user_id: user?.id ?? null,
         title: deal.title,
         formatted_address: deal.address,
         price: deal.price,
         monthly_rent: deal.monthly_rent,
         units: deal.units,
         arv: deal.arv,
+        taxes: deal.taxes,
+        insurance: deal.insurance,
+        maintenance: deal.maintenance,
+        management_rate: 8,
+        vacancy_rate: 5,
         image_url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80',
         contact_name: csvContact.contact_name,
         contact_email: csvContact.contact_email,
@@ -294,12 +349,12 @@ export default function SubmitDealPage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
 
-        {/* Info Box utilisateur non connecté */}
+        {/* Bannière utilisateur invité */}
         {!currentUser && (
           <div className="mb-6 p-4 rounded-2xl bg-[#0b1222] border border-slate-800 flex items-center justify-between gap-4">
             <div className="text-xs text-slate-400">
               <span className="text-white font-bold block mb-0.5">Posting as Guest</span>
-              Create an account or log in if you want to edit or delete your deals later.
+              Create an account or log in to manage, edit, or delete your deals later.
             </div>
             <Link 
               href="/auth"
@@ -311,7 +366,7 @@ export default function SubmitDealPage() {
         )}
         
         {isSubmitted ? (
-          /* ÉCRAN DE SUCCÈS & GÉNÉRATEUR DE BACKLINKS */
+          /* ÉCRAN DE SUCCÈS & BACKLINKS */
           <div className="bg-[#0b1222] border-2 border-emerald-500/50 rounded-3xl p-6 sm:p-10 text-center space-y-6 shadow-2xl animate-in fade-in duration-300">
             <div className="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.3)]">
               <CheckCircle className="w-8 h-8" />
@@ -326,7 +381,7 @@ export default function SubmitDealPage() {
               </p>
             </div>
 
-            {/* OUTIL 1 : Le Pitch 1-Clic pour Groupes Facebook */}
+            {/* Post 1-Clic Facebook & BiggerPockets */}
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
@@ -352,7 +407,7 @@ export default function SubmitDealPage() {
               </p>
             </div>
 
-            {/* OUTIL 2 : Le Badge HTML Embeddable */}
+            {/* Badge HTML Backlink */}
             <div className="bg-slate-950 border border-slate-800 rounded-2xl p-4 sm:p-5 text-left space-y-2.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
@@ -374,9 +429,6 @@ export default function SubmitDealPage() {
               <p className="text-[11px] text-slate-400 leading-relaxed">
                 Paste this badge on your website to display an institutional verification checkmark for your buyers.
               </p>
-              <code className="text-[11px] text-emerald-300 block font-mono bg-slate-900/90 p-2.5 rounded-xl border border-slate-800/80 truncate">
-                {`<a href="${typeof window !== 'undefined' ? window.location.origin : 'multidealprop.com'}" target="_blank">...</a>`}
-              </code>
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-3">
@@ -410,7 +462,7 @@ export default function SubmitDealPage() {
         ) : (
           <div className="space-y-6">
             
-            {/* Header & Sélecteur d'onglets (Single vs Portfolio CSV) */}
+            {/* Header & Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
@@ -448,10 +500,13 @@ export default function SubmitDealPage() {
               </div>
             </div>
 
-            {/* ONGLET 1 : FORMULAIRE MANUEL */}
+            {/* ============================================================ */}
+            {/* ONGLET 1 : FORMULAIRE MANUEL AVEC OPEX DÉTAILLÉES            */}
+            {/* ============================================================ */}
             {activeTab === 'single' ? (
               <form onSubmit={(e) => handleSingleSubmit(e, false)} className="bg-[#0b1222] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
                 
+                {/* 1. Propriété de base */}
                 <div className="space-y-4">
                   <h2 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
                     <Building2 className="w-4 h-4" /> 1. Property Details
@@ -462,7 +517,7 @@ export default function SubmitDealPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Turnkey University Circle Duplex"
+                      placeholder="e.g. Turnkey West Side Cash Flow Duplex"
                       value={formData.title}
                       onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none focus:border-emerald-400"
@@ -474,7 +529,7 @@ export default function SubmitDealPage() {
                     <input
                       type="text"
                       required
-                      placeholder="e.g. 1428 E 120th St, Cleveland, OH 44106"
+                      placeholder="e.g. 3548 W 63rd St, Cleveland, OH 44102"
                       value={formData.address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
@@ -487,7 +542,7 @@ export default function SubmitDealPage() {
                       <input
                         type="number"
                         required
-                        placeholder="98000"
+                        placeholder="99900"
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-400"
@@ -498,7 +553,7 @@ export default function SubmitDealPage() {
                       <input
                         type="number"
                         required
-                        placeholder="1950"
+                        placeholder="1850"
                         value={formData.monthly_rent}
                         onChange={(e) => setFormData({ ...formData, monthly_rent: e.target.value })}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-mono outline-none focus:border-emerald-400"
@@ -524,10 +579,114 @@ export default function SubmitDealPage() {
                     <label className="text-slate-300 text-xs font-bold block mb-1">Estimated ARV ($) (Optional)</label>
                     <input
                       type="number"
-                      placeholder="145000"
+                      placeholder="140000"
                       value={formData.arv}
                       onChange={(e) => setFormData({ ...formData, arv: e.target.value })}
                       className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                    />
+                  </div>
+
+                  {/* 1.1 Operating Expenses (OpEx) détaillées */}
+                  <div className="space-y-3 pt-3 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <DollarSign className="w-3.5 h-3.5" /> Operating Expenses (Annual OpEx)
+                      </label>
+                      <span className="text-[10px] text-slate-500">Auto-benchmarked if empty</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-slate-400 text-[11px] block mb-1">Annual Property Taxes ($)</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 1450"
+                          value={formData.taxes}
+                          onChange={(e) => setFormData({ ...formData, taxes: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-slate-400 text-[11px] block mb-1">Annual Hazard Insurance ($)</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 850"
+                          value={formData.insurance}
+                          onChange={(e) => setFormData({ ...formData, insurance: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-slate-400 text-[11px] block mb-1">Annual Repairs / CapEx ($)</label>
+                        <input
+                          type="number"
+                          placeholder="e.g. 1200"
+                          value={formData.maintenance}
+                          onChange={(e) => setFormData({ ...formData, maintenance: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="text-slate-400 text-[11px] block mb-1">Property Management (%)</label>
+                        <input
+                          type="number"
+                          placeholder="8"
+                          value={formData.management_rate}
+                          onChange={(e) => setFormData({ ...formData, management_rate: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-slate-400 text-[11px] block mb-1">Economic Vacancy Reserve (%)</label>
+                        <input
+                          type="number"
+                          placeholder="5"
+                          value={formData.vacancy_rate}
+                          onChange={(e) => setFormData({ ...formData, vacancy_rate: e.target.value })}
+                          className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-xs text-white font-mono outline-none focus:border-emerald-400"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Live Underwriting Audit Box */}
+                    {Number(formData.price) > 0 && Number(formData.monthly_rent) > 0 && (
+                      <div className="p-3.5 bg-slate-950 border border-emerald-500/20 rounded-2xl flex flex-wrap items-center justify-between gap-4 mt-2">
+                        <div className="flex items-center gap-2">
+                          <Calculator className="w-4 h-4 text-emerald-400" />
+                          <span className="text-[11px] font-bold text-slate-300">Live Underwriting Audit:</span>
+                        </div>
+                        <div className="flex items-center gap-4 text-xs font-mono">
+                          <div>
+                            <span className="text-slate-500 text-[10px] block font-sans">Net NOI</span>
+                            <span className="text-white font-bold">${Math.round(metrics.effectiveNOI).toLocaleString()}/yr</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 text-[10px] block font-sans">Real Cap Rate</span>
+                            <span className="text-emerald-400 font-black">{metrics.capRate}%</span>
+                          </div>
+                          <div>
+                            <span className="text-slate-500 text-[10px] block font-sans">Estimated DSCR</span>
+                            <span className="text-cyan-400 font-black">{metrics.dscr}x</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div className="pt-2">
+                    <label className="text-slate-300 text-xs font-bold block mb-1">Deal Description &amp; Highlights</label>
+                    <textarea
+                      rows={3}
+                      placeholder="e.g. Turnkey duplex with separate utilities, new roof in 2021, fully occupied by long-term paying tenants..."
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
                     />
                   </div>
 
@@ -602,7 +761,7 @@ export default function SubmitDealPage() {
 
                 </div>
 
-                {/* Contact Grossiste */}
+                {/* 2. Coordonnées vendeur */}
                 <div className="space-y-4">
                   <h2 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
                     <Home className="w-4 h-4" /> 2. Seller / Wholesaler Info
@@ -614,7 +773,7 @@ export default function SubmitDealPage() {
                       <input
                         type="text"
                         required
-                        placeholder="Alex Smith"
+                        placeholder="Marcus Vance"
                         value={formData.contact_name}
                         onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
@@ -625,7 +784,7 @@ export default function SubmitDealPage() {
                       <input
                         type="email"
                         required
-                        placeholder="alex@acquisitions.com"
+                        placeholder="deals@midwestcashflow.com"
                         value={formData.contact_email}
                         onChange={(e) => setFormData({ ...formData, contact_email: e.target.value })}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
@@ -635,7 +794,7 @@ export default function SubmitDealPage() {
                       <label className="text-slate-300 text-xs font-bold block mb-1">Phone Number</label>
                       <input
                         type="tel"
-                        placeholder="(216) 555-0182"
+                        placeholder="(216) 555-0142"
                         value={formData.contact_phone}
                         onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
@@ -644,7 +803,7 @@ export default function SubmitDealPage() {
                   </div>
                 </div>
 
-                {/* Actions */}
+                {/* Boutons d'action */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     type="button"
@@ -676,7 +835,9 @@ export default function SubmitDealPage() {
                 </div>
               </form>
             ) : (
-              /* ONGLET 2 : OPTION BULK CSV */
+              /* ============================================================ */
+              /* ONGLET 2 : BULK CSV PORTFOLIO IMPORT                        */
+              /* ============================================================ */
               <form onSubmit={handleBulkSubmit} className="bg-[#0b1222] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
                 
                 <div className="space-y-4">
@@ -686,7 +847,7 @@ export default function SubmitDealPage() {
                         <FileSpreadsheet className="w-4 h-4" /> 1. Portfolio CSV Spreadsheet
                       </h2>
                       <p className="text-slate-400 text-xs mt-0.5">
-                        Import 5, 10 or 50 multi-family buildings at once.
+                        Import full multi-family portfolios with OpEx metrics.
                       </p>
                     </div>
 
@@ -696,7 +857,7 @@ export default function SubmitDealPage() {
                       className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-bold px-3 py-2 rounded-xl transition shrink-0"
                     >
                       <Download className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Download Sample CSV Template</span>
+                      <span>Download Sample CSV</span>
                     </button>
                   </div>
 
@@ -706,7 +867,7 @@ export default function SubmitDealPage() {
                       {csvFile ? csvFile.name : 'Click to Upload your Portfolio CSV'}
                     </span>
                     <span className="text-xs text-slate-500 mt-1">
-                      {parsedDeals.length > 0 ? `${parsedDeals.length} properties detected` : 'Columns: title, address, price, monthly_rent, units, arv'}
+                      {parsedDeals.length > 0 ? `${parsedDeals.length} properties detected` : 'Columns: title, address, price, monthly_rent, units, arv, taxes, insurance, maintenance'}
                     </span>
                     <input
                       type="file"
@@ -744,7 +905,7 @@ export default function SubmitDealPage() {
                       <input
                         type="text"
                         required
-                        placeholder="Alex Smith"
+                        placeholder="Marcus Vance"
                         value={csvContact.contact_name}
                         onChange={(e) => setCsvContact({ ...csvContact, contact_name: e.target.value })}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
@@ -755,7 +916,7 @@ export default function SubmitDealPage() {
                       <input
                         type="email"
                         required
-                        placeholder="alex@acquisitions.com"
+                        placeholder="deals@midwestcashflow.com"
                         value={csvContact.contact_email}
                         onChange={(e) => setCsvContact({ ...csvContact, contact_email: e.target.value })}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
@@ -765,7 +926,7 @@ export default function SubmitDealPage() {
                       <label className="text-slate-300 text-xs font-bold block mb-1">Phone Number</label>
                       <input
                         type="tel"
-                        placeholder="(216) 555-0182"
+                        placeholder="(216) 555-0142"
                         value={csvContact.contact_phone}
                         onChange={(e) => setCsvContact({ ...csvContact, contact_phone: e.target.value })}
                         className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-xs text-white outline-none focus:border-emerald-400"
