@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Building2, 
@@ -19,7 +19,9 @@ import {
   Plus,
   FileSpreadsheet,
   Download,
-  PlusCircle
+  PlusCircle,
+  LayoutDashboard,
+  UserCheck
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 
@@ -33,6 +35,23 @@ export default function SubmitDealPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [batchCount, setBatchCount] = useState<number>(0);
   const [copySuccess, setCopySuccess] = useState('');
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  // Vérifier la session active à l'arrivée sur la page
+  useEffect(() => {
+    async function checkAuth() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        setCurrentUser(user);
+        // Préremplir automatiquement l'email s'il est disponible
+        if (user.email) {
+          setFormData((prev) => ({ ...prev, contact_email: prev.contact_email || user.email! }));
+          setCsvContact((prev) => ({ ...prev, contact_email: prev.contact_email || user.email! }));
+        }
+      }
+    }
+    checkAuth();
+  }, []);
   
   // Images formulaire manuel
   const [imagesList, setImagesList] = useState<string[]>([]);
@@ -98,12 +117,16 @@ export default function SubmitDealPage() {
     setLoading(true);
 
     try {
+      // Récupération de l'utilisateur connecté s'il existe
+      const { data: { user } } = await supabase.auth.getUser();
+
       const primaryImage = imagesList.length > 0 
         ? imagesList[0] 
         : 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
 
       const { error } = await supabase.from('deals').insert([
         {
+          user_id: user?.id ?? null, // <-- Attaché au compte de l'utilisateur
           title: formData.title,
           formatted_address: formData.address,
           price: Number(formData.price),
@@ -122,7 +145,6 @@ export default function SubmitDealPage() {
       if (error) throw error;
 
       if (chainMode) {
-        // Option 2 : On garde le contact, on vide les infos du bien
         setFormData((prev) => ({
           ...prev,
           title: '',
@@ -178,7 +200,6 @@ export default function SubmitDealPage() {
 
       const parsed: any[] = [];
       for (let i = 1; i < lines.length; i++) {
-        // Regex pour séparer par virgules en respectant les guillemets
         const row = lines[i].match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || lines[i].split(',');
         if (row.length >= 5) {
           parsed.push({
@@ -206,7 +227,10 @@ export default function SubmitDealPage() {
     setLoading(true);
 
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+
       const dealsToInsert = parsedDeals.map((deal) => ({
+        user_id: user?.id ?? null, // <-- Attaché au compte de l'utilisateur
         title: deal.title,
         formatted_address: deal.address,
         price: deal.price,
@@ -247,13 +271,44 @@ export default function SubmitDealPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Underwriter</span>
           </Link>
-          <div className="text-right">
-            <span className="text-[10px] font-black uppercase tracking-widest text-emerald-400">Deal Portal</span>
+          <div className="flex items-center gap-3">
+            {currentUser ? (
+              <Link 
+                href="/my-deals"
+                className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 font-bold bg-emerald-500/10 px-3 py-1.5 rounded-xl border border-emerald-500/30 transition"
+              >
+                <LayoutDashboard className="w-3.5 h-3.5" />
+                <span>My Listings</span>
+              </Link>
+            ) : (
+              <Link 
+                href="/auth"
+                className="text-xs text-slate-400 hover:text-white bg-slate-900 border border-slate-800 px-3 py-1.5 rounded-xl font-bold transition"
+              >
+                Login to Edit Listings
+              </Link>
+            )}
           </div>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 py-10">
+
+        {/* Info Box utilisateur non connecté */}
+        {!currentUser && (
+          <div className="mb-6 p-4 rounded-2xl bg-[#0b1222] border border-slate-800 flex items-center justify-between gap-4">
+            <div className="text-xs text-slate-400">
+              <span className="text-white font-bold block mb-0.5">Posting as Guest</span>
+              Create an account or log in if you want to edit or delete your deals later.
+            </div>
+            <Link 
+              href="/auth"
+              className="text-xs font-bold bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl transition shrink-0"
+            >
+              Sign Up / Login
+            </Link>
+          </div>
+        )}
         
         {isSubmitted ? (
           /* ÉCRAN DE SUCCÈS & GÉNÉRATEUR DE BACKLINKS */
@@ -325,6 +380,14 @@ export default function SubmitDealPage() {
             </div>
 
             <div className="pt-2 flex flex-col sm:flex-row gap-3">
+              {currentUser && (
+                <Link
+                  href="/my-deals"
+                  className="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-emerald-400 font-bold py-3.5 rounded-xl text-xs uppercase tracking-wider transition text-center"
+                >
+                  View in My Listings
+                </Link>
+              )}
               <button
                 onClick={() => {
                   setIsSubmitted(false);
@@ -385,9 +448,7 @@ export default function SubmitDealPage() {
               </div>
             </div>
 
-            {/* ============================================================ */}
-            {/* ONGLET 1 : FORMULAIRE MANUEL (AVEC SAISIE EN CHAÎNE)        */}
-            {/* ============================================================ */}
+            {/* ONGLET 1 : FORMULAIRE MANUEL */}
             {activeTab === 'single' ? (
               <form onSubmit={(e) => handleSingleSubmit(e, false)} className="bg-[#0b1222] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
                 
@@ -583,7 +644,7 @@ export default function SubmitDealPage() {
                   </div>
                 </div>
 
-                {/* Boutons d'actions : Unique vs Saisie en Chaîne (Option 2) */}
+                {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 pt-2">
                   <button
                     type="button"
@@ -615,9 +676,7 @@ export default function SubmitDealPage() {
                 </div>
               </form>
             ) : (
-              /* ============================================================ */
-              /* ONGLET 2 : OPTION 1 - BULK CSV PORTFOLIO IMPORT              */
-              /* ============================================================ */
+              /* ONGLET 2 : OPTION BULK CSV */
               <form onSubmit={handleBulkSubmit} className="bg-[#0b1222] border border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
                 
                 <div className="space-y-4">
@@ -641,7 +700,6 @@ export default function SubmitDealPage() {
                     </button>
                   </div>
 
-                  {/* Drag and drop CSV */}
                   <label className="flex flex-col items-center justify-center border-2 border-dashed border-slate-700 hover:border-emerald-500/50 bg-slate-950 rounded-2xl p-8 cursor-pointer transition text-center group">
                     <FileSpreadsheet className="w-10 h-10 text-slate-500 group-hover:text-emerald-400 mb-2 transition" />
                     <span className="text-sm font-bold text-slate-200 group-hover:text-white">
@@ -658,7 +716,6 @@ export default function SubmitDealPage() {
                     />
                   </label>
 
-                  {/* Aperçu des propriétés trouvées dans le CSV */}
                   {parsedDeals.length > 0 && (
                     <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-2">
                       <span className="text-xs font-black uppercase tracking-wider text-emerald-400 block">
@@ -676,7 +733,6 @@ export default function SubmitDealPage() {
                   )}
                 </div>
 
-                {/* Coordonnées globales pour tout le portfolio */}
                 <div className="space-y-4">
                   <h2 className="text-xs font-black uppercase tracking-wider text-cyan-400 flex items-center gap-2 border-b border-slate-800 pb-2">
                     <Home className="w-4 h-4" /> 2. Portfolio Sponsor / Promoter Contact
