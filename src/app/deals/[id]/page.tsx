@@ -7,13 +7,14 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-interface Props {
-  params: { id: string };
+interface PageProps {
+  params: Promise<{ id: string }>;
 }
 
-// 1. Génération des balises Open Graph pour Facebook & Twitter
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const rawId = decodeURIComponent(params.id);
+// 1. Balises Open Graph pour Facebook & Twitter (Next.js 15 async params)
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const rawId = decodeURIComponent(id);
 
   const { data: deal } = await supabase
     .from('deals')
@@ -28,11 +29,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
 
-  // Sélection d'une image web absolue valide pour Facebook
   const fallbackImage = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=1200&q=80';
   let ogImage = fallbackImage;
 
-  if (Array.isArray(deal.images) && deal.images.length > 0 && deal.images[0].startsWith('http')) {
+  if (Array.isArray(deal.images) && deal.images.length > 0 && typeof deal.images[0] === 'string' && deal.images[0].startsWith('http')) {
     ogImage = deal.images[0];
   } else if (deal.image_url && typeof deal.image_url === 'string' && deal.image_url.startsWith('http')) {
     ogImage = deal.image_url;
@@ -72,9 +72,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-// 2. Le Server Component qui passe les données préchargées au Client
-export default async function DealPage({ params }: Props) {
-  const rawId = decodeURIComponent(params.id);
+// 2. Server Component (Next.js 15 async params)
+export default async function DealPage({ params }: PageProps) {
+  const { id } = await params;
+  const rawId = decodeURIComponent(id);
 
   const { data: initialDeal, error } = await supabase
     .from('deals')
