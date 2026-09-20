@@ -4,11 +4,41 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 
 export default function ContactPage() {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    subject: 'Lender Network Partnership',
+    message: '',
+  });
+  const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitted(true);
+    setLoading(true);
+
+    try {
+      const res = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+
+      if (res.ok) {
+        setSubmitted(true);
+      } else {
+        const err = await res.json();
+        alert(`Error: ${err.error || 'Unable to submit message.'}`);
+      }
+    } catch {
+      alert('Network error. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -33,7 +63,6 @@ export default function ContactPage() {
             Direct communications for real estate operators, commercial mortgage brokers, and capital partners.
           </p>
 
-          {/* Badge direct email */}
           <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-xs">
             <span className="text-slate-400">Direct Email:</span>
             <a href="mailto:support@multidealprop.com" className="text-cyan-400 font-mono hover:underline">
@@ -50,7 +79,7 @@ export default function ContactPage() {
               </div>
               <h3 className="text-xl font-bold text-white">Message Transmitted</h3>
               <p className="text-slate-400 text-xs max-w-sm mx-auto">
-                Thank you. A capital desk coordinator will review your request and reply from <span className="text-white">support@multidealprop.com</span> within 1 business day.
+                Thank you. A capital desk coordinator will review your inquiry and reply to <span className="text-white">{formData.email}</span> within 1 business day.
               </p>
             </div>
           ) : (
@@ -59,8 +88,11 @@ export default function ContactPage() {
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Your Name</label>
                 <input
                   type="text"
+                  name="name"
                   required
                   placeholder="Full Name"
+                  value={formData.name}
+                  onChange={handleChange}
                   className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-cyan-500"
                 />
               </div>
@@ -70,17 +102,25 @@ export default function ContactPage() {
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Email Address</label>
                   <input
                     type="email"
+                    name="email"
                     required
                     placeholder="name@company.com"
+                    value={formData.email}
+                    onChange={handleChange}
                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-cyan-500"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Subject / Inquiry Type</label>
-                  <select className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-cyan-500">
-                    <option>Lender Network Partnership</option>
-                    <option>Broker Deal Submission</option>
-                    <option>General Support / Inquiries</option>
+                  <select
+                    name="subject"
+                    value={formData.subject}
+                    onChange={handleChange}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-cyan-500"
+                  >
+                    <option value="Lender Network Partnership">Lender Network Partnership</option>
+                    <option value="Broker Deal Submission">Broker Deal Submission</option>
+                    <option value="General Support / Inquiries">General Support / Inquiries</option>
                   </select>
                 </div>
               </div>
@@ -89,17 +129,21 @@ export default function ContactPage() {
                 <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Message</label>
                 <textarea
                   rows={4}
+                  name="message"
                   required
                   placeholder="Describe your inquiry or deal volume..."
+                  value={formData.message}
+                  onChange={handleChange}
                   className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-cyan-500 resize-none"
                 />
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-white text-black hover:bg-slate-200 font-bold text-xs uppercase tracking-wider py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                disabled={loading}
+                className="w-full bg-white text-black hover:bg-slate-200 font-bold text-xs uppercase tracking-wider py-4 rounded-xl transition-all shadow-[0_0_20px_rgba(255,255,255,0.1)] disabled:opacity-50"
               >
-                Send Message &rarr;
+                {loading ? 'Transmitting...' : 'Send Message \u2192'}
               </button>
             </form>
           )}
