@@ -10,7 +10,7 @@ export async function POST(request: Request) {
   try {
     const data = await request.json();
 
-    // 1. Sauvegarde dans Supabase
+    // 1. Enregistrement dans Supabase
     if (supabaseUrl && supabaseKey) {
       const { error: dbError } = await supabase.from('contacts').insert([
         {
@@ -26,18 +26,18 @@ export async function POST(request: Request) {
       }
     }
 
-    // 2. Envoi par Resend (instancié uniquement à l'exécution de la requête)
+    // 2. Envoi via Resend vers l'adresse vérifiée du compte
     const apiKey = process.env.RESEND_API_KEY;
     if (!apiKey) {
-      console.error('RESEND_API_KEY manquante dans les variables d’environnement');
-      return NextResponse.json({ success: true, warning: 'Saved to database, email skipped (no key)' }, { status: 200 });
+      console.error('Clé RESEND_API_KEY absente');
+      return NextResponse.json({ success: true, warning: 'Saved to database, email skipped' }, { status: 200 });
     }
 
     const resend = new Resend(apiKey);
 
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: 'MultiDealProp <onboarding@resend.dev>',
-      to: ['prosebmail@gmail.com'], // Votre adresse autorisée en mode test
+      to: ['prosebmail@gmail.com'],
       reply_to: data.email,
       subject: `[Nouveau Contact] ${data.subject} - ${data.name}`,
       text: `Nouveau message reçu depuis multidealprop.com :\n\nNom: ${data.name}\nEmail: ${data.email}\nSujet: ${data.subject}\n\nMessage:\n${data.message}`,
