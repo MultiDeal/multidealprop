@@ -37,7 +37,7 @@ export async function POST(request: Request) {
 
     const { data: emailData, error: emailError } = await resend.emails.send({
       from: 'MultiDealProp <onboarding@resend.dev>',
-      to: ['support@multidealprop.com'],
+      to: ['prosebmail@gmail.com'], // Votre adresse autorisée en mode test
       reply_to: data.email,
       subject: `[Nouveau Contact] ${data.subject} - ${data.name}`,
       text: `Nouveau message reçu depuis multidealprop.com :\n\nNom: ${data.name}\nEmail: ${data.email}\nSujet: ${data.subject}\n\nMessage:\n${data.message}`,
