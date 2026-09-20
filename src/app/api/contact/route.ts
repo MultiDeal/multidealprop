@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { Resend } from 'resend';
 
-// Initialisation de Resend et Supabase
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
@@ -27,11 +26,11 @@ export async function POST(request: Request) {
       console.error('Supabase Error:', dbError);
     }
 
-    // 2. Envoi de l'email d'alerte via Resend
+    // 2. Envoi de l'email d'alerte via Resend (syntaxe reply_to conforme au SDK)
     const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'MultiDealProp <onboarding@resend.dev>', // Si votre domaine est validé sur Resend, vous pouvez mettre 'MultiDealProp <support@multidealprop.com>'
-      to: ['support@multidealprop.com'], // Ou votre adresse Gmail personnelle si vous n'avez pas encore configuré la boîte de réception
-      replyTo: data.email,
+      from: 'MultiDealProp <onboarding@resend.dev>', // Modifiez avec support@multidealprop.com si le domaine est validé sur Resend
+      to: ['support@multidealprop.com'], // Ou votre adresse de réception directe
+      reply_to: data.email,
       subject: `[Nouveau Contact] ${data.subject} - ${data.name}`,
       text: `Nouveau message reçu depuis multidealprop.com :\n\nNom: ${data.name}\nEmail: ${data.email}\nSujet: ${data.subject}\n\nMessage:\n${data.message}`,
     });
