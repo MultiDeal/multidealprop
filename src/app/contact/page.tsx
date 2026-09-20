@@ -32,6 +32,14 @@ export default function ContactPage() {
           <p className="text-slate-400 text-sm mt-3 max-w-md mx-auto">
             Direct communications for real estate operators, commercial mortgage brokers, and capital partners.
           </p>
+
+          {/* Badge direct email */}
+          <div className="mt-6 inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/[0.03] text-xs">
+            <span className="text-slate-400">Direct Email:</span>
+            <a href="mailto:support@multidealprop.com" className="text-cyan-400 font-mono hover:underline">
+              support@multidealprop.com
+            </a>
+          </div>
         </div>
 
         <div className="bg-[#0a0a0a]/80 border border-white/10 rounded-3xl p-8 shadow-2xl backdrop-blur-xl">
@@ -42,7 +50,7 @@ export default function ContactPage() {
               </div>
               <h3 className="text-xl font-bold text-white">Message Transmitted</h3>
               <p className="text-slate-400 text-xs max-w-sm mx-auto">
-                Thank you. A capital desk coordinator will respond to your corporate inquiry within 1 business day.
+                Thank you. A capital desk coordinator will review your request and reply from <span className="text-white">support@multidealprop.com</span> within 1 business day.
               </p>
             </div>
           ) : (
