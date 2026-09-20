@@ -51,7 +51,10 @@ export default function PrivacyPage() {
 
           <h2 className="text-base font-bold text-white uppercase tracking-wider pt-4">5. Contact Information</h2>
           <p>
-            For inquiries regarding personal data deletion or privacy practices, please contact us at <span className="text-cyan-400">privacy@multidealprop.com</span>.
+            For inquiries regarding personal data deletion or privacy practices, please contact us at{' '}
+            <a href="mailto:support@multidealprop.com" className="text-cyan-400 hover:underline">
+              support@multidealprop.com
+            </a>.
           </p>
         </section>
       </main>
