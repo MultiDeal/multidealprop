@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 
 export default function FinTechProHome() {
   const [step, setStep] = useState(1);
@@ -41,7 +42,6 @@ export default function FinTechProHome() {
     setLoading(true);
 
     const propertyVal = Number(formData.purchasePrice) || 0;
-    // Calcul automatique standard à 75% LTV si l'emprunteur n'a pas spécifié de ratio sur mesure
     const calculatedLoan = Math.round(propertyVal * 0.75);
 
     try {
@@ -58,19 +58,18 @@ export default function FinTechProHome() {
           fullName: formData.fullName,
           email: formData.email,
           phone: formData.phone,
-          tcpa_accepted: formData.tcpa_accepted
-        })
+          tcpa_accepted: formData.tcpa_accepted,
+        }),
       });
 
       if (res.ok) {
         setSubmitted(true);
 
-        // Déclencheur analytique pour Google Tag Manager si présent
         if (typeof window !== 'undefined' && (window as unknown as { dataLayer?: unknown[] }).dataLayer) {
           (window as unknown as { dataLayer: unknown[] }).dataLayer.push({
             event: 'lead_submitted',
             lead_type: formData.propertyType,
-            property_value: propertyVal
+            property_value: propertyVal,
           });
         }
       } else {
@@ -84,42 +83,41 @@ export default function FinTechProHome() {
     }
   };
 
-  // Balisage de données structurées JSON-LD (SEO Google)
   const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "FinancialProduct",
-    "name": "Commercial & DSCR Loan Underwriting",
-    "provider": {
-      "@type": "Organization",
-      "name": "MultiDealProp",
-      "url": "https://multidealprop.com"
+    '@context': 'https://schema.org',
+    '@type': 'FinancialProduct',
+    name: 'Commercial & DSCR Loan Underwriting',
+    provider: {
+      '@type': 'Organization',
+      name: 'MultiDealProp',
+      url: 'https://multidealprop.com',
     },
-    "category": "Commercial Real Estate Financing",
-    "description": "Pre-qualify multifamily and DSCR real estate investments. Real-time routing to accredited private lenders with no W-2 tax requirements.",
-    "areaServed": "US"
+    category: 'Commercial Real Estate Financing',
+    description:
+      'Pre-qualify multifamily and DSCR real estate investments. Real-time routing to accredited private lenders with no W-2 tax requirements.',
+    areaServed: 'US',
   };
 
   return (
     <div className="min-h-screen bg-[#050505] text-slate-200 font-sans selection:bg-cyan-500/30 overflow-x-hidden relative">
-      
-      {/* Balisage JSON-LD pour Google Rich Results */}
+      {/* Schema Markup JSON-LD */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
 
-      {/* Ambiance d'arrière-plan avec dégradés légers */}
+      {/* Arrière-plan Aurora */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[40%] bg-blue-600/10 blur-[150px] rounded-full pointer-events-none" />
       <div className="absolute top-[20%] right-[-10%] w-[40%] h-[40%] bg-cyan-600/10 blur-[150px] rounded-full pointer-events-none" />
 
-      {/* Navigation */}
+      {/* Header */}
       <header className="relative z-50 px-6 lg:px-12 py-6 max-w-7xl mx-auto flex items-center justify-between">
-        <div className="flex items-center gap-3 cursor-pointer">
+        <Link href="/" className="flex items-center gap-3 cursor-pointer">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-slate-800 to-slate-900 border border-slate-700/50 flex items-center justify-center shadow-lg shadow-cyan-900/20">
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500 font-black text-lg">M</span>
           </div>
           <span className="text-xl font-bold tracking-tight text-white">
             multidealprop<span className="text-cyan-500">.</span>
           </span>
-        </div>
-        
+        </Link>
+
         <nav className="hidden md:flex gap-8 text-[11px] font-bold uppercase tracking-widest text-slate-400">
           <a href="#platform" className="hover:text-cyan-400 transition-colors">Platform</a>
           <a href="#criteria" className="hover:text-cyan-400 transition-colors">Criteria</a>
@@ -147,10 +145,9 @@ export default function FinTechProHome() {
           </p>
         </div>
 
-        {/* Bento Grid Formulaire & Widgets */}
+        {/* Bento Grid */}
         <div className="grid lg:grid-cols-12 gap-6 max-w-6xl mx-auto" id="platform">
-          
-          {/* Formulaire de qualification multi-étapes */}
+          {/* Formulaire de qualification */}
           <section className="lg:col-span-8 bg-[#0a0a0a]/80 border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative min-h-[460px]">
             <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
               <h2 className="text-xs font-bold uppercase tracking-widest text-cyan-400">
@@ -158,11 +155,11 @@ export default function FinTechProHome() {
               </h2>
               <div className="flex gap-2">
                 {[1, 2, 3].map(i => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className={`h-1.5 rounded-full transition-all duration-500 ${
                       step >= i ? 'w-8 bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]' : 'w-4 bg-white/10'
-                    }`} 
+                    }`}
                   />
                 ))}
               </div>
@@ -180,8 +177,7 @@ export default function FinTechProHome() {
               </div>
             ) : (
               <form onSubmit={step === 3 ? handleSubmit : handleNext} className="space-y-6">
-                
-                {/* Phase 01 : Sélection de l'actif */}
+                {/* Phase 01 */}
                 {step === 1 && (
                   <div className="space-y-6">
                     <div>
@@ -233,7 +229,7 @@ export default function FinTechProHome() {
                   </div>
                 )}
 
-                {/* Phase 02 : Métriques financières */}
+                {/* Phase 02 */}
                 {step === 2 && (
                   <div className="space-y-6">
                     <div className="grid sm:grid-cols-2 gap-6">
@@ -311,7 +307,7 @@ export default function FinTechProHome() {
                   </div>
                 )}
 
-                {/* Phase 03 : Coordonnées, géolocalisation & consentement TCPA */}
+                {/* Phase 03 */}
                 {step === 3 && (
                   <div className="space-y-5">
                     <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs leading-relaxed">
@@ -414,7 +410,7 @@ export default function FinTechProHome() {
             )}
           </section>
 
-          {/* Widgets d'indicateurs financiers */}
+          {/* Widgets */}
           <div className="lg:col-span-4 grid grid-rows-2 gap-6">
             <aside className="bg-[#0a0a0a]/80 border border-white/5 rounded-3xl p-6 backdrop-blur-xl flex flex-col justify-between group hover:border-cyan-500/30 transition-colors">
               <div className="flex items-center justify-between mb-4">
@@ -451,17 +447,16 @@ export default function FinTechProHome() {
               </div>
             </aside>
           </div>
-
         </div>
       </main>
 
-      {/* Preuve Sociale : Logos des Partenaires Institutionnels */}
+      {/* Partenaires & Preuve Sociale */}
       <section className="border-t border-white/5 bg-[#030303] py-12 relative z-10">
         <div className="max-w-7xl mx-auto px-6">
           <p className="text-center text-[10px] font-bold uppercase tracking-[0.3em] text-slate-600 mb-8">
             Capital deployed through industry-leading lending partners
           </p>
-          
+
           <div className="flex flex-wrap justify-center items-center gap-10 md:gap-16 opacity-40 grayscale hover:grayscale-0 transition-all duration-700">
             <div className="flex items-center gap-1.5">
               <div className="w-5 h-5 bg-white rounded-sm flex items-center justify-center">
@@ -483,11 +478,11 @@ export default function FinTechProHome() {
 
             <div className="flex items-center gap-2">
               <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L2 22h20L12 2zm0 5l5 10H7l5-10z"/>
+                <path d="M12 2L2 22h20L12 2zm0 5l5 10H7l5-10z" />
               </svg>
               <span className="text-xl font-bold tracking-[0.2em] text-white">ARBOR</span>
             </div>
-            
+
             <div className="flex items-center gap-1.5">
               <span className="text-white text-2xl font-black italic leading-none">V</span>
               <span className="text-lg font-bold tracking-tight text-white">Visio Lending</span>
@@ -515,7 +510,7 @@ export default function FinTechProHome() {
         </div>
       </section>
 
-      {/* Section 1 : How It Works */}
+      {/* How It Works */}
       <section id="how-it-works" className="border-t border-white/5 py-24 px-6 bg-[#030303] relative z-10">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
@@ -524,7 +519,7 @@ export default function FinTechProHome() {
               Bypass traditional banking friction. Our process is engineered for active real estate investors acquiring multifamily units or leveraging DSCR financing.
             </p>
           </div>
-          
+
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-white/[0.02] border border-white/[0.05] p-8 rounded-3xl hover:bg-white/[0.04] transition-colors">
               <div className="text-cyan-500 font-mono text-sm mb-4">01</div>
@@ -551,7 +546,7 @@ export default function FinTechProHome() {
         </div>
       </section>
 
-      {/* Section 2 : Tableau des critères de financement (SEO) */}
+      {/* Criteria Table */}
       <section id="criteria" className="py-24 px-6 bg-[#050505] relative z-10 border-t border-white/5">
         <div className="max-w-4xl mx-auto">
           <div className="mb-12">
@@ -595,11 +590,11 @@ export default function FinTechProHome() {
         </div>
       </section>
 
-      {/* Section 3 : Foire aux questions (FAQ SEO) */}
+      {/* FAQ */}
       <section id="faq" className="border-t border-white/5 py-24 px-6 bg-[#030303] relative z-10">
         <div className="max-w-3xl mx-auto">
           <h2 className="text-3xl font-extrabold text-white tracking-tight mb-10 text-center">Frequently Asked Questions</h2>
-          
+
           <div className="space-y-4">
             <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6">
               <h3 className="text-white font-bold mb-2">What is a DSCR Loan?</h3>
@@ -623,7 +618,7 @@ export default function FinTechProHome() {
         </div>
       </section>
 
-      {/* Footer Légal Institutionnel */}
+      {/* Footer Légal avec liens fonctionnels */}
       <footer className="border-t border-white/10 bg-[#000000] py-12 px-6 relative z-10">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8">
@@ -634,12 +629,12 @@ export default function FinTechProHome() {
               <span className="font-bold tracking-tight text-white text-sm">multidealprop.</span>
             </div>
             <div className="flex gap-6 text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href="/contact" className="hover:text-white transition-colors">Contact</Link>
             </div>
           </div>
-          
+
           <div className="text-center md:text-left text-[11px] text-slate-600 leading-relaxed max-w-4xl">
             <p className="mb-2">© {new Date().getFullYear()} MultiDealProp. All rights reserved.</p>
             <p>
@@ -648,7 +643,6 @@ export default function FinTechProHome() {
           </div>
         </div>
       </footer>
-
     </div>
   );
 }
